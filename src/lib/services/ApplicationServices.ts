@@ -1,6 +1,7 @@
 import * as firebase from 'firebase';
 
 export default class ApplicationServices {
+    private readonly _firebase: any;
 
     constructor() {
         firebase.initializeApp({
@@ -19,22 +20,17 @@ export default class ApplicationServices {
         }
     }
 
-    firebase() {
+
+    get firebase(): any {
         return this._firebase;
     }
 
     static _instance = null;
 
-    static get() {
+    static get(): ApplicationServices {
         if (ApplicationServices._instance == null) {
             ApplicationServices._instance = new ApplicationServices();
         }
         return ApplicationServices._instance;
-    }
-}
-
-class Storage {
-    async get(collection, id) {
-
     }
 }

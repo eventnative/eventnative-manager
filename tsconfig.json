@@ -2,6 +2,7 @@
   "compilerOptions": {
     "jsx": "react",
     "module": "commonjs",
+    "esModuleInterop": true,
     //"noImplicitAny": true,
     "outDir": "./dist/",
     "preserveConstEnums": true,

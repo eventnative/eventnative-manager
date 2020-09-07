@@ -3,7 +3,7 @@ import * as React from 'react'
 
 import {BrowserRouter, Redirect, Route, Switch, Link, HashRouter, NavLink} from 'react-router-dom';
 const logo = require('./icons/ksense_icon.svg');
-import {Layout, Menu, Row, Col, Button, Space, Card, Spin} from "antd";
+import {Layout, Menu, Row, Col, Button, Space, Card, Spin, Select} from "antd";
 import {
     UserOutlined,
     VideoCameraOutlined,
@@ -12,15 +12,18 @@ import {
     MenuUnfoldOutlined,
     AreaChartOutlined,
     PartitionOutlined,
-    LogoutOutlined
+    LogoutOutlined,
+    SlidersOutlined
 } from "@ant-design/icons";
 import './App.less';
 import './App.less';
 import Popover from "antd/es/popover";
-import ApplicationServices from './lib/services/ApplicationServices';
 import {StyledFirebaseAuth} from "react-firebaseui";
 import * as firebase from 'firebase';
 import {alert} from "./lib/commons/utils";
+import SubMenu from "antd/es/menu/SubMenu";
+import {UsergroupAddOutlined} from "@ant-design/icons/lib";
+import ApplicationServices from "./lib/services/ApplicationServices";
 
 enum AppLifecycle {
     LOADING, //Application is loading
@@ -70,7 +73,7 @@ export default class App extends React.Component<{}, AppState> {
     };
 
     public componentDidMount() {
-        this.unregisterAuthObserver = this.services.firebase().auth().onAuthStateChanged(
+        this.unregisterAuthObserver = this.services.firebase.auth().onAuthStateChanged(
             (user: any) => {
                 this.setState((state: AppState) => {
                     if (user) {
@@ -103,9 +106,22 @@ export default class App extends React.Component<{}, AppState> {
     }
 
     appLayout() {
+        let projectSelector = (
+            <Select
+                optionFilterProp="children"
+                defaultValue="jack"
+            >
+                <Select.Option value="project">Jack</Select.Option>
+                <Select.Option value="lucy">Lucy</Select.Option>
+                <Select.Option value="tom">Tom</Select.Option>
+            </Select>
+        );
         let userMenu = (
             <Menu>
-                <Menu.Item key="1" icon={<LogoutOutlined/>} onClick={() => firebase.auth().signOut().then(() => {
+                <Menu.Item key="profile" icon={<SlidersOutlined/>}>
+                    <NavLink to="/profile">Profile</NavLink>
+                </Menu.Item>
+                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => firebase.auth().signOut().then(() => {
                     this.setState((state: AppState) => {
                         state.lifecycle = AppLifecycle.LOGIN;
                     })
@@ -120,25 +136,39 @@ export default class App extends React.Component<{}, AppState> {
                     {this.state.menuCollapsed ? (<span/>) : (<span className="logoText">kSense</span>)}
                     <Switch>
                         <Menu mode="inline" defaultSelectedKeys={['1']} className="theme-blue-bg sidebar-menu">
-                            <Menu.Item key="1" icon={<AreaChartOutlined/>}>
-                                <NavLink to="/dashboard" activeClassName="selected">Dashboard</NavLink>
+                            <Menu.Item key="status" icon={<PartitionOutlined />}>
+                                <NavLink to="/dashboard" activeClassName="selected">Status</NavLink>
                             </Menu.Item>
-                            <Menu.Item key="2" icon={<PartitionOutlined/>}>
-                                <NavLink to="/config" activeClassName="selected">Config</NavLink>
+                            <Menu.Item key="connections" icon={<AreaChartOutlined/>}>
+                                <NavLink to="/connectors" activeClassName="selected">Connections</NavLink>
                             </Menu.Item>
+                            <Menu.Item key="destinations" icon={<AreaChartOutlined/>}>
+                                <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
+                            </Menu.Item>
+                            <SubMenu title="Project Settings" icon={<SlidersOutlined />}>
+                                <Menu.Item key="general_settins" icon={<AreaChartOutlined/>}>
+                                    <NavLink to="/project_settings" activeClassName="selected">Access & General</NavLink>
+                                </Menu.Item>
+                                <Menu.Item key="users" icon={<UsergroupAddOutlined />}>
+                                    <NavLink to="/users" activeClassName="selected">Users</NavLink>
+                                </Menu.Item>
+                            </SubMenu>
                         </Menu>
                     </Switch>
                 </Layout.Sider>
                 <Layout>
                     <Layout.Header className="theme-blue-bg" style={{padding: 0}}>
                         <Row>
-                            <Col className="gutter-row" span={22}>
+                            <Col className="gutter-row" span={20}>
                                 {React.createElement(this.state.menuCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
                                     className: 'trigger',
                                     onClick: this.toggleMenu,
                                 })}
                             </Col>
-                            <Col className="gutter-row" span={2}>
+                            <Col span={3}>
+                                {projectSelector}
+                            </Col>
+                            <Col className="gutter-row" span={1}>
                                 <div className="user-menu">
                                     <Popover content={userMenu} trigger="click">
                                         <UserOutlined style={{color: 'white'}}/>
@@ -177,7 +207,7 @@ export default class App extends React.Component<{}, AppState> {
         );
         return (
                 <Card title={title} style={{margin: 'auto', 'marginTop': '100px', 'maxWidth': '400px'}}>
-                    <StyledFirebaseAuth uiConfig={this.firebaseSignInUIConfig} firebaseAuth={this.services.firebase().auth()}/>
+                    <StyledFirebaseAuth uiConfig={this.firebaseSignInUIConfig} firebaseAuth={this.services.firebase.auth()}/>
                 </Card>
         );
     }
