@@ -5,7 +5,6 @@ import {BrowserRouter, Redirect, Route, Switch, Link, HashRouter, NavLink} from 
 const logo = require('./icons/ksense_icon.svg');
 import {Layout, Menu, Row, Col, Button, Space, Card, Spin, Select} from "antd";
 import {
-    UserOutlined,
     VideoCameraOutlined,
     UploadOutlined,
     MenuFoldOutlined,
@@ -22,7 +21,7 @@ import {StyledFirebaseAuth} from "react-firebaseui";
 import * as firebase from 'firebase';
 import {alert} from "./lib/commons/utils";
 import SubMenu from "antd/es/menu/SubMenu";
-import {UsergroupAddOutlined} from "@ant-design/icons/lib";
+import {UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "./lib/services/ApplicationServices";
 
 enum AppLifecycle {
