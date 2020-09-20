@@ -12,7 +12,10 @@ function circularReferencesReplacer() {
     };
 }
 
-
+/**
+ * Enhanced alert. Displays JSON representation of the
+ * object and logs a copy to console
+ */
 export function alert(...object) {
     if (object.length === 1) {
         console.log('Object:', object[0]);
@@ -21,4 +24,15 @@ export function alert(...object) {
         console.log('Object:', object);
         window.alert(JSON.stringify(object, circularReferencesReplacer(), 4));
     }
+}
+
+/**
+ * Navigates to a page and reloads it (if URL is prefixed by hash). Url is relative
+ */
+export function navigateAndReload(url) {
+    if (url.startsWith("#")) {
+        window.location.hash = url;
+        //window.location.reload()
+    }
+
 }

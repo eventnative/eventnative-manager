@@ -2,6 +2,19 @@
 @import '~antd/dist/antd.less';
 @import "theme.less";
 
+body {
+  height: 100%;
+}
+
+#reactApplicationRoot {
+  height: 100%;
+  .rootAppLayout {
+    height: 100%;
+  }
+}
+
+
+
 .trigger {
   font-size: 18px;
   line-height: 64px;
@@ -11,54 +24,8 @@
 }
 
 
-.side-bar-background, .side-bar, .left-menu {
-  background-color: @blue_bg;
-}
-
-.trigger:hover {
-  color: white;
-}
-.trigger {
-  color: @gray_font;
-}
 
 .logo {
   height: 32px;
   margin: 16px;
 }
-
-.theme-blue-bg {
-  background: @blue_bg;
-}
-
-.logoText {
-  font-family: Rubik, serif;
-  font-size: 18px;
-  color: white;
-}
-
-.side-bar {
-  .sidebar-menu a, .sidebar-menu, .ant-menu-item-selected a {
-    color: @gray_font !important;
-    background: transparent !important;
-    border: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    font-weight: bold !important;
-  }
-
-  .ant-menu-item-active a, .ant-menu-item-active {
-    color: white !important;
-  }
-
-  .ant-menu-item-selected {
-    background: @blue_bg !important;
-    color: white !important;
-    border: 0 !important;
-    a {
-      color: white !important;
-    }
-
-  }
-}
-
