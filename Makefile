@@ -12,7 +12,7 @@ assemble: backend frontend
 	cp dist/* ./build/dist/web/
 
 backend:
-	cd ./backend; go build -o ../$(APPLICATION)
+	cd ./backend; go mod tidy; go build -o ../$(APPLICATION)
 
 frontend:
 	cd ./frontend; npm install; yarn build --output-path ../dist
