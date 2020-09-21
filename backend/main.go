@@ -17,7 +17,7 @@ func main() {
 	flag.Parse()
 	ReadConfiguration(*configFilePath)
 	staticFilesPath := viper.GetString("server.static_files_dir")
-	log.Printf("Static files path: %s\n", staticFilesPath)
+	log.Printf("Static files serving path: [%s]\n", staticFilesPath)
 	router := SetupRouter(staticFilesPath)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
@@ -47,7 +47,9 @@ func Cors(h http.Handler) http.Handler {
 func ReadConfiguration(configFilePath string) {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	log.Printf("Reading config from %s\n", configFilePath)
+	if configFilePath != "" {
+		log.Printf("Reading config from %s\n", configFilePath)
+	}
 	viper.SetConfigFile(configFilePath)
 	if err := viper.ReadInConfig(); err != nil {
 		if viper.ConfigFileUsed() != "" {
