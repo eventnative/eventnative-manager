@@ -16,8 +16,9 @@ func main() {
 	configFilePath := flag.String("cfg", "", "config file path")
 	flag.Parse()
 	ReadConfiguration(*configFilePath)
-
-	router := SetupRouter(viper.GetString("server.static_files_dir"))
+	staticFilesPath := viper.GetString("server.static_files_dir")
+	log.Printf("Static files path: %s\n", staticFilesPath)
+	router := SetupRouter(staticFilesPath)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
 		Handler:           Cors(router),

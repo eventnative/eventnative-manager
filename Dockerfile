@@ -1,5 +1,6 @@
 FROM golang:1.14.6-alpine3.12
 ENV EVENTNATIVE_USER=enhosted
+ENV SERVER_STATIC_FILES_DIR="/home/$EVENTNATIVE_USER/app/web"
 
 RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 RUN apk add git make bash npm shadow@testing yarn
