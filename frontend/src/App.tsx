@@ -10,7 +10,7 @@ import Popover from "antd/es/popover";
 import {StyledFirebaseAuth} from "react-firebaseui";
 import * as firebase from 'firebase';
 import SubMenu from "antd/es/menu/SubMenu";
-import {LockOutlined, UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
+import {KeyOutlined, LockOutlined, UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "./lib/services/ApplicationServices";
 import {GlobalError, Preloader} from "./lib/components/components";
 import LoginForm from "./lib/components/LoginForm/LoginForm";

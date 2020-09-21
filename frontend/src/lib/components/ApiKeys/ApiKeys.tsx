@@ -4,6 +4,7 @@ import {Card} from 'antd';
 import {DeleteOutlined} from '@ant-design/icons';
 import ApplicationServices from "../../services/ApplicationServices";
 import * as firebase from "firebase";
+import {ApiKeyService} from "../../services/ApiKeyService";
 
 enum PageLifecycle {
     LOADING, //Data is loading
@@ -28,7 +29,7 @@ type AppState = {
 }
 
 export default class ApiKeys extends React.Component<{}, AppState> {
-    private readonly services: ApplicationServices
+    private readonly apiKeyService: ApiKeyService
 
     constructor(props: any, context: any) {
         super(props, context);
@@ -40,7 +41,7 @@ export default class ApiKeys extends React.Component<{}, AppState> {
     }
 
     public componentDidMount() {
-        this.services.firebase.firestore().collection('en_auth').doc('my_user_id_123').get()
+        this.services.firebase.firestore().collection('en_auth').doc(firebase.auth().currentUser.uid).get()
             .then((auth: any) => {
                 this.setState((state: AppState) => {
                     if (auth.exists && (auth.data().auth !== [] || auth.data().s2s_auth !== [])) {
