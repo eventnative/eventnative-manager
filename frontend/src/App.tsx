@@ -1,28 +1,26 @@
-
 import * as React from 'react'
 
-import {BrowserRouter, Redirect, Route, Switch, Link, HashRouter, NavLink} from 'react-router-dom';
-const logo = require('./icons/ksense_icon.svg');
-import {Layout, Menu, Row, Col, Button, Space, Card, Spin, Select} from "antd";
+import {NavLink, Route, Switch} from 'react-router-dom';
+import {Card, Col, Layout, Menu, Row, Select, Spin} from "antd";
 import {
-    VideoCameraOutlined,
-    UploadOutlined,
+    AreaChartOutlined,
+    KeyOutlined,
+    LogoutOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
-    AreaChartOutlined,
     PartitionOutlined,
-    LogoutOutlined,
     SlidersOutlined
 } from "@ant-design/icons";
-import './App.less';
 import './App.less';
 import Popover from "antd/es/popover";
 import {StyledFirebaseAuth} from "react-firebaseui";
 import * as firebase from 'firebase';
-import {alert} from "./lib/commons/utils";
 import SubMenu from "antd/es/menu/SubMenu";
 import {UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "./lib/services/ApplicationServices";
+import ApiKeys from "./lib/components/ApiKeys/ApiKeys"
+
+const logo = require('./icons/ksense_icon.svg');
 
 enum AppLifecycle {
     LOADING, //Application is loading
@@ -144,6 +142,9 @@ export default class App extends React.Component<{}, AppState> {
                             <Menu.Item key="destinations" icon={<AreaChartOutlined/>}>
                                 <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
                             </Menu.Item>
+                            <Menu.Item key="api_keys" icon={<KeyOutlined/>}>
+                                <NavLink to="/api_keys" activeClassName="selected">API Keys</NavLink>
+                            </Menu.Item>
                             <SubMenu title="Project Settings" icon={<SlidersOutlined />}>
                                 <Menu.Item key="general_settins" icon={<AreaChartOutlined/>}>
                                     <NavLink to="/project_settings" activeClassName="selected">Access & General</NavLink>
@@ -190,6 +191,9 @@ export default class App extends React.Component<{}, AppState> {
                             </Route>
                             <Route path="/config">
                                 Config
+                            </Route>
+                            <Route path="/api_keys">
+                                <ApiKeys/>
                             </Route>
                         </Switch>
                     </Layout.Content>
