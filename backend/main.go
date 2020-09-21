@@ -12,6 +12,7 @@ import (
 
 func main() {
 	configFilePath := flag.String("cfg", "", "config file path")
+	flag.Parse()
 	readConfiguration(*configFilePath)
 	appConfig := appconfig.Instance
 	http.HandleFunc("/", HelloServer)
@@ -19,9 +20,9 @@ func main() {
 }
 
 func readConfiguration(configFilePath string) {
-	flag.Parse()
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	log.Printf("Reading config from %s\n", configFilePath)
 	viper.SetConfigFile(configFilePath)
 	if err := viper.ReadInConfig(); err != nil {
 		if viper.ConfigFileUsed() != "" {
@@ -34,5 +35,5 @@ func readConfiguration(configFilePath string) {
 }
 
 func HelloServer(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, %s!\n", r.URL.Path[1:])
+	fmt.Fprintf(w, "This is %s. Hello, %s!\n", appconfig.Instance.ServerName, r.URL.Path[1:])
 }

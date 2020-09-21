@@ -7,11 +7,12 @@ RUN apk add git make bash npm shadow@testing yarn
 ADD . /go/src/github.com/ksensehq/$EVENTNATIVE_USER
 RUN groupadd -r $EVENTNATIVE_USER \
     && useradd -r -d /home/$EVENTNATIVE_USER -g $EVENTNATIVE_USER $EVENTNATIVE_USER \
-    && mkdir -p /home/$EVENTNATIVE_USER/web \
-    && mkdir -p /home/$EVENTNATIVE_USER/app \
+    && mkdir -p /home/$EVENTNATIVE_USER/app/res \
+    && mkdir -p /home/$EVENTNATIVE_USER/app/web \
     && chown -R $EVENTNATIVE_USER:$EVENTNATIVE_USER /home/$EVENTNATIVE_USER \
-    && chown -R $EVENTNATIVE_USER:$EVENTNATIVE_USER /home/$EVENTNATIVE_USER/web \
     && chown -R $EVENTNATIVE_USER:$EVENTNATIVE_USER /home/$EVENTNATIVE_USER/app \
+    && chown -R $EVENTNATIVE_USER:$EVENTNATIVE_USER /home/$EVENTNATIVE_USER/app/res \
+    && chown -R $EVENTNATIVE_USER:$EVENTNATIVE_USER /home/$EVENTNATIVE_USER/app/web \
     && chown -R $EVENTNATIVE_USER:$EVENTNATIVE_USER /go/src/github.com/ksensehq/$EVENTNATIVE_USER
 
 USER $EVENTNATIVE_USER
@@ -27,4 +28,4 @@ USER $EVENTNATIVE_USER
 WORKDIR /home/$EVENTNATIVE_USER
 
 EXPOSE 8001
-ENTRYPOINT /home/$EVENTNATIVE_USER/app/$EVENTNATIVE_USER
+ENTRYPOINT /home/$EVENTNATIVE_USER/app/$EVENTNATIVE_USER -cfg=/home/$EVENTNATIVE_USER/app/res/configuration.yaml
