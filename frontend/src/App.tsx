@@ -1,25 +1,21 @@
+
 import * as React from 'react'
 
 import {NavLink, Route, Switch} from 'react-router-dom';
-import {Card, Col, Layout, Menu, Row, Select, Spin} from "antd";
-import {
-    AreaChartOutlined,
-    KeyOutlined,
-    LogoutOutlined,
-    MenuFoldOutlined,
-    MenuUnfoldOutlined,
-    PartitionOutlined,
-    SlidersOutlined
-} from "@ant-design/icons";
+import {Card, Col, Layout, Menu, Row, Select} from "antd";
+import {Form, Input, Button, Checkbox} from 'antd';
+import {AreaChartOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, PartitionOutlined, SlidersOutlined} from "@ant-design/icons";
 import './App.less';
 import Popover from "antd/es/popover";
 import {StyledFirebaseAuth} from "react-firebaseui";
 import * as firebase from 'firebase';
 import SubMenu from "antd/es/menu/SubMenu";
-import {UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
+import {LockOutlined, UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "./lib/services/ApplicationServices";
+import {GlobalError, Preloader} from "./lib/components/components";
+import LoginForm from "./lib/components/LoginForm/LoginForm";
+import SignupForm from "./lib/components/SignupForm/SignupForm";
 import ApiKeys from "./lib/components/ApiKeys/ApiKeys"
-
 const logo = require('./icons/ksense_icon.svg');
 
 enum AppLifecycle {
@@ -52,10 +48,8 @@ export default class App extends React.Component<{}, AppState> {
             signInFlow: 'popup',
             // We will display Google and Facebook as auth providers.
             signInOptions: [
-                // {
-                //     provider: firebase.auth.EmailAuthProvider.EMAIL_PASSWORD_SIGN_IN_METHOD
-                // },
-                firebase.auth.GoogleAuthProvider.PROVIDER_ID
+                firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+                firebase.auth.GithubAuthProvider.PROVIDER_ID
             ],
             callbacks: {
                 signInSuccessWithAuthResult: () => false
@@ -91,102 +85,40 @@ export default class App extends React.Component<{}, AppState> {
     public render() {
         switch (this.state.lifecycle) {
             case AppLifecycle.LOGIN:
-                return this.loginForm();
+                return (<Switch>
+                    <Route path="/register" exact component={SignupForm} />
+                    <Route component={LoginForm} />
+                </Switch>);
+                return <LoginForm />;
             case AppLifecycle.APP:
                 return this.appLayout();
             case AppLifecycle.ERROR:
-                return (<h1>Error</h1>);
+                return (<GlobalError/>);
             case AppLifecycle.LOADING:
-                return (<Spin />);
+                return (<Preloader/>);
 
         }
     }
 
     appLayout() {
-        let projectSelector = (
-            <Select
-                optionFilterProp="children"
-                defaultValue="jack"
-            >
-                <Select.Option value="project">Jack</Select.Option>
-                <Select.Option value="lucy">Lucy</Select.Option>
-                <Select.Option value="tom">Tom</Select.Option>
-            </Select>
-        );
-        let userMenu = (
-            <Menu>
-                <Menu.Item key="profile" icon={<SlidersOutlined/>}>
-                    <NavLink to="/profile">Profile</NavLink>
-                </Menu.Item>
-                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => firebase.auth().signOut().then(() => {
-                    this.setState((state: AppState) => {
-                        state.lifecycle = AppLifecycle.LOGIN;
-                    })
-                })}>
-                    Logout
-                </Menu.Item>
-            </Menu>);
         return (
-            <Layout>
+            <Layout className="rootAppLayout">
                 <Layout.Sider trigger={null} collapsible collapsed={this.state.menuCollapsed} className="side-bar">
                     <img className="logo" src={logo} alt="[logo]"/>
                     {this.state.menuCollapsed ? (<span/>) : (<span className="logoText">kSense</span>)}
-                    <Switch>
-                        <Menu mode="inline" defaultSelectedKeys={['1']} className="theme-blue-bg sidebar-menu">
-                            <Menu.Item key="status" icon={<PartitionOutlined />}>
-                                <NavLink to="/dashboard" activeClassName="selected">Status</NavLink>
-                            </Menu.Item>
-                            <Menu.Item key="connections" icon={<AreaChartOutlined/>}>
-                                <NavLink to="/connectors" activeClassName="selected">Connections</NavLink>
-                            </Menu.Item>
-                            <Menu.Item key="destinations" icon={<AreaChartOutlined/>}>
-                                <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
-                            </Menu.Item>
-                            <Menu.Item key="api_keys" icon={<KeyOutlined/>}>
-                                <NavLink to="/api_keys" activeClassName="selected">API Keys</NavLink>
-                            </Menu.Item>
-                            <SubMenu title="Project Settings" icon={<SlidersOutlined />}>
-                                <Menu.Item key="general_settins" icon={<AreaChartOutlined/>}>
-                                    <NavLink to="/project_settings" activeClassName="selected">Access & General</NavLink>
-                                </Menu.Item>
-                                <Menu.Item key="users" icon={<UsergroupAddOutlined />}>
-                                    <NavLink to="/users" activeClassName="selected">Users</NavLink>
-                                </Menu.Item>
-                            </SubMenu>
-                        </Menu>
-                    </Switch>
+                    {App.leftMenu()}
                 </Layout.Sider>
                 <Layout>
-                    <Layout.Header className="theme-blue-bg" style={{padding: 0}}>
-                        <Row>
-                            <Col className="gutter-row" span={20}>
-                                {React.createElement(this.state.menuCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
-                                    className: 'trigger',
-                                    onClick: this.toggleMenu,
-                                })}
-                            </Col>
-                            <Col span={3}>
-                                {projectSelector}
-                            </Col>
-                            <Col className="gutter-row" span={1}>
-                                <div className="user-menu">
-                                    <Popover content={userMenu} trigger="click">
-                                        <UserOutlined style={{color: 'white'}}/>
-                                    </Popover>
-                                </div>
-                            </Col>
-                        </Row>
-                    </Layout.Header>
+                    {this.headerComponent()}
                     <Layout.Content
                         className="site-layout-background"
                         style={{
                             margin: '24px 16px',
                             padding: 24,
                             minHeight: 280,
-                        }}
-                    >
+                        }}>
                         <Switch>
-                            <Route path={["/dashboard", "/"]} exact>
+                            <Route path={["/dashboard", "/", "/register"]} exact>
                                 Dashboard2
                             </Route>
                             <Route path="/config">
@@ -202,17 +134,79 @@ export default class App extends React.Component<{}, AppState> {
         );
     }
 
-    loginForm() {
-        let title = (
-            <div style={{"textAlign": "center"}}>
-                <img src={logo} alt="[logo]" /> <span style={{'fontSize': '18px'}}>kSense Login</span>
-            </div>
-        );
-        return (
-                <Card title={title} style={{margin: 'auto', 'marginTop': '100px', 'maxWidth': '400px'}}>
-                    <StyledFirebaseAuth uiConfig={this.firebaseSignInUIConfig} firebaseAuth={this.services.firebase.auth()}/>
-                </Card>
-        );
+    private static leftMenu() {
+        return <Switch>
+            <Menu mode="inline" defaultSelectedKeys={['1']} className="theme-blue-bg sidebar-menu">
+                <Menu.Item key="status" icon={<PartitionOutlined/>}>
+                    <NavLink to="/dashboard" activeClassName="selected">Status</NavLink>
+                </Menu.Item>
+                <Menu.Item key="connections" icon={<AreaChartOutlined/>}>
+                    <NavLink to="/connectors" activeClassName="selected">Connections</NavLink>
+                </Menu.Item>
+                <Menu.Item key="destinations" icon={<AreaChartOutlined/>}>
+                    <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
+                </Menu.Item>
+                <Menu.Item key="api_keys" icon={<KeyOutlined/>}>
+                    <NavLink to="/api_keys" activeClassName="selected">API Keys</NavLink>
+                </Menu.Item>
+                <SubMenu title="Project Settings" icon={<SlidersOutlined/>}>
+                    <Menu.Item key="general_settins" icon={<AreaChartOutlined/>}>
+                        <NavLink to="/project_settings" activeClassName="selected">Access & General</NavLink>
+                    </Menu.Item>
+                    <Menu.Item key="users" icon={<UsergroupAddOutlined/>}>
+                        <NavLink to="/users" activeClassName="selected">Users</NavLink>
+                    </Menu.Item>
+                </SubMenu>
+            </Menu>
+        </Switch>;
+    }
+
+    private headerComponent() {
+        return <Layout.Header className="theme-blue-bg" style={{padding: 0}}>
+            <Row>
+                <Col className="gutter-row" span={20}>
+                    {React.createElement(this.state.menuCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
+                        className: 'trigger',
+                        onClick: this.toggleMenu,
+                    })}
+                </Col>
+                <Col span={3}>
+                    <Select optionFilterProp="children" defaultValue="jack">
+                        <Select.Option value="project">Jack</Select.Option>
+                        <Select.Option value="lucy">Lucy</Select.Option>
+                        <Select.Option value="tom">Tom</Select.Option>
+                    </Select>
+                </Col>
+                <Col className="gutter-row" span={1}>
+                    <div className="user-menu">
+                        <Popover content={(
+                            <Menu>
+                                <Menu.Item key="profile" icon={<SlidersOutlined/>}>
+                                    <NavLink to="/profile">Profile</NavLink>
+                                </Menu.Item>
+                                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => firebase.auth().signOut().then(() => {
+                                    this.setState((state: AppState) => {
+                                        state.lifecycle = AppLifecycle.LOGIN;
+                                    })
+                                })}>
+                                    Logout
+                                </Menu.Item>
+                            </Menu>)} trigger="click">
+                            <UserOutlined/>
+                        </Popover>
+                    </div>
+                </Col>
+            </Row>
+        </Layout.Header>;
+    }
+
+
+    private onFinishFailed() {
+
+    }
+
+    private onFinish() {
+
     }
 }
 
