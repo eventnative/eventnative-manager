@@ -14,6 +14,7 @@ import ApplicationServices from "./lib/services/ApplicationServices";
 import {GlobalError, Preloader} from "./lib/components/components";
 import LoginForm from "./lib/components/LoginForm/LoginForm";
 import SignupForm from "./lib/components/SignupForm/SignupForm";
+import {reloadPage} from "./lib/commons/utils";
 const logo = require('./icons/ksense_icon.svg');
 
 enum AppLifecycle {
@@ -31,8 +32,6 @@ type AppState = {
 
 export default class App extends React.Component<{}, AppState> {
     private readonly services: ApplicationServices
-    private readonly firebaseSignInUIConfig: any;
-    private unregisterAuthObserver: firebase.Unsubscribe;
 
     constructor(props: any, context: any) {
         super(props, context);
@@ -41,18 +40,7 @@ export default class App extends React.Component<{}, AppState> {
             menuCollapsed: false,
             lifecycle: AppLifecycle.LOADING
         }
-        this.firebaseSignInUIConfig = {
-            // Popup signin flow rather than redirect flow.
-            signInFlow: 'popup',
-            // We will display Google and Facebook as auth providers.
-            signInOptions: [
-                firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-                firebase.auth.GithubAuthProvider.PROVIDER_ID
-            ],
-            callbacks: {
-                signInSuccessWithAuthResult: () => false
-            }
-        };
+
     }
 
     toggleMenu = () => {
@@ -62,22 +50,16 @@ export default class App extends React.Component<{}, AppState> {
     };
 
     public componentDidMount() {
-        this.unregisterAuthObserver = this.services.firebase.auth().onAuthStateChanged(
-            (user: any) => {
-                this.setState((state: AppState) => {
-                    if (user) {
-                        state.lifecycle = AppLifecycle.APP;
-                    } else {
-                        state.lifecycle = AppLifecycle.LOGIN;
-                        state.loginErrorMessage = "User doesn't have access";
-                    }
-                }, () => this.forceUpdate());
-            }
-        );
-    }
-
-    public componentWillUnmount() {
-        this.unregisterAuthObserver();
+        this.services.userServices.checkLogin((hasLogin) => {
+            this.setState((state: AppState) => {
+                if (hasLogin) {
+                    state.lifecycle = AppLifecycle.APP;
+                } else {
+                    state.lifecycle = AppLifecycle.LOGIN;
+                    state.loginErrorMessage = "User doesn't have access";
+                }
+            }, () => this.forceUpdate());
+        })
     }
 
     public render() {
@@ -87,7 +69,6 @@ export default class App extends React.Component<{}, AppState> {
                     <Route path="/register" exact component={SignupForm} />
                     <Route component={LoginForm} />
                 </Switch>);
-                return <LoginForm />;
             case AppLifecycle.APP:
                 return this.appLayout();
             case AppLifecycle.ERROR:
@@ -176,11 +157,7 @@ export default class App extends React.Component<{}, AppState> {
                                 <Menu.Item key="profile" icon={<SlidersOutlined/>}>
                                     <NavLink to="/profile">Profile</NavLink>
                                 </Menu.Item>
-                                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => firebase.auth().signOut().then(() => {
-                                    this.setState((state: AppState) => {
-                                        state.lifecycle = AppLifecycle.LOGIN;
-                                    })
-                                })}>
+                                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userServices.removeAuth(reloadPage)}>
                                     Logout
                                 </Menu.Item>
                             </Menu>)} trigger="click">
