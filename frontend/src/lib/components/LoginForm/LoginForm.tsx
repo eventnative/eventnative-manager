@@ -8,7 +8,7 @@ const githubLogo = require('../../../icons/github.svg');
 import './LoginForm.less'
 import ApplicationServices from "../../services/ApplicationServices";
 import * as firebase from "firebase";
-import {navigateAndReload} from "../../commons/utils";
+import {navigateAndReload, reloadPage} from "../../commons/utils";
 
 type State = {
     loading: boolean
@@ -122,9 +122,10 @@ export default class LoginForm extends React.Component<any, State> {
 
     private passwordLogin(values) {
         this.setState({loading: true});
-        firebase.auth().signInWithEmailAndPassword(values['username'], values['password']).then((...params) => {
-            this.setState({loading: false});
+        this.services.userServices.login(values['username'], values['password']).then(() => {
             message.destroy()
+            this.setState({loading: false});
+            reloadPage();
         }).catch(error => {
             message.destroy()
             console.log("Error", error);
@@ -134,18 +135,10 @@ export default class LoginForm extends React.Component<any, State> {
     }
 
     private googleLogin() {
-        console.log('Google login')
-        this.services.firebase.auth().signInWithRedirect(new firebase.auth.GoogleAuthProvider()).then(result => {
-            var token = result.credential.accessToken;
-            var user = result.user;
-        }).catch(function(error) {
-            var errorCode = error.code;
-            var errorMessage = error.message;
-            var email = error.email;
-        });
+        this.services.userServices.initiateGoogleLogin();
     }
 
     private githubLogin() {
-
+        this.services.userServices.initiateGithubLogin();
     }
 }

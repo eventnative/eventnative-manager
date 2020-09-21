@@ -34,5 +34,11 @@ export function navigateAndReload(url) {
         window.location.hash = url;
         //window.location.reload()
     }
+}
 
+/**
+ * Fully reloads current page
+ */
+export function reloadPage() {
+    location.reload();
 }
