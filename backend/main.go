@@ -2,24 +2,48 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"github.com/gin-contrib/static"
+	"github.com/gin-gonic/gin"
 	"github.com/ksensehq/enhosted/appconfig"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 func main() {
 	configFilePath := flag.String("cfg", "", "config file path")
 	flag.Parse()
-	readConfiguration(*configFilePath)
-	appConfig := appconfig.Instance
-	http.HandleFunc("/", HelloServer)
-	log.Fatal(http.ListenAndServe(appConfig.Authority, nil))
+	ReadConfiguration(*configFilePath)
+
+	router := SetupRouter(viper.GetString("server.static_files_dir"))
+	server := &http.Server{
+		Addr:              appconfig.Instance.Authority,
+		Handler:           Cors(router),
+		ReadTimeout:       time.Second * 60,
+		ReadHeaderTimeout: time.Second * 60,
+		IdleTimeout:       time.Second * 65,
+	}
+	log.Fatal(server.ListenAndServe())
 }
 
-func readConfiguration(configFilePath string) {
+func Cors(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Access-Control-Max-Age", "86400")
+		w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
+		w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Host")
+		w.Header().Add("Access-Control-Allow-Credentials", "true")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
+func ReadConfiguration(configFilePath string) {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	log.Printf("Reading config from %s\n", configFilePath)
@@ -34,6 +58,12 @@ func readConfiguration(configFilePath string) {
 	}
 }
 
-func HelloServer(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "This is %s. Hello, %s!\n", appconfig.Instance.ServerName, r.URL.Path[1:])
+func SetupRouter(staticContentDirectory string) *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	router.GET("/api/", func(c *gin.Context) {
+		c.String(http.StatusOK, "This is %s. Hello, user!\n", appconfig.Instance.ServerName)
+	})
+	router.Use(static.Serve("/", static.LocalFile(staticContentDirectory, false)))
+	return router
 }
