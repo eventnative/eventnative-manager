@@ -154,13 +154,13 @@ class FirebaseUserServices implements UserServices {
             if (user.email == null) {
                 reject(new Error("User email is null"))
             }
-            firebase.firestore().collection(FirebaseUserServices.USERS_COLLECTION).doc(user.email).get()
+            firebase.firestore().collection(FirebaseUserServices.USERS_COLLECTION).doc(user.uid).get()
                 .then((doc) => {
                     let suggestedInfo = this.suggestedInfoFromFirebaseUser(user);
                     if (doc.exists) {
-                        resolve(this.user = new User(suggestedInfo, doc.data()));
+                        resolve(this.user = new User(user.uid, suggestedInfo, doc.data()));
                     } else {
-                        resolve(this.user = new User(suggestedInfo));
+                        resolve(this.user = new User(user.uid, suggestedInfo));
                     }
                 })
                 .catch(reject)
@@ -198,7 +198,7 @@ class FirebaseUserServices implements UserServices {
             userData['_project'] = Object.assign({}, user.projects[0]);
             delete userData['_projects']
             console.log("Sending to FB", userData)
-            return firebase.firestore().collection(FirebaseUserServices.USERS_COLLECTION).doc(user.email).set(userData, {merge: true}).then(resolve);
+            return firebase.firestore().collection(FirebaseUserServices.USERS_COLLECTION).doc(user.uid).set(userData, {merge: true}).then(resolve);
         }))
     }
 
@@ -210,7 +210,7 @@ class FirebaseUserServices implements UserServices {
         return new Promise<void>((resolve, reject) => {
             firebase.auth().createUserWithEmailAndPassword(email, password)
                 .then((user) => {
-                    this.update(new User(this.suggestedInfoFromFirebaseUser(user.user), {
+                    this.update(new User(user.user.uid, this.suggestedInfoFromFirebaseUser(user.user), {
                         "_name": name,
                         "_project": new Project(randomId(), company)
                     })).then(resolve).catch(reject)

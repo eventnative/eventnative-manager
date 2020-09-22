@@ -41,18 +41,18 @@ export default function OnboardingForm(props: Props) {
                 services.userServices.update(user).then(reloadPage).catch((error) => {
                     console.error("Failed to update user", error);
                     setState({loading: false});
-                    message.error("Something went wrong :( Cannot update user info")
+                    message.error("Cannot update user info: " + error.message)
                 })
-            })
+            }).catch(() => {setState({loading: false})})
     }
 
 
     return (<Modal
-        title="Please, tell us more about yourself and your company!"
+        title="You're almost done! To finish registration, please tell us more about yourself and your company"
         visible={props.visible}
         closable={false}
         footer={[
-            <Button key="submit" loading={state.loading} onClick={() => {
+            <Button key="submit" onClick={() => {
                 services.userServices.removeAuth(reloadPage);
             }}>Logout</Button>,
             <Button key="submit" type="primary" loading={state.loading} onClick={() => {
