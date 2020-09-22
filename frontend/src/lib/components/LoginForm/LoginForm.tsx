@@ -1,14 +1,13 @@
 import * as React from 'react'
 import {Button, Card, Col, Form, Input, message, Row} from "antd";
 import {LockOutlined, UserOutlined} from "@ant-design/icons/lib";
-import { useHistory } from "react-router-dom";
+import './LoginForm.less'
+import ApplicationServices from "../../services/ApplicationServices";
+import {navigateAndReload, reloadPage} from "../../commons/utils";
+
 const logo = require('../../../icons/ksense_icon.svg');
 const googleLogo = require('../../../icons/google.svg');
 const githubLogo = require('../../../icons/github.svg');
-import './LoginForm.less'
-import ApplicationServices from "../../services/ApplicationServices";
-import * as firebase from "firebase";
-import {navigateAndReload, reloadPage} from "../../commons/utils";
 
 type State = {
     loading: boolean
@@ -19,6 +18,7 @@ export default class LoginForm extends React.Component<any, State> {
 
     constructor(props: Readonly<any>) {
         super(props);
+        console.log('login init')
         this.services = ApplicationServices.get();
         this.state = {
             loading: false
@@ -122,7 +122,7 @@ export default class LoginForm extends React.Component<any, State> {
 
     private passwordLogin(values) {
         this.setState({loading: true});
-        this.services.userServices.login(values['username'], values['password']).then(() => {
+        this.services.userService.login(values['username'], values['password']).then(() => {
             message.destroy()
             this.setState({loading: false});
             reloadPage();
@@ -135,10 +135,10 @@ export default class LoginForm extends React.Component<any, State> {
     }
 
     private googleLogin() {
-        this.services.userServices.initiateGoogleLogin();
+        this.services.userService.initiateGoogleLogin();
     }
 
     private githubLogin() {
-        this.services.userServices.initiateGithubLogin();
+        this.services.userService.initiateGithubLogin();
     }
 }

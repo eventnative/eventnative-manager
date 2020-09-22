@@ -52,7 +52,7 @@ export default class App extends React.Component<{}, AppState> {
     };
 
     public componentDidMount() {
-        this.services.userServices.checkLogin((hasLogin) => {
+        this.services.userService.checkLogin((hasLogin) => {
             this.setState((state: AppState) => {
                 if (hasLogin) {
                     state.lifecycle = AppLifecycle.APP;
@@ -165,7 +165,7 @@ export default class App extends React.Component<{}, AppState> {
                                 <Menu.Item key="profile" icon={<SlidersOutlined/>}>
                                     <NavLink to="/profile">Profile</NavLink>
                                 </Menu.Item>
-                                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userServices.removeAuth(reloadPage)}>
+                                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userService.removeAuth(reloadPage)}>
                                     Logout
                                 </Menu.Item>
                             </Menu>)} trigger="click">

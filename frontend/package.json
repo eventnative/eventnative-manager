@@ -17,7 +17,8 @@
     "react-firebaseui": "^4.1.0",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "3.4.3"
+    "react-scripts": "3.4.3",
+    "rc-tween-one": "latest"
   },
   "scripts": {
     "start": "webpack-dev-server --open --mode development",

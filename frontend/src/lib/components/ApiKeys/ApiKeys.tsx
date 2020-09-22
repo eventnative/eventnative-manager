@@ -1,137 +1,279 @@
 import React from 'react';
-import {Spin} from "antd";
-import {Card} from 'antd';
-import {DeleteOutlined} from '@ant-design/icons';
+import {Button, Form, Input, Layout, message, Space, Spin, Tag} from "antd";
 import ApplicationServices from "../../services/ApplicationServices";
-import * as firebase from "firebase";
-import {ApiKeyService} from "../../services/ApiKeyService";
+import {CopyTwoTone, MinusCircleOutlined, MinusCircleTwoTone, PlusOutlined} from "@ant-design/icons/lib";
+import TweenOneGroup from 'rc-tween-one'
+import * as uuid from 'uuid';
+import './ApiKeys.less'
+import {GlobalError} from "../components";
 
 enum PageLifecycle {
     LOADING, //Data is loading
-    EMPTY, //Empty api keys
     DATA, //Api keys
     ERROR //Error
 }
 
 type Token = {
-    token: string
+    auth: string
+    s2s_auth: string
     origins?: string[]
 }
 
-type KeysPayload = {
-    auth: Token[]
-    s2s_auth: Token[]
-}
-
-type AppState = {
+type State = {
     lifecycle: PageLifecycle
-    keys: KeysPayload
+    keys: Token[]
+    inputVisible: Boolean,
+    inputValue: string | number | readonly string[],
 }
 
-export default class ApiKeys extends React.Component<{}, AppState> {
-    private readonly apiKeyService: ApiKeyService
+export default class ApiKeys extends React.Component<{}, State> {
+    private readonly services: ApplicationServices;
 
     constructor(props: any, context: any) {
         super(props, context);
         this.services = ApplicationServices.get();
         this.state = {
             lifecycle: PageLifecycle.LOADING,
-            keys: {} as KeysPayload
+            keys: [],
+            inputVisible: false,
+            inputValue: ''
         }
     }
 
     public componentDidMount() {
-        this.services.firebase.firestore().collection('en_auth').doc(firebase.auth().currentUser.uid).get()
+        this.services.apiKeyService.get()
             .then((auth: any) => {
-                this.setState((state: AppState) => {
-                    if (auth.exists && (auth.data().auth !== [] || auth.data().s2s_auth !== [])) {
-                        state.lifecycle = PageLifecycle.DATA;
-                        state.keys.auth = auth.data().auth
-                        state.keys.s2s_auth = auth.data().s2s_auth
-                    } else {
-                        state.lifecycle = PageLifecycle.EMPTY;
+                this.setState((state: State) => {
+                    if (auth.exists === true && auth.data()) {
+                        state.keys = auth.data()
                     }
+                    state.lifecycle = PageLifecycle.DATA;
                 }, () => this.forceUpdate())
             })
             .catch((error: any) => {
-                this.setState((state: AppState) => {
-                    console.log("Error getting document:", error);
+                this.setState((state: State) => {
                     state.lifecycle = PageLifecycle.ERROR
                 }, () => this.forceUpdate())
             })
-
-        /*function(auth) {
-    if (auth.exists && (auth.data().auth !== [] || auth.data().s2s_auth !== [])) {
-        console.log("Document data:", auth.data());
-        this.setState((state: AppState) => {
-            if (user) {
-                state.lifecycle = AppLifecycle.APP;
-            } else {
-                state.lifecycle = AppLifecycle.LOGIN;
-                state.loginErrorMessage = "User doesn't have access";
-            }
-        }
-        this.setState(this.getState().lifecycle = PageLifecycle.DATA)
-    } else {
-        this.state.lifecycle = PageLifecycle.EMPTY
-    }
-}).catch(function(error) {
-    console.log("Error getting document:", error);
-    this.state.lifecycle = PageLifecycle.ERROR
-});
-*/
-        /*this.services.firebase.firestore().collection('en_auth').doc('my_user_id_123').set({
-            auth: [{"token": "1231231231", "origins": ["abc.com"]}],
-            s2s_auth: [],
-        }).then(function () {
-            console.log("Document successfully written!");
-        })
-            .catch(function (error) {
-                console.error("Error writing document: ", error);
-            });*/
     }
 
-    deleteAuth(index) {
-        this.setState((state: AppState) => {
-            state.keys.auth.splice(index, 1)
-        }, () => this.forceUpdate());
+    private saveApiKeys(payload: Token[]) {
+        this.setState((state: State) => {
+            state.lifecycle = PageLifecycle.LOADING
+        }, () => this.forceUpdate())
+        this.services.apiKeyService.save(payload)
+            .then(() => {
+                this.setState((state: State) => {
+                    state.lifecycle = PageLifecycle.DATA
+                    message.success('Keys have been saved!')
+                }, () => this.forceUpdate())
+            })
+            .catch((error: any) => {
+                this.setState((state: State) => {
+                    state.lifecycle = PageLifecycle.DATA
+                    message.error('Error saving keys: ' + error.toString())
+                }, () => this.forceUpdate())
+            })
     }
 
     render() {
         switch (this.state.lifecycle) {
-            case PageLifecycle.EMPTY:
-                return this.empty();
             case PageLifecycle.DATA:
-                return this.data(this.state.keys);
+                return this.data();
             case PageLifecycle.ERROR:
-                return (<h1>Error</h1>);
+                return (<GlobalError/>);
             case PageLifecycle.LOADING:
                 return (<Spin/>);
 
         }
     }
 
-    data(keys) {
-        return (
-            <div className="container">
-                <Card title="API Keys" extra={<a href="#">More</a>} style={{width: 800}}>
-                    {keys.auth.map(function (t: Token, index) {
-                        return (<p key={index}>{t.token} - {t.origins} <DeleteOutlined /></p>)//onClick={this.deleteAuth(index).bind(this)}
-                    })}
-                </Card>
-                <Card title="S2S API Keys" extra={<a href="#">More</a>} style={{width: 800}}>
+    showInput = () => {
+        //this.setState({inputVisible: true}, () => this.input.focus());
+    };
 
-                    {keys.s2s_auth.map(function (t: Token, index) {
-                        return <p key={index}>{t.token} - {t.origins}</p>;
-                    })}
-                </Card>
+    handleInputChange = e => {
+        this.setState({inputValue: e.target.value});
+    };
+
+    saveInputRef = input => {
+        // this.state.input = input;
+    };
+
+    data() {
+        return (
+            <div className="api-keys-container">
+                <Form name="dynamic_form_nest_item" initialValues={this.state.keys} onFinish={values => {
+                    this.saveApiKeys(values)
+                }} autoComplete="off">
+                    <h2>Api Keys</h2>
+                    <Form.List name="auth">
+                        {(fields, {add, remove}) => {
+                            return (
+                                <div>
+                                    {fields.map((field, index) => (
+                                        <Space key={field.key} style={{display: 'flex', marginBottom: 8}} align="start">
+                                            <Form.Item
+                                                {...field}
+                                                id={String(index)}
+                                                name={[field.name, 'token']}
+                                                fieldKey={[field.fieldKey, 'token']}
+                                                rules={[{required: true, message: 'Missing key'}]}
+                                            >
+                                                <Input placeholder="Key" disabled={true}/>
+                                            </Form.Item>
+                                            <br/>
+                                            <div style={{marginBottom: 16}}>
+                                                {/*<TweenOneGroup
+                                                    enter={{
+                                                        scale: 0.8,
+                                                        opacity: 0,
+                                                        type: 'from',
+                                                        duration: 100,
+                                                        onComplete: e => {
+                                                            e.target.style = '';
+                                                        },
+                                                    }}
+                                                    leave={{opacity: 0, width: 0, scale: 0, duration: 200}}
+                                                    appear={false}
+                                                >*/}
+                                                {this.state.keys[index].origins.map((origin, i) => {
+                                                    return (
+                                                        <span key={origin} style={{display: 'inline-block'}}>
+                                                            <Tag
+                                                                closable
+                                                                onClose={e => {
+                                                                    e.preventDefault();
+                                                                    this.state.keys[index].origins.splice(i, 1)
+                                                                }}
+                                                            >
+                                                                {origin}
+                                                            </Tag>
+                                                            </span>
+                                                    );
+                                                })}
+                                                {/* </TweenOneGroup>*/}
+                                            </div>
+                                            {this.state.inputVisible && (
+                                                <Input
+                                                    ref={this.saveInputRef}
+                                                    type="text"
+                                                    size="small"
+                                                    style={{width: 78}}
+                                                    value={this.state.inputValue}
+                                                    onChange={this.handleInputChange}
+                                                    //onBlur={this.handleInputConfirm}
+                                                    onPressEnter={() => {
+                                                        if (this.state.inputValue && this.state.keys[index].origins.indexOf(this.state.inputValue.toString()) === -1) {
+                                                            //this.state.keys.auth[index].origins.push() = [...this.state.keys.auth[index].origins, this.state.inputValue];
+                                                            this.state.keys[index].origins.push('pppp')
+                                                        }
+
+                                                        this.setState({
+                                                            inputVisible: false,
+                                                            inputValue: '',
+                                                        });
+                                                    }}
+                                                />
+                                            )}
+                                            {!this.state.inputVisible && (
+                                                <Tag onClick={this.showInput} className="site-tag-plus">
+                                                    <PlusOutlined/> New Tag
+                                                </Tag>
+                                            )}
+                                            );
+
+                                            <CopyTwoTone
+                                                onClick={() => {
+                                                    console.log(fields[index])
+                                                    console.log([field.name, 'origins'])
+                                                    message.success('Copied!')
+                                                }}
+                                            />
+                                            <MinusCircleTwoTone twoToneColor={'red'}
+                                                                onClick={() => {
+                                                                    remove(field.name);
+                                                                }}
+                                            />
+
+                                        </Space>
+                                    ))}
+
+                                    <Form.Item>
+                                        <Button
+                                            type="dashed"
+                                            onClick={() => {
+                                                add({token: uuid.v4()});
+                                            }}
+                                            block
+                                        >
+                                            <PlusOutlined/> Generate
+                                        </Button>
+                                    </Form.Item>
+                                </div>
+                            );
+                        }}
+                    </Form.List>
+
+                    {/*<h2>S2S Api Keys</h2>
+                    <Form.List name="s2s_auth">
+                        {(fields, {add, remove}) => {
+                            return (
+                                <div>
+                                    {fields.map((field, index) => (
+                                        <Space key={field.key} style={{display: 'flex', marginBottom: 8}} align="start">
+                                            <Form.Item
+                                                {...field}
+                                                id={String(index)}
+                                                name={[field.name, 'token']}
+                                                fieldKey={[field.fieldKey, 'token']}
+                                                rules={[{required: true, message: 'Missing key'}]}
+                                            >
+                                                <Input placeholder="S2S Key" disabled={true}/>
+                                            </Form.Item>
+
+                                            <CopyTwoTone
+                                                onClick={() => {
+                                                    message.success('Copied!')
+                                                }}
+                                            />
+                                            <MinusCircleTwoTone twoToneColor={'red'}
+                                                                onClick={() => {
+                                                                    remove(field.name);
+                                                                }}
+                                            />
+                                        </Space>
+                                    ))}
+
+                                    <Form.Item>
+                                        <Button
+                                            type="dashed"
+                                            onClick={() => {
+                                                add({token: uuid.v4()});
+                                            }}
+                                            block
+                                        >
+                                            <PlusOutlined/> Generate
+                                        </Button>
+                                    </Form.Item>
+                                </div>
+                            );
+                        }}
+                    </Form.List>*/}
+
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit">
+                            Submit
+                        </Button>
+                    </Form.Item>
+                </Form>
             </div>
         );
     }
 
     empty() {
         return (
-            <h1>Empty</h1>
+            <h1>empty</h1>
         );
     }
 }
