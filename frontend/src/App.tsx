@@ -73,9 +73,10 @@ export default class App extends React.Component<AppProperties, AppState> {
     public render() {
         switch (this.state.lifecycle) {
             case AppLifecycle.LOGIN:
-                return (<Switch>
+                return (
+                <Switch>
                     <Route path="/register" exact component={SignupForm}/>
-                    <Route><LoginForm errorMessage={this.state.loginErrorMessage}/></Route>
+                    <Route><LoginForm /></Route>
                 </Switch>);
             case AppLifecycle.APP:
                 return this.appLayout();
