@@ -2,18 +2,45 @@
 @import '~antd/dist/antd.less';
 @import "theme.less";
 
+@content-bg: rgb(240, 242, 245);
+
 body {
   height: 100%;
 }
 
 #reactApplicationRoot {
   height: 100%;
-  .rootAppLayout {
+  .app-layout-root {
     height: 100%;
   }
 }
 
+.app-layout-header, .app-layout-content, .app-layout-root, .app-layout-header-and-content {
+  background: @content-bg;
+  padding: 0;
+}
 
+.app-layout-header {
+  background: white;
+  border-bottom: 1px solid darkgray;
+}
+
+.app-layout-content {
+}
+
+.side-bar {
+  border: 0 !important;
+}
+
+.sidebar-menu {
+  border: 0 !important;
+
+}
+
+.user-menu {
+  text-align: right;
+  padding-right: 10px;
+}
 
 .trigger {
   font-size: 18px;
@@ -28,4 +55,15 @@ body {
 .logo {
   height: 32px;
   margin: 16px;
+}
+
+.logo-text {
+  font-size: 20px;
+}
+
+.user-dropdown-info-panel {
+  font-size: x-small;
+  text-align: center;
+  text-decoration: underline;
+  background: white;
 }

@@ -1,7 +1,8 @@
 import * as React from 'react'
 import {Button, Card, Col, Form, Input, message, Modal, Row} from "antd";
 import {LockOutlined, UserOutlined, MailOutlined} from "@ant-design/icons/lib";
-import { useHistory } from "react-router-dom";
+import {useHistory} from "react-router-dom";
+
 const logo = require('../../../icons/ksense_icon.svg');
 const googleLogo = require('../../../icons/google.svg');
 const githubLogo = require('../../../icons/github.svg');
@@ -48,6 +49,7 @@ export default class LoginForm extends React.Component<Props, State> {
         );
         return ([
             <PasswordResetForm
+                key="password-reset-form"
                 visible={this.state.showPasswordReset}
                 close={() => this.setState({showPasswordReset: false})}
                 onSuccess={() => message.info("Password reset e-mail has been sent!")}
@@ -72,7 +74,7 @@ export default class LoginForm extends React.Component<Props, State> {
                                     },
                                 ]}
                             >
-                                <Input prefix={<MailOutlined />} placeholder="E-Mail"/>
+                                <Input prefix={<MailOutlined/>} placeholder="E-Mail"/>
                             </Form.Item>
                             <Form.Item
                                 name="password"
@@ -91,11 +93,11 @@ export default class LoginForm extends React.Component<Props, State> {
                             </Form.Item>
 
                             <Form.Item>
-                                <Button type="primary" htmlType="submit" className="login-form-button" loading={this.state.loading}>
+                                <Button key="pwd-login-button" type="primary" htmlType="submit" className="login-form-button" loading={this.state.loading}>
                                     {this.state.loading ? "" : "Log in"}
                                 </Button>
                                 <div>
-                                    <a className="login-right-forgot" onClick={() => this.setState({showPasswordReset: true}) }>
+                                    <a className="login-right-forgot" onClick={() => this.setState({showPasswordReset: true})}>
                                         Forgot password?
                                     </a>
                                 </div>
@@ -105,22 +107,22 @@ export default class LoginForm extends React.Component<Props, State> {
                     <Col span={12} className="login-form-right-panel">
                         <Form style={{float: 'right'}}>
                             <Form.Item>
-                                <Button icon={<img src={googleLogo} height={16} alt="" />} onClick={(e) => this.googleLogin()}>
+                                <Button key="google-login-button" icon={<img src={googleLogo} height={16} alt=""/>} onClick={(e) => this.googleLogin()}>
                                     Sign in with Google
                                 </Button>
                             </Form.Item>
                             <Form.Item>
-                                <Button icon={<img src={githubLogo} height={16} alt=""/>}>Sign in with Github</Button>
+                                <Button key="github-login-button" icon={<img src={githubLogo} height={16} alt=""/>}>Sign in with Github</Button>
                             </Form.Item>
                         </Form>
                     </Col>
                 </Row>
-                    <div className="login-form-signup">
-                        <div>Don't have an account?</div>
-                        <Button shape="round"  className="login-form-signup-button" onClick={() => navigateAndReload("#/register")} >
-                            Sign Up!
-                        </Button>
-                    </div>
+                <div className="login-form-signup">
+                    <div>Don't have an account?</div>
+                    <Button shape="round" className="login-form-signup-button" onClick={() => navigateAndReload("#/register")}>
+                        Sign Up!
+                    </Button>
+                </div>
 
             </Card>]);
     }
@@ -159,30 +161,37 @@ export default class LoginForm extends React.Component<Props, State> {
 function PasswordResetForm({visible, onSuccess, close}) {
     let services = ApplicationServices.get();
     const [state, setState] = useState({
-        loading: false
+        loading: false,
+        errorMessage: null
     })
     const [form] = Form.useForm();
 
     const onSubmit = () => {
-        setState({loading: true});
+        setState({loading: true, errorMessage: null});
         form
             .validateFields()
             .then((values) => {
                 services.userServices.sendPasswordReset(values['email']).then(() => {
                     onSuccess();
                     close()
-                }).error((error) => {
-                    message.info("Failed to request password reset. Unknown user");
+                    setState({loading: false, errorMessage: null})
+                }).catch((error) => {
+                    message.error(error.message)
+                    setState({loading: false, errorMessage: error.message});
                 })
+            })
+            .catch(error => {
+                setState({loading: false, errorMessage: error.message});
             });
     }
 
     return (<Modal
         title="Password reset. Please, enter your email"
         visible={visible}
-        closable={false}
+        closable={true}
+        onCancel={close}
         footer={[
-            <Button onClick={close}>Cancel</Button>,
+            <Button key="close" onClick={close}>Cancel</Button>,
             <Button key="submit" type="primary" loading={state.loading} onClick={onSubmit}>Submit</Button>,
         ]}>
         <Form

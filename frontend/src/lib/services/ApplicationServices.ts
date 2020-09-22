@@ -78,7 +78,7 @@ export interface UserServices {
      */
     getUser(): User
 
-    sendPasswordReset(user: string);
+    sendPasswordReset(email?: string);
 
     update(user: User);
 
@@ -193,8 +193,8 @@ class FirebaseUserServices implements UserServices {
         }))
     }
 
-    sendPasswordReset(user: string): Promise<void> {
-        return firebase.auth().sendPasswordResetEmail(user).then()
+    sendPasswordReset(email?: string): Promise<void> {
+        return firebase.auth().sendPasswordResetEmail(email ? email : this.getUser().email);
     }
 
     createUser(email: string, password: string, name: string, company: string): Promise<void> {
