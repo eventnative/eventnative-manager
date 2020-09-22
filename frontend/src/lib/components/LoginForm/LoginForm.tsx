@@ -1,52 +1,59 @@
 import * as React from 'react'
-import {Button, Card, Col, Form, Input, message, Row} from "antd";
-import {LockOutlined, UserOutlined} from "@ant-design/icons/lib";
-import './LoginForm.less'
-import ApplicationServices from "../../services/ApplicationServices";
-import {navigateAndReload, reloadPage} from "../../commons/utils";
+import {Button, Card, Col, Form, Input, message, Modal, Row} from "antd";
+import {LockOutlined, UserOutlined, MailOutlined} from "@ant-design/icons/lib";
+import {useHistory} from "react-router-dom";
 
 const logo = require('../../../icons/ksense_icon.svg');
 const googleLogo = require('../../../icons/google.svg');
 const githubLogo = require('../../../icons/github.svg');
+import './LoginForm.less'
+import ApplicationServices from "../../services/ApplicationServices";
+import * as firebase from "firebase";
+import {navigateAndReload, reloadPage} from "../../commons/utils";
+import {useState} from "react";
+import {Project} from "../../services/model";
+import * as Utils from "../../commons/utils";
+import {Simulate} from "react-dom/test-utils";
+import error = Simulate.error;
 
 type State = {
     loading: boolean
+    showPasswordReset?: boolean
 }
 
-export default class LoginForm extends React.Component<any, State> {
+type Props = {
+    errorMessage?: string
+}
+
+export default class LoginForm extends React.Component<Props, State> {
     private services: ApplicationServices;
 
     constructor(props: Readonly<any>) {
         super(props);
-        console.log('login init')
         this.services = ApplicationServices.get();
         this.state = {
-            loading: false
+            loading: false,
+            showPasswordReset: false
         }
     }
 
 
     render() {
-        const layout = {
-            labelCol: {
-                span: 8,
-            },
-            wrapperCol: {
-                span: 16,
-            },
-        };
-        const tailLayout = {
-            wrapperCol: {
-                offset: 8,
-                span: 16,
-            },
-        };
+        // if (this.props.errorMessage) {
+        //     message.error(this.props.errorMessage);
+        // }
         let title = (
             <div style={{"textAlign": "center"}}>
                 <img src={logo} alt="[logo]" style={{'height': '50px'}}/> <span style={{'fontSize': '18px'}}>Welcome Back</span>
             </div>
         );
-        return (
+        return ([
+            <PasswordResetForm
+                key="password-reset-form"
+                visible={this.state.showPasswordReset}
+                close={() => this.setState({showPasswordReset: false})}
+                onSuccess={() => message.info("Password reset e-mail has been sent!")}
+            />,
             <Card title={title} style={{margin: 'auto', 'marginTop': '100px', 'maxWidth': '500px'}} bordered={false}>
                 <Row>
                     <Col span={12} className="login-form-left-panel">
@@ -63,18 +70,18 @@ export default class LoginForm extends React.Component<any, State> {
                                 rules={[
                                     {
                                         required: true,
-                                        message: 'Please input your Username!',
+                                        message: 'Please, input your e-mail!',
                                     },
                                 ]}
                             >
-                                <Input prefix={<UserOutlined className="site-form-item-icon"/>} placeholder="Username"/>
+                                <Input prefix={<MailOutlined/>} placeholder="E-Mail"/>
                             </Form.Item>
                             <Form.Item
                                 name="password"
                                 rules={[
                                     {
                                         required: true,
-                                        message: 'Please input your Password!',
+                                        message: 'Please input your password!',
                                     },
                                 ]}
                             >
@@ -86,11 +93,11 @@ export default class LoginForm extends React.Component<any, State> {
                             </Form.Item>
 
                             <Form.Item>
-                                <Button type="primary" htmlType="submit" className="login-form-button" loading={this.state.loading}>
+                                <Button key="pwd-login-button" type="primary" htmlType="submit" className="login-form-button" loading={this.state.loading}>
                                     {this.state.loading ? "" : "Log in"}
                                 </Button>
                                 <div>
-                                    <a className="login-right-forgot" href="">
+                                    <a className="login-right-forgot" onClick={() => this.setState({showPasswordReset: true})}>
                                         Forgot password?
                                     </a>
                                 </div>
@@ -100,24 +107,24 @@ export default class LoginForm extends React.Component<any, State> {
                     <Col span={12} className="login-form-right-panel">
                         <Form style={{float: 'right'}}>
                             <Form.Item>
-                                <Button icon={<img src={googleLogo} height={16} alt="" />} onClick={(e) => this.googleLogin()}>
+                                <Button key="google-login-button" icon={<img src={googleLogo} height={16} alt=""/>} onClick={(e) => this.googleLogin()}>
                                     Sign in with Google
                                 </Button>
                             </Form.Item>
                             <Form.Item>
-                                <Button icon={<img src={githubLogo} height={16} alt=""/>}>Sign in with Github</Button>
+                                <Button key="github-login-button" icon={<img src={githubLogo} height={16} alt=""/>}>Sign in with Github</Button>
                             </Form.Item>
                         </Form>
                     </Col>
                 </Row>
-                    <div className="login-form-signup">
-                        <div>Don't have an account?</div>
-                        <Button shape="round"  className="login-form-signup-button" onClick={() => navigateAndReload("#/register")} >
-                            Sign Up!
-                        </Button>
-                    </div>
+                <div className="login-form-signup">
+                    <div>Don't have an account?</div>
+                    <Button shape="round" className="login-form-signup-button" onClick={() => navigateAndReload("#/register")}>
+                        Sign Up!
+                    </Button>
+                </div>
 
-            </Card>);
+            </Card>]);
     }
 
     private passwordLogin(values) {
@@ -135,10 +142,76 @@ export default class LoginForm extends React.Component<any, State> {
     }
 
     private googleLogin() {
-        this.services.userService.initiateGoogleLogin();
+        this.services.userService.initiateGoogleLogin().then(() => {
+            message.destroy()
+            this.setState({loading: false});
+            reloadPage();
+        }).catch(error => {
+            message.destroy()
+            console.log("Google auth error", error);
+            message.error("Access denied")
+        });
     }
 
     private githubLogin() {
         this.services.userService.initiateGithubLogin();
     }
+}
+
+function PasswordResetForm({visible, onSuccess, close}) {
+    let services = ApplicationServices.get();
+    const [state, setState] = useState({
+        loading: false,
+        errorMessage: null
+    })
+    const [form] = Form.useForm();
+
+    const onSubmit = () => {
+        setState({loading: true, errorMessage: null});
+        form
+            .validateFields()
+            .then((values) => {
+                services.userServices.sendPasswordReset(values['email']).then(() => {
+                    onSuccess();
+                    close()
+                    setState({loading: false, errorMessage: null})
+                }).catch((error) => {
+                    message.error(error.message)
+                    setState({loading: false, errorMessage: error.message});
+                })
+            })
+            .catch(error => {
+                setState({loading: false, errorMessage: error.message});
+            });
+    }
+
+    return (<Modal
+        title="Password reset. Please, enter your email"
+        visible={visible}
+        closable={true}
+        onCancel={close}
+        footer={[
+            <Button key="close" onClick={close}>Cancel</Button>,
+            <Button key="submit" type="primary" loading={state.loading} onClick={onSubmit}>Submit</Button>,
+        ]}>
+        <Form
+            layout="vertical"
+            form={form}
+            name="password-reset-form"
+            className="password-reset-form"
+        >
+            <Form.Item
+                name="email"
+                rules={[
+                    {
+                        required: true,
+                        message: 'Email can\'t be empty!',
+                    },
+                ]}
+            >
+                <Input prefix={<UserOutlined className="site-form-item-icon"/>} placeholder="E-mail"/>
+            </Form.Item>
+        </Form>
+    </Modal>);
+
 }

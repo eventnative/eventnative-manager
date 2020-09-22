@@ -2,21 +2,21 @@
 import * as React from 'react'
 
 import {NavLink, Route, Switch} from 'react-router-dom';
-import {Card, Col, Layout, Menu, Row, Select} from "antd";
-import {Form, Input, Button, Checkbox} from 'antd';
+import {Button, Col, Dropdown, Layout, Menu, message, Modal, Row, Select} from "antd";
 import {AreaChartOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, PartitionOutlined, SlidersOutlined} from "@ant-design/icons";
 import './App.less';
 import Popover from "antd/es/popover";
-import {StyledFirebaseAuth} from "react-firebaseui";
-import * as firebase from 'firebase';
 import SubMenu from "antd/es/menu/SubMenu";
-import {KeyOutlined, LockOutlined, UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
+import {KeyOutlined, LockOutlined, ExclamationCircleOutlined, UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "./lib/services/ApplicationServices";
 import {GlobalError, Preloader} from "./lib/components/components";
 import LoginForm from "./lib/components/LoginForm/LoginForm";
 import SignupForm from "./lib/components/SignupForm/SignupForm";
 import ApiKeys from "./lib/components/ApiKeys/ApiKeys"
 import {reloadPage} from "./lib/commons/utils";
+import {User} from "./lib/services/model";
+import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
+
 const logo = require('./icons/ksense_icon.svg');
 
 enum AppLifecycle {
@@ -27,49 +27,57 @@ enum AppLifecycle {
 }
 
 type AppState = {
-    menuCollapsed: boolean
+    showOnboardingForm: boolean;
     lifecycle: AppLifecycle
     loginErrorMessage?: string
+    globalErrorDetails?: string
+    user?: User
 }
 
-export default class App extends React.Component<{}, AppState> {
+type AppProperties = {
+}
+
+const LOGIN_TIMEOUT = 5000;
+export default class App extends React.Component<AppProperties, AppState> {
     private readonly services: ApplicationServices
 
-    constructor(props: any, context: any) {
+    constructor(props: AppProperties, context: any) {
         super(props, context);
         this.services = ApplicationServices.get();
         this.state = {
-            menuCollapsed: false,
-            lifecycle: AppLifecycle.LOADING
+            lifecycle: AppLifecycle.LOADING,
+            showOnboardingForm: false
         }
 
     }
 
-    toggleMenu = () => {
-        this.setState((state: AppState) => {
-            state.menuCollapsed = !state.menuCollapsed;
-        }, () => this.forceUpdate());
-    };
-
     public componentDidMount() {
-        this.services.userService.checkLogin((hasLogin) => {
-            this.setState((state: AppState) => {
-                if (hasLogin) {
-                    state.lifecycle = AppLifecycle.APP;
-                } else {
-                    state.lifecycle = AppLifecycle.LOGIN;
-                    state.loginErrorMessage = "User doesn't have access";
-                }
-            }, () => this.forceUpdate());
-        })
+        window.setTimeout(() => {
+            if (this.state.lifecycle == AppLifecycle.LOADING) {
+                console.log("Login timout");
+                this.setState({lifecycle: AppLifecycle.ERROR, globalErrorDetails: "Timout"})
+            }
+        }, LOGIN_TIMEOUT);
+        this.services.userServices.waitForUser().then((loginStatus) => {
+            this.setState({
+                lifecycle: loginStatus.user ? AppLifecycle.APP : AppLifecycle.LOGIN,
+                user: loginStatus.user,
+                showOnboardingForm: loginStatus.user && !loginStatus.user.onboarded,
+                loginErrorMessage: loginStatus.loginErrorMessage
+            })
+        }).catch((error) => {
+            console.error("Failed to get user", error);
+            this.setState({lifecycle: AppLifecycle.ERROR});
+        });
+
     }
 
     public render() {
         switch (this.state.lifecycle) {
             case AppLifecycle.LOGIN:
                 return (<Switch>
-                    <Route path="/register" exact component={SignupForm} />
-                    <Route component={LoginForm} />
+                    <Route path="/register" exact component={SignupForm}/>
+                    <Route><LoginForm errorMessage={this.state.loginErrorMessage}/></Route>
                 </Switch>);
             case AppLifecycle.APP:
                 return this.appLayout();
@@ -83,21 +91,13 @@ export default class App extends React.Component<{}, AppState> {
 
     appLayout() {
         return (
-            <Layout className="rootAppLayout">
-                <Layout.Sider trigger={null} collapsible collapsed={this.state.menuCollapsed} className="side-bar">
-                    <img className="logo" src={logo} alt="[logo]"/>
-                    {this.state.menuCollapsed ? (<span/>) : (<span className="logoText">kSense</span>)}
-                    {App.leftMenu()}
-                </Layout.Sider>
-                <Layout>
-                    {this.headerComponent()}
-                    <Layout.Content
-                        className="site-layout-background"
-                        style={{
-                            margin: '24px 16px',
-                            padding: 24,
-                            minHeight: 280,
-                        }}>
+            <Layout className="app-layout-root">
+                {this.headerComponent()}
+                <Layout className="app-layout-header-and-content">
+                    <Layout.Sider  className="side-bar" theme="light">
+                        {App.leftMenu()}
+                    </Layout.Sider>
+                    <Layout.Content className="app-layout-content">
                         <Switch>
                             <Route path={["/dashboard", "/", "/register"]} exact>
                                 Dashboard2
@@ -111,6 +111,7 @@ export default class App extends React.Component<{}, AppState> {
                         </Switch>
                     </Layout.Content>
                 </Layout>
+                <OnboardingForm user={this.state.user} userSuggestions={null} visible={this.state.showOnboardingForm}/>
             </Layout>
         );
     }
@@ -143,47 +144,56 @@ export default class App extends React.Component<{}, AppState> {
     }
 
     private headerComponent() {
-        return <Layout.Header className="theme-blue-bg" style={{padding: 0}}>
+        return <Layout.Header className="app-layout-header">
             <Row>
+                <Col className="gutter-row" span={4}>
+                    <img className="logo" src={logo} alt="[logo]"/>
+                    <span className="logo-text">kSense</span>
+                </Col>
                 <Col className="gutter-row" span={20}>
-                    {React.createElement(this.state.menuCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
-                        className: 'trigger',
-                        onClick: this.toggleMenu,
-                    })}
-                </Col>
-                <Col span={3}>
-                    <Select optionFilterProp="children" defaultValue="jack">
-                        <Select.Option value="project">Jack</Select.Option>
-                        <Select.Option value="lucy">Lucy</Select.Option>
-                        <Select.Option value="tom">Tom</Select.Option>
-                    </Select>
-                </Col>
-                <Col className="gutter-row" span={1}>
                     <div className="user-menu">
-                        <Popover content={(
-                            <Menu>
-                                <Menu.Item key="profile" icon={<SlidersOutlined/>}>
-                                    <NavLink to="/profile">Profile</NavLink>
-                                </Menu.Item>
-                                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userService.removeAuth(reloadPage)}>
-                                    Logout
-                                </Menu.Item>
-                            </Menu>)} trigger="click">
-                            <UserOutlined/>
-                        </Popover>
+                        <Dropdown trigger={["click"]} overlay={this.getUserDropDownMenu()}>
+                            <Button icon={<UserOutlined/>}>{this.state.user.name}</Button>
+                        </Dropdown>
                     </div>
                 </Col>
             </Row>
         </Layout.Header>;
     }
 
+    private resetPassword() {
+        Modal.confirm({
+            title: 'Password reset',
+            icon: <ExclamationCircleOutlined />,
+            content: 'Please confirm password reset. Instructions will be sent to your email',
+            okText: 'Reset password',
+            cancelText: 'Cancel',
+            onOk: () => {
+                this.services.userServices.sendPasswordReset()
+                    .then(() => message.info("Reset password instructions has been sent. Please, check your mailbox"))
+                    .catch((error) => {
+                        message.error("Can't reset password: " + error.message);
+                        console.log("Can't reset password", error)
+                    })
 
-    private onFinishFailed() {
+            },
+            onCancel: () => {}
+        });
 
     }
 
-    private onFinish() {
-
+    private getUserDropDownMenu() {
+        return <div>
+            <div className="user-dropdown-info-panel">{this.state.user.email}</div>
+            <Menu>
+                <Menu.Item key="profile" icon={<SlidersOutlined/>} onClick={() => this.resetPassword()}>
+                    Reset Password
+                </Menu.Item>
+                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userService.removeAuth(reloadPage)}>
+                    Logout
+                </Menu.Item>
+            </Menu>
+        </div>;
     }
 }
 
