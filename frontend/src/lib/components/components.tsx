@@ -22,7 +22,7 @@ export function Preloader(props) {
 }
 
 const DEFAULT_ERROR_TEXT = (<p>The application has crashed :( We are making everything possible to fix +
-        the situation ASAP. Please, contact us at support@ksense.io</p>)
+        the situation ASAP. Please, contact us at support@ksense.io. Useful information may be found in developer console</p>)
 
 
 export function GlobalError(props) {

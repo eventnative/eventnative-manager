@@ -42,3 +42,7 @@ export function navigateAndReload(url) {
 export function reloadPage() {
     location.reload();
 }
+
+export function randomId() {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}

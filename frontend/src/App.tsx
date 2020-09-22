@@ -1,20 +1,19 @@
 import * as React from 'react'
 
 import {NavLink, Route, Switch} from 'react-router-dom';
-import {Card, Col, Layout, Menu, Row, Select} from "antd";
-import {Form, Input, Button, Checkbox} from 'antd';
+import {Col, Layout, Menu, message, Row, Select} from "antd";
 import {AreaChartOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, PartitionOutlined, SlidersOutlined} from "@ant-design/icons";
 import './App.less';
 import Popover from "antd/es/popover";
-import {StyledFirebaseAuth} from "react-firebaseui";
-import * as firebase from 'firebase';
 import SubMenu from "antd/es/menu/SubMenu";
-import {LockOutlined, UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
+import {UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "./lib/services/ApplicationServices";
 import {GlobalError, Preloader} from "./lib/components/components";
 import LoginForm from "./lib/components/LoginForm/LoginForm";
 import SignupForm from "./lib/components/SignupForm/SignupForm";
 import {reloadPage} from "./lib/commons/utils";
+import {User} from "./lib/services/model";
+import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
 const logo = require('./icons/ksense_icon.svg');
 
 enum AppLifecycle {
@@ -25,11 +24,15 @@ enum AppLifecycle {
 }
 
 type AppState = {
+    showOnboardingForm: boolean;
     menuCollapsed: boolean
     lifecycle: AppLifecycle
     loginErrorMessage?: string
+    globalErrorDetails?: string
+    user?: User
 }
 
+const LOGIN_TIMEOUT = 5000;
 export default class App extends React.Component<{}, AppState> {
     private readonly services: ApplicationServices
 
@@ -38,28 +41,35 @@ export default class App extends React.Component<{}, AppState> {
         this.services = ApplicationServices.get();
         this.state = {
             menuCollapsed: false,
-            lifecycle: AppLifecycle.LOADING
+            lifecycle: AppLifecycle.LOADING,
+            showOnboardingForm: false
         }
 
     }
 
     toggleMenu = () => {
-        this.setState((state: AppState) => {
-            state.menuCollapsed = !state.menuCollapsed;
-        }, () => this.forceUpdate());
+        this.setState({menuCollapsed: !this.state.menuCollapsed});
     };
 
     public componentDidMount() {
-        this.services.userServices.checkLogin((hasLogin) => {
-            this.setState((state: AppState) => {
-                if (hasLogin) {
-                    state.lifecycle = AppLifecycle.APP;
-                } else {
-                    state.lifecycle = AppLifecycle.LOGIN;
-                    state.loginErrorMessage = "User doesn't have access";
-                }
-            }, () => this.forceUpdate());
-        })
+        // window.setTimeout(() => {
+        //     if (this.state.lifecycle == AppLifecycle.LOADING) {
+        //         console.log("Login timout");
+        //         this.setState({lifecycle: AppLifecycle.ERROR, globalErrorDetails: "Timout"})
+        //     }
+        // }, LOGIN_TIMEOUT);
+        this.services.userServices.waitForUser().then((loginStatus) => {
+            this.setState({
+                lifecycle: loginStatus.user ? AppLifecycle.APP : AppLifecycle.LOGIN,
+                user: loginStatus.user,
+                showOnboardingForm: loginStatus.user && !loginStatus.user.onboarded,
+                loginErrorMessage: loginStatus.loginErrorMessage
+            })
+        }).catch((error) => {
+            console.error("Failed to get user", error);
+            this.setState({lifecycle: AppLifecycle.ERROR});
+        });
+
     }
 
     public render() {
@@ -67,7 +77,7 @@ export default class App extends React.Component<{}, AppState> {
             case AppLifecycle.LOGIN:
                 return (<Switch>
                     <Route path="/register" exact component={SignupForm} />
-                    <Route component={LoginForm} />
+                    <Route><LoginForm errorMessage={this.state.loginErrorMessage} /></Route>
                 </Switch>);
             case AppLifecycle.APP:
                 return this.appLayout();
@@ -106,6 +116,7 @@ export default class App extends React.Component<{}, AppState> {
                         </Switch>
                     </Layout.Content>
                 </Layout>
+                <OnboardingForm user={this.state.user} userSuggestions={null} visible={this.state.showOnboardingForm} />
             </Layout>
         );
     }
@@ -167,15 +178,6 @@ export default class App extends React.Component<{}, AppState> {
                 </Col>
             </Row>
         </Layout.Header>;
-    }
-
-
-    private onFinishFailed() {
-
-    }
-
-    private onFinish() {
-
     }
 }
 
