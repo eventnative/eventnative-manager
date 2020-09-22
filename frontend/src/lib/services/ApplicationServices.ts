@@ -10,7 +10,7 @@ export default class ApplicationServices {
 
         const firebaseConfig = {
             apiKey: "AIzaSyDBm2HqvxleuJyD9xo8rh0vo1TQGp8Vohg",
-            authDomain: "tracker-285220.firebaseapp.com",
+            authDomain: "back1.eventnative.com",
             databaseURL: "https://tracker-285220.firebaseio.com",
             projectId: "tracker-285220",
             storageBucket: "tracker-285220.appspot.com",
@@ -92,6 +92,15 @@ class FirebaseUserServices implements UserServices {
     private unregisterAuthObserver: firebase.Unsubscribe;
 
     initiateGithubLogin(redirect?: string) {
+        return new Promise<void>(((resolve, reject) => {
+            firebase.auth().signInWithPopup(new firebase.auth.GithubAuthProvider())
+                .then((a) => {
+                    resolve();
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        }));
     }
 
     initiateGoogleLogin(redirect?: string): Promise<void> {

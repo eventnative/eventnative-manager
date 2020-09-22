@@ -31,12 +31,19 @@ export default class SignupForm extends React.Component<any, State> {
         }).catch(error => {
             message.destroy()
             console.log("Google auth error", error);
-            message.error("Google signup is temporary unavailable")
+            message.error("Google signup is unavailable: " + error.message)
         });
     }
 
     githubSignup() {
-
+        this.services.userServices.initiateGithubLogin().then(() => {
+            message.destroy()
+            reloadPage();
+        }).catch(error => {
+            message.destroy()
+            console.log("Google auth error", error);
+            message.error("Github signup is unavailable: " + error.message)
+        });
     }
 
     passwordSignup(values) {
