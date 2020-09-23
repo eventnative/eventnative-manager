@@ -112,7 +112,7 @@ export default class LoginForm extends React.Component<Props, State> {
                                 </Button>
                             </Form.Item>
                             <Form.Item>
-                                <Button key="github-login-button" icon={<img src={githubLogo} height={16} alt=""/>}>Sign in with Github</Button>
+                                <Button key="github-login-button" icon={<img src={githubLogo} height={16} alt=""/>} onClick={() => this.githubLogin()}>Sign in with Github</Button>
                             </Form.Item>
                         </Form>
                     </Col>
@@ -149,12 +149,20 @@ export default class LoginForm extends React.Component<Props, State> {
         }).catch(error => {
             message.destroy()
             console.log("Google auth error", error);
-            message.error("Access denied")
+            message.error("Access denied: " + error.message)
         });
     }
 
     private githubLogin() {
-        this.services.userService.initiateGithubLogin();
+        this.services.userService.initiateGithubLogin().then(() => {
+            message.destroy()
+            this.setState({loading: false});
+            reloadPage();
+        }).catch(error => {
+            message.destroy()
+            console.log("Google auth error", error);
+            message.error("Access denied: " + error.message)
+        });;
     }
 }
 

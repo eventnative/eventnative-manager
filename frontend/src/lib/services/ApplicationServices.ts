@@ -8,9 +8,10 @@ export default class ApplicationServices {
     private readonly _apiKeyService: FirebaseApiKeyService;
 
     constructor() {
+
         const firebaseConfig = {
             apiKey: "AIzaSyDBm2HqvxleuJyD9xo8rh0vo1TQGp8Vohg",
-            authDomain: "tracker-285220.firebaseapp.com",
+            authDomain: "back1.eventnative.com",
             databaseURL: "https://tracker-285220.firebaseio.com",
             projectId: "tracker-285220",
             storageBucket: "tracker-285220.appspot.com",
@@ -47,7 +48,7 @@ export default class ApplicationServices {
 }
 
 type UserLoginStatus = {
-    user? : User
+    user?: User
     loggedIn: boolean
     loginErrorMessage: string
 }
@@ -96,6 +97,15 @@ class FirebaseUserService implements UserService {
     private unregisterAuthObserver: firebase.Unsubscribe;
 
     initiateGithubLogin(redirect?: string) {
+        return new Promise<void>(((resolve, reject) => {
+            firebase.auth().signInWithPopup(new firebase.auth.GithubAuthProvider())
+                .then((a) => {
+                    resolve();
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        }));
     }
 
     initiateGoogleLogin(redirect?: string): Promise<void> {
@@ -149,13 +159,13 @@ class FirebaseUserService implements UserService {
             if (user.email == null) {
                 reject(new Error("User email is null"))
             }
-            firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.email).get()
+            firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.uid).get()
                 .then((doc) => {
                     let suggestedInfo = this.suggestedInfoFromFirebaseUser(user);
                     if (doc.exists) {
-                        resolve(this.user = new User(suggestedInfo, doc.data()));
+                        resolve(this.user = new User(user.uid, suggestedInfo, doc.data()));
                     } else {
-                        resolve(this.user = new User(suggestedInfo));
+                        resolve(this.user = new User(user.uid, suggestedInfo));
                     }
                 })
                 .catch(reject)
@@ -193,7 +203,7 @@ class FirebaseUserService implements UserService {
             userData['_project'] = Object.assign({}, user.projects[0]);
             delete userData['_projects']
             console.log("Sending to FB", userData)
-            return firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.email).set(userData, {merge: true}).then(resolve);
+            return firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.uid).set(userData, {merge: true}).then(resolve);
         }))
     }
 
@@ -205,7 +215,7 @@ class FirebaseUserService implements UserService {
         return new Promise<void>((resolve, reject) => {
             firebase.auth().createUserWithEmailAndPassword(email, password)
                 .then((user) => {
-                    this.update(new User(this.suggestedInfoFromFirebaseUser(user.user), {
+                    this.update(new User(user.user.uid, this.suggestedInfoFromFirebaseUser(user.user), {
                         "_name": name,
                         "_project": new Project(randomId(), company)
                     })).then(resolve).catch(reject)

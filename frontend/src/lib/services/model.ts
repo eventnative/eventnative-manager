@@ -33,13 +33,15 @@ export type SuggestedUserInfo = {
 
 
 export class User {
+    private readonly _uid: string;
     private readonly _email: string;
     private _name: string;
     private _projects: Project[] = []
     private _onboarded = false;
     private readonly _suggestedInfo: SuggestedUserInfo;
 
-    constructor(suggested: SuggestedUserInfo, data?: any) {
+    constructor(uid: string, suggested: SuggestedUserInfo, data?: any) {
+        this._uid = uid;
         console.info(suggested, data);
         this._suggestedInfo = suggested;
         this._email = suggested.email;
@@ -56,6 +58,10 @@ export class User {
         }
     }
 
+
+    get uid(): string {
+        return this._uid;
+    }
 
     get onboarded(): boolean {
         return this._onboarded;
