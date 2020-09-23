@@ -65,7 +65,8 @@ export default class ApiKeys extends React.Component<{}, State> {
                     lifecycle: PageLifecycle.DATA
                 })
             })
-            .catch((error: any) => {
+            .catch(error => {
+                message.error('Error loading api keys ' + error.message)
                 this.setState({lifecycle: PageLifecycle.ERROR})
             })
     }
@@ -77,9 +78,9 @@ export default class ApiKeys extends React.Component<{}, State> {
                 this.setState({lifecycle: PageLifecycle.DATA, loading: false})
                 message.success('Keys have been saved!')
             })
-            .catch((error: any) => {
+            .catch(error => {
                 this.setState({lifecycle: PageLifecycle.DATA, loading: false})
-                message.error('Error saving keys: ' + error.toString())
+                message.error('Error saving keys: ' + error.message)
             })
     }
 

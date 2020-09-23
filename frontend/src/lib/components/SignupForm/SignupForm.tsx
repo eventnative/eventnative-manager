@@ -36,7 +36,7 @@ export default class SignupForm extends React.Component<any, State> {
     }
 
     githubSignup() {
-        this.services.userServices.initiateGithubLogin().then(() => {
+        this.services.userService.initiateGithubLogin().then(() => {
             message.destroy()
             reloadPage();
         }).catch(error => {
