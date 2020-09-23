@@ -11,15 +11,17 @@ import ApplicationServices from "./lib/services/ApplicationServices";
 import {GlobalError, Preloader} from "./lib/components/components";
 import LoginForm from "./lib/components/LoginForm/LoginForm";
 import SignupForm from "./lib/components/SignupForm/SignupForm";
-import {reloadPage} from "./lib/commons/utils";
+import {navigateAndReload, reloadPage} from "./lib/commons/utils";
 import {User} from "./lib/services/model";
 import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
+import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
+import {ReactNode} from "react";
 
 const logo = require('./icons/ksense_icon.svg');
 
 enum AppLifecycle {
     LOADING, //Application is loading
-    LOGIN, //Login form is displayed
+    REQUIRES_LOGIN, //Login form is displayed
     APP, //Application
     ERROR //Global error (maintenance)
 }
@@ -58,7 +60,7 @@ export default class App extends React.Component<AppProperties, AppState> {
         }, LOGIN_TIMEOUT);
         this.services.userServices.waitForUser().then((loginStatus) => {
             this.setState({
-                lifecycle: loginStatus.user ? AppLifecycle.APP : AppLifecycle.LOGIN,
+                lifecycle: loginStatus.user ? AppLifecycle.APP : AppLifecycle.REQUIRES_LOGIN,
                 user: loginStatus.user,
                 showOnboardingForm: loginStatus.user && !loginStatus.user.onboarded,
                 loginErrorMessage: loginStatus.loginErrorMessage
@@ -72,11 +74,13 @@ export default class App extends React.Component<AppProperties, AppState> {
 
     public render() {
         switch (this.state.lifecycle) {
-            case AppLifecycle.LOGIN:
-                return (
-                <Switch>
-                    <Route path="/register" exact component={SignupForm}/>
-                    <Route><LoginForm /></Route>
+            case AppLifecycle.REQUIRES_LOGIN:
+                return (<Switch>
+                    {PUBLIC_PAGES.map(route => {
+                        return (<Route path={route.getPrefixedPath()} exact>
+                            {route.getComponent()}
+                        </Route>)
+                    })}
                 </Switch>);
             case AppLifecycle.APP:
                 return this.appLayout();
@@ -86,6 +90,15 @@ export default class App extends React.Component<AppProperties, AppState> {
                 return (<Preloader/>);
 
         }
+    }
+
+    public wrapInternalPage(route: Page): ReactNode {
+        return (
+            <span>
+                <h1>{route.pageHeader}</h1>
+                {route.getComponent()}
+            </span>
+        );
     }
 
     appLayout() {
@@ -98,12 +111,11 @@ export default class App extends React.Component<AppProperties, AppState> {
                     </Layout.Sider>
                     <Layout.Content className="app-layout-content">
                         <Switch>
-                            <Route path={["/dashboard", "/", "/register"]} exact>
-                                Dashboard2
-                            </Route>
-                            <Route path="/config">
-                                Config
-                            </Route>
+                            {PRIVATE_PAGES.map(route => {
+                                return (<Route path={route.getPrefixedPath()} exact>
+                                    {this.wrapInternalPage(route)}
+                                </Route>)
+                            })}
                         </Switch>
                     </Layout.Content>
                 </Layout>
@@ -182,7 +194,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                 <Menu.Item key="profile" icon={<SlidersOutlined/>} onClick={() => this.resetPassword()}>
                     Reset Password
                 </Menu.Item>
-                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userServices.removeAuth(reloadPage)}>
+                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userServices.removeAuth(() => navigateAndReload("#/"))}>
                     Logout
                 </Menu.Item>
             </Menu>
