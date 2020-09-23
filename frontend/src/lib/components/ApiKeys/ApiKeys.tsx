@@ -120,9 +120,6 @@ export default class ApiKeys extends React.Component<{}, State> {
     data() {
         return (
             <div className="api-keys-container">
-                <div className="api-keys-header">
-                    <span style={{'fontSize': '18px'}}>API Keys</span>
-                </div>
                 <div className="api-keys-content">
                     <List
                         itemLayout="horizontal"

@@ -96,10 +96,12 @@ export default class App extends React.Component<AppProperties, AppState> {
 
     public wrapInternalPage(route: Page): ReactNode {
         return (
-            <span>
-                <h1>{route.pageHeader}</h1>
-                {route.getComponent()}
-            </span>
+            <div className="internal-page-wrapper">
+                <h1 className="internal-page-header">{route.pageHeader}</h1>
+                <div className="internal-page-content-wrapper">
+                    {route.getComponent()}
+                </div>
+            </div>
         );
     }
 

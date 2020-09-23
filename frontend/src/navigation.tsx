@@ -37,5 +37,5 @@ export const PUBLIC_PAGES: Page[] = [
 
 export const PRIVATE_PAGES: Page[] = [
     new Page("EventNative | edit destinations", "/destinations", () => (<DestinationsList />), "Edit destinations"),
-    new Page("EventNative | edit API keys", "/api_keys", () => (<ApiKeys />), "Edit destinations")
+    new Page("EventNative | edit API keys", "/api_keys", () => (<ApiKeys />), "API Keys")
 ];
