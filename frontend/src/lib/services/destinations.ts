@@ -27,6 +27,12 @@ export const destinationConfigTypes = [
     new DestinationConfigFactory("BigQuery", "bigquery", (id) => new BQConfig(id)),
 ]
 
+export const destinationsByTypeId = destinationConfigTypes.reduce((map: Record<string, DestinationConfigFactory<any>>, obj) => {
+    map[obj.type] = obj;
+    return map;
+}, {})
+
+
 
 export abstract class DestinationConfig {
     private readonly _id: string

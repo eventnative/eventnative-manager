@@ -7,11 +7,16 @@ const loader = require("../../icons/loading.gif");
 const plumber = require("../../icons/plumber.png");
 import './components.less'
 import Icon from "antd/es/icon";
+import {Spin} from "antd";
+
+type IPreloaderProps = {
+    text?: string
+}
 /**
  * Loader component. A spinner and text positioned in the center of parent component, assuming
  * parent's component display = block
  */
-export function Preloader(props) {
+export function Preloader(props: IPreloaderProps) {
     let text = props.text ? props.text : "Loading application, please be patient!"
     return (<div style={{}} className="preloader-wrapper">
         <img src={loader} alt="[loading]" className="preloader-image" />
@@ -33,5 +38,10 @@ export function GlobalError(props) {
             {text}
         </div>
     </div>);
+}
+
+export function CenteredSpin() {
+    return (<div className="common-centered-spin"><Spin size="large" /></div>)
+
 }
 

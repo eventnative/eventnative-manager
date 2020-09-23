@@ -6,7 +6,7 @@ import TweenOneGroup from 'rc-tween-one'
 
 import * as uuid from 'uuid';
 import './ApiKeys.less'
-import {GlobalError} from "../components";
+import {CenteredSpin, GlobalError} from "../components";
 
 enum PageLifecycle {
     LOADING, //Data is loading
@@ -91,7 +91,7 @@ export default class ApiKeys extends React.Component<{}, State> {
             case PageLifecycle.ERROR:
                 return (<GlobalError/>);
             case PageLifecycle.LOADING:
-                return (<Spin/>);
+                return (<CenteredSpin/>);
 
         }
     }
