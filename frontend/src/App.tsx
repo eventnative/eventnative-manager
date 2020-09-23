@@ -14,7 +14,6 @@ import LoginForm from "./lib/components/LoginForm/LoginForm";
 import SignupForm from "./lib/components/SignupForm/SignupForm";
 import {navigateAndReload, reloadPage} from "./lib/commons/utils";
 import ApiKeys from "./lib/components/ApiKeys/ApiKeys"
-import {reloadPage} from "./lib/commons/utils";
 import {User} from "./lib/services/model";
 import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
 import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
@@ -200,7 +199,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                 <Menu.Item key="profile" icon={<SlidersOutlined/>} onClick={() => this.resetPassword()}>
                     Reset Password
                 </Menu.Item>
-                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userServices.removeAuth(reloadPage)}>
+                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userService.removeAuth(reloadPage)}>
                     Logout
                 </Menu.Item>
             </Menu>

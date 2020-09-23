@@ -2,6 +2,7 @@ import React, {ReactElement, ReactNode} from "react";
 import LoginForm from "./lib/components/LoginForm/LoginForm";
 import SignupForm from "./lib/components/SignupForm/SignupForm";
 import {DestinationsList} from "./lib/components/DestinationsEditor/DestinationsList";
+import ApiKeys from "./lib/components/ApiKeys/ApiKeys";
 
 export class Page {
     componentFactory: () => ReactElement
@@ -35,5 +36,6 @@ export const PUBLIC_PAGES: Page[] = [
 ];
 
 export const PRIVATE_PAGES: Page[] = [
-    new Page("EventNative | edit destinations", "/destinations", () => (<DestinationsList />), "Edit destinations")
+    new Page("EventNative | edit destinations", "/destinations", () => (<DestinationsList />), "Edit destinations"),
+    new Page("EventNative | edit API keys", "/api_keys", () => (<ApiKeys />), "Edit destinations")
 ];
