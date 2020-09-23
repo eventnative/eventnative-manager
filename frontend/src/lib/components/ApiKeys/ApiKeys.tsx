@@ -1,8 +1,9 @@
 import React from 'react';
-import {Button, Form, Input, Layout, message, Space, Spin, Tag} from "antd";
+import {Button, Col, Input, List, Mentions, message, Row, Spin, Tag} from "antd";
 import ApplicationServices from "../../services/ApplicationServices";
-import {CopyTwoTone, MinusCircleOutlined, MinusCircleTwoTone, PlusOutlined} from "@ant-design/icons/lib";
+import {CopyTwoTone, MinusCircleTwoTone, PlusOutlined} from "@ant-design/icons/lib";
 import TweenOneGroup from 'rc-tween-one'
+
 import * as uuid from 'uuid';
 import './ApiKeys.less'
 import {GlobalError} from "../components";
@@ -19,11 +20,21 @@ type Token = {
     origins?: string[]
 }
 
+type Record = {
+    token: Token
+
+    inputOrigin: string
+    inputVisible: boolean
+}
+
+type Payload = {
+    records: Record[]
+}
+
 type State = {
+    loading: boolean
     lifecycle: PageLifecycle
-    keys: Token[]
-    inputVisible: Boolean,
-    inputValue: string | number | readonly string[],
+    payload: Payload
 }
 
 export default class ApiKeys extends React.Component<{}, State> {
@@ -33,46 +44,42 @@ export default class ApiKeys extends React.Component<{}, State> {
         super(props, context);
         this.services = ApplicationServices.get();
         this.state = {
+            loading: false,
             lifecycle: PageLifecycle.LOADING,
-            keys: [],
-            inputVisible: false,
-            inputValue: ''
+            payload: {records: []} as Payload,
         }
     }
 
     public componentDidMount() {
         this.services.apiKeyService.get()
-            .then((auth: any) => {
-                this.setState((state: State) => {
-                    if (auth.exists === true && auth.data()) {
-                        state.keys = auth.data()
-                    }
-                    state.lifecycle = PageLifecycle.DATA;
-                }, () => this.forceUpdate())
+            .then((payload: any) => {
+                if (payload.exists === true && payload.data() && payload.data().tokens) {
+                    let records = payload.data().tokens.map(t => {
+                        return {token: t, inputOrigin: '', inputVisible: false}
+                    });
+                    this.setState({
+                        payload: {records: records}
+                    })
+                }
+                this.setState({
+                    lifecycle: PageLifecycle.DATA
+                })
             })
             .catch((error: any) => {
-                this.setState((state: State) => {
-                    state.lifecycle = PageLifecycle.ERROR
-                }, () => this.forceUpdate())
+                this.setState({lifecycle: PageLifecycle.ERROR})
             })
     }
 
-    private saveApiKeys(payload: Token[]) {
-        this.setState((state: State) => {
-            state.lifecycle = PageLifecycle.LOADING
-        }, () => this.forceUpdate())
-        this.services.apiKeyService.save(payload)
+    private saveApiKeys(payload: Payload) {
+        this.setState({loading: true})
+        this.services.apiKeyService.save({tokens: payload.records.map(t => t.token)})
             .then(() => {
-                this.setState((state: State) => {
-                    state.lifecycle = PageLifecycle.DATA
-                    message.success('Keys have been saved!')
-                }, () => this.forceUpdate())
+                this.setState({lifecycle: PageLifecycle.DATA, loading: false})
+                message.success('Keys have been saved!')
             })
             .catch((error: any) => {
-                this.setState((state: State) => {
-                    state.lifecycle = PageLifecycle.DATA
-                    message.error('Error saving keys: ' + error.toString())
-                }, () => this.forceUpdate())
+                this.setState({lifecycle: PageLifecycle.DATA, loading: false})
+                message.error('Error saving keys: ' + error.toString())
             })
     }
 
@@ -88,185 +95,147 @@ export default class ApiKeys extends React.Component<{}, State> {
         }
     }
 
-    showInput = () => {
-        //this.setState({inputVisible: true}, () => this.input.focus());
+    copyToClipboard = (value) => {
+        const el = document.createElement('textarea');
+        el.value = value;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
     };
 
-    handleInputChange = e => {
-        this.setState({inputValue: e.target.value});
+    handleInputConfirm = (e, item, index) => {
+        console.log(item)
+        if (item.inputOrigin && item.token.origins.indexOf(item.inputOrigin) === -1) {
+            item.token.origins.push(item.inputOrigin)
+        }
+        item.inputOrigin = ''
+        item.inputVisible = false
+        this.state.payload.records[index] = item
+        this.setState({payload: this.state.payload})
     };
 
-    saveInputRef = input => {
-        // this.state.input = input;
-    };
 
     data() {
         return (
             <div className="api-keys-container">
-                <Form name="dynamic_form_nest_item" initialValues={this.state.keys} onFinish={values => {
-                    this.saveApiKeys(values)
-                }} autoComplete="off">
-                    <h2>Api Keys</h2>
-                    <Form.List name="auth">
-                        {(fields, {add, remove}) => {
-                            return (
-                                <div>
-                                    {fields.map((field, index) => (
-                                        <Space key={field.key} style={{display: 'flex', marginBottom: 8}} align="start">
-                                            <Form.Item
-                                                {...field}
-                                                id={String(index)}
-                                                name={[field.name, 'token']}
-                                                fieldKey={[field.fieldKey, 'token']}
-                                                rules={[{required: true, message: 'Missing key'}]}
-                                            >
-                                                <Input placeholder="Key" disabled={true}/>
-                                            </Form.Item>
-                                            <br/>
-                                            <div style={{marginBottom: 16}}>
-                                                {/*<TweenOneGroup
-                                                    enter={{
-                                                        scale: 0.8,
-                                                        opacity: 0,
-                                                        type: 'from',
-                                                        duration: 100,
-                                                        onComplete: e => {
-                                                            e.target.style = '';
-                                                        },
-                                                    }}
-                                                    leave={{opacity: 0, width: 0, scale: 0, duration: 200}}
-                                                    appear={false}
-                                                >*/}
-                                                {this.state.keys[index].origins.map((origin, i) => {
+                <div className="api-keys-header">
+                    <span style={{'fontSize': '18px'}}>API Keys</span>
+                </div>
+                <div className="api-keys-content">
+                    <List
+                        itemLayout="horizontal"
+                        dataSource={this.state.payload.records}
+                        renderItem={(item, index) => (
+                            <List.Item>
+                                <Row>
+                                    <Col style={{marginRight: 10}}>
+                                        Token: <Mentions value={item.token.auth} placeholder="Token" readOnly
+                                                         style={{width: 350, marginRight: 5}}/>
+
+                                        <CopyTwoTone
+                                            style={{marginBottom: 10}}
+                                            onClick={() => {
+                                                this.copyToClipboard(item.token.auth)
+                                                message.success('Copied!')
+                                            }}
+                                        />
+                                    </Col>
+                                    <Col style={{marginRight: 10}}>
+                                        S2S Token: <Mentions value={item.token.s2s_auth} placeholder="S2S Token" readOnly
+                                                             style={{width: 350, marginRight: 5}}/>
+
+                                        <CopyTwoTone
+                                            style={{marginRight: 5, marginBottom: 10}}
+                                            onClick={() => {
+                                                this.copyToClipboard(item.token.s2s_auth)
+                                                message.success('Copied!')
+                                            }}
+                                        />
+                                        <MinusCircleTwoTone
+                                            style={{marginBottom: 10}}
+                                            twoToneColor={'red'}
+                                            onClick={() => {
+                                                this.state.payload.records.splice(index, 1)
+                                                this.setState({payload: this.state.payload})
+                                            }}
+                                        />
+                                    </Col>
+                                    <Col>
+                                        <div style={{marginTop: 5}}>
+                                            <TweenOneGroup>
+                                                {(item.token.origins && (item.token.origins.map((origin, originIndex) => {
                                                     return (
-                                                        <span key={origin} style={{display: 'inline-block'}}>
+                                                        <span key={origin}
+                                                              style={{display: 'inline-block'}}>
                                                             <Tag
                                                                 closable
                                                                 onClose={e => {
-                                                                    e.preventDefault();
-                                                                    this.state.keys[index].origins.splice(i, 1)
+                                                                    this.state.payload.records[index].token.origins.splice(originIndex, 1)
+                                                                    this.setState({payload: this.state.payload})
                                                                 }}
                                                             >
-                                                                {origin}
-                                                            </Tag>
-                                                            </span>
+                                                             {origin}
+                                                         </Tag>
+                                                         </span>
                                                     );
-                                                })}
-                                                {/* </TweenOneGroup>*/}
-                                            </div>
-                                            {this.state.inputVisible && (
-                                                <Input
-                                                    ref={this.saveInputRef}
-                                                    type="text"
-                                                    size="small"
-                                                    style={{width: 78}}
-                                                    value={this.state.inputValue}
-                                                    onChange={this.handleInputChange}
-                                                    //onBlur={this.handleInputConfirm}
-                                                    onPressEnter={() => {
-                                                        if (this.state.inputValue && this.state.keys[index].origins.indexOf(this.state.inputValue.toString()) === -1) {
-                                                            //this.state.keys.auth[index].origins.push() = [...this.state.keys.auth[index].origins, this.state.inputValue];
-                                                            this.state.keys[index].origins.push('pppp')
-                                                        }
-
-                                                        this.setState({
-                                                            inputVisible: false,
-                                                            inputValue: '',
-                                                        });
-                                                    }}
-                                                />
-                                            )}
-                                            {!this.state.inputVisible && (
-                                                <Tag onClick={this.showInput} className="site-tag-plus">
-                                                    <PlusOutlined/> New Tag
-                                                </Tag>
-                                            )}
-                                            );
-
-                                            <CopyTwoTone
-                                                onClick={() => {
-                                                    console.log(fields[index])
-                                                    console.log([field.name, 'origins'])
-                                                    message.success('Copied!')
+                                                })))}
+                                            </TweenOneGroup>
+                                        </div>
+                                        {item.inputVisible && (
+                                            <Input
+                                                id={"origin_input_" + index}
+                                                type="text"
+                                                size="small"
+                                                style={{width: 78, marginRight: 5}}
+                                                value={item.inputOrigin}
+                                                onChange={e => {
+                                                    this.state.payload.records[index].inputOrigin = e.target.value
+                                                    this.setState({payload: this.state.payload})
+                                                }}
+                                                onBlur={e => {
+                                                    this.handleInputConfirm(e, item, index)
+                                                }}
+                                                onPressEnter={e => {
+                                                    this.handleInputConfirm(e, item, index)
                                                 }}
                                             />
-                                            <MinusCircleTwoTone twoToneColor={'red'}
-                                                                onClick={() => {
-                                                                    remove(field.name);
-                                                                }}
-                                            />
-
-                                        </Space>
-                                    ))}
-
-                                    <Form.Item>
-                                        <Button
-                                            type="dashed"
-                                            onClick={() => {
-                                                add({token: uuid.v4()});
-                                            }}
-                                            block
-                                        >
-                                            <PlusOutlined/> Generate
-                                        </Button>
-                                    </Form.Item>
-                                </div>
-                            );
-                        }}
-                    </Form.List>
-
-                    {/*<h2>S2S Api Keys</h2>
-                    <Form.List name="s2s_auth">
-                        {(fields, {add, remove}) => {
-                            return (
-                                <div>
-                                    {fields.map((field, index) => (
-                                        <Space key={field.key} style={{display: 'flex', marginBottom: 8}} align="start">
-                                            <Form.Item
-                                                {...field}
-                                                id={String(index)}
-                                                name={[field.name, 'token']}
-                                                fieldKey={[field.fieldKey, 'token']}
-                                                rules={[{required: true, message: 'Missing key'}]}
-                                            >
-                                                <Input placeholder="S2S Key" disabled={true}/>
-                                            </Form.Item>
-
-                                            <CopyTwoTone
+                                        )}
+                                        {!item.inputVisible && (
+                                            <Tag
                                                 onClick={() => {
-                                                    message.success('Copied!')
+                                                    this.state.payload.records[index].inputVisible = true
+                                                    this.setState({payload: this.state.payload})
                                                 }}
-                                            />
-                                            <MinusCircleTwoTone twoToneColor={'red'}
-                                                                onClick={() => {
-                                                                    remove(field.name);
-                                                                }}
-                                            />
-                                        </Space>
-                                    ))}
-
-                                    <Form.Item>
-                                        <Button
-                                            type="dashed"
-                                            onClick={() => {
-                                                add({token: uuid.v4()});
-                                            }}
-                                            block
-                                        >
-                                            <PlusOutlined/> Generate
-                                        </Button>
-                                    </Form.Item>
-                                </div>
-                            );
-                        }}
-                    </Form.List>*/}
-
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit">
-                            Submit
+                                                className="site-tag-plus">
+                                                <PlusOutlined/> Add Origin
+                                            </Tag>
+                                        )}
+                                    </Col>
+                                </Row>
+                            </List.Item>
+                        )}
+                    />
+                </div>
+                <div className="apikeys-action-buttons">
+                    <Row>
+                        <Button
+                            type="dashed"
+                            style={{width: 200}}
+                            onClick={() => {
+                                this.state.payload.records.push({token: {auth: uuid.v4(), s2s_auth: uuid.v4(), origins: []}, inputOrigin: '', inputVisible: false});
+                                this.setState({payload: this.state.payload})
+                            }}
+                            block
+                        >
+                            <PlusOutlined/> Generate
                         </Button>
-                    </Form.Item>
-                </Form>
+                        <Button type="primary" htmlType="submit" loading={this.state.loading}
+                                onClick={() => this.saveApiKeys(this.state.payload)}>
+                            Save
+                        </Button>
+                    </Row>
+                </div>
             </div>
         );
     }

@@ -25,7 +25,7 @@ export default class SignupForm extends React.Component<any, State> {
     }
 
     googleSignup() {
-        this.services.userServices.initiateGoogleLogin().then(() => {
+        this.services.userService.initiateGoogleLogin().then(() => {
             message.destroy()
             reloadPage();
         }).catch(error => {
@@ -41,7 +41,7 @@ export default class SignupForm extends React.Component<any, State> {
 
     passwordSignup(values) {
         this.setState({loading: true});
-        this.services.userServices.createUser(values['email'], values['password'], values['name'],  values['company']).then(() => {
+        this.services.userService.createUser(values['email'], values['password'], values['name'],  values['company']).then(() => {
             this.setState({loading: false});
             reloadPage()
         }).catch((error) => {

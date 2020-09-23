@@ -58,7 +58,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                 this.setState({lifecycle: AppLifecycle.ERROR, globalErrorDetails: "Timout"})
             }
         }, LOGIN_TIMEOUT);
-        this.services.userServices.waitForUser().then((loginStatus) => {
+        this.services.userService.waitForUser().then((loginStatus) => {
             this.setState({
                 lifecycle: loginStatus.user ? AppLifecycle.APP : AppLifecycle.LOGIN,
                 user: loginStatus.user,
@@ -169,7 +169,7 @@ export default class App extends React.Component<AppProperties, AppState> {
             okText: 'Reset password',
             cancelText: 'Cancel',
             onOk: () => {
-                this.services.userServices.sendPasswordReset()
+                this.services.userService.sendPasswordReset()
                     .then(() => message.info("Reset password instructions has been sent. Please, check your mailbox"))
                     .catch((error) => {
                         message.error("Can't reset password: " + error.message);
@@ -196,4 +196,3 @@ export default class App extends React.Component<AppProperties, AppState> {
         </div>;
     }
 }
-

@@ -171,7 +171,7 @@ function PasswordResetForm({visible, onSuccess, close}) {
         form
             .validateFields()
             .then((values) => {
-                services.userServices.sendPasswordReset(values['email']).then(() => {
+                services.userService.sendPasswordReset(values['email']).then(() => {
                     onSuccess();
                     close()
                     setState({loading: false, errorMessage: null})
