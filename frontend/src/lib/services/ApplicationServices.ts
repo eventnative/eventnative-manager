@@ -4,7 +4,8 @@ import {message} from "antd";
 import {randomId} from "../commons/utils";
 
 export default class ApplicationServices {
-    private readonly _userServices: FirebaseUserServices;
+    private readonly _userService: FirebaseUserService;
+    private readonly _apiKeyService: FirebaseApiKeyService;
 
     constructor() {
 
@@ -22,12 +23,16 @@ export default class ApplicationServices {
         if (window) {
             window.firebase = firebase;
         }
-        this._userServices = new FirebaseUserServices();
+        this._userService = new FirebaseUserService();
+        this._apiKeyService = new FirebaseApiKeyService();
     }
 
+    get userService(): FirebaseUserService {
+        return this._userService;
+    }
 
-    get userServices(): UserServices {
-        return this._userServices;
+    get apiKeyService(): FirebaseApiKeyService {
+        return this._apiKeyService;
     }
 
     static _instance = null;
@@ -48,7 +53,7 @@ type UserLoginStatus = {
     loginErrorMessage: string
 }
 
-export interface UserServices {
+export interface UserService {
     /**
      * Logs in user. On success user must reload
      * @param email email
@@ -87,7 +92,7 @@ export interface UserServices {
     createUser(email: string, password: string, name: string, company: string): Promise<void>;
 }
 
-class FirebaseUserServices implements UserServices {
+class FirebaseUserService implements UserService {
     private user?: User
     private unregisterAuthObserver: firebase.Unsubscribe;
 
@@ -154,7 +159,7 @@ class FirebaseUserServices implements UserServices {
             if (user.email == null) {
                 reject(new Error("User email is null"))
             }
-            firebase.firestore().collection(FirebaseUserServices.USERS_COLLECTION).doc(user.uid).get()
+            firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.uid).get()
                 .then((doc) => {
                     let suggestedInfo = this.suggestedInfoFromFirebaseUser(user);
                     if (doc.exists) {
@@ -198,7 +203,7 @@ class FirebaseUserServices implements UserServices {
             userData['_project'] = Object.assign({}, user.projects[0]);
             delete userData['_projects']
             console.log("Sending to FB", userData)
-            return firebase.firestore().collection(FirebaseUserServices.USERS_COLLECTION).doc(user.uid).set(userData, {merge: true}).then(resolve);
+            return firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.uid).set(userData, {merge: true}).then(resolve);
         }))
     }
 
@@ -217,5 +222,32 @@ class FirebaseUserServices implements UserServices {
                 })
                 .catch(reject);
         })
+    }
+}
+
+export interface ApiKeyService {
+    /**
+     * Return api keys
+     * @returns a promise
+     */
+    get(): Promise<any>
+
+    /**
+     * Save api keys
+     */
+    save(apiKeys: any)
+}
+
+class FirebaseApiKeyService implements ApiKeyService {
+    private static readonly API_KEYS_COLLECTION = "api_keys";
+
+    get(): Promise<any> {
+        let userId = firebase.auth().currentUser.uid
+        return firebase.firestore().collection(FirebaseApiKeyService.API_KEYS_COLLECTION).doc(userId).get()
+    }
+
+    save(payload: any): Promise<any> {
+        let userId = firebase.auth().currentUser.uid
+        return firebase.firestore().collection(FirebaseApiKeyService.API_KEYS_COLLECTION).doc(userId).set(payload)
     }
 }
