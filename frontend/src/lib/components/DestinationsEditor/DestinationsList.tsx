@@ -1,9 +1,10 @@
 import * as React from 'react'
-import {BQConfig, ClickHouseConfig, DestinationConfig, PostgresConfig} from "../../services/destinations";
-import {Avatar, Grid, Row, Tooltip} from "antd";
+import {BQConfig, ClickHouseConfig, DestinationConfig, destinationConfigTypes, PostgresConfig} from "../../services/destinations";
+import {Avatar, Dropdown, Grid, Menu, Row, Tooltip} from "antd";
 import {List, Button, Skeleton} from 'antd';
 import {ReactNode} from "react";
-import {PlusOutlined} from "@ant-design/icons/lib";
+import {DeleteOutlined, EditOutlined, PlusOutlined, UserOutlined} from "@ant-design/icons/lib";
+import './DestinationEditor.less'
 
 type State = {
     loading: boolean
@@ -30,20 +31,47 @@ export class DestinationsList extends React.Component<any, State> {
     }
 
     destinationComponent(config: DestinationConfig): ReactNode {
-        return (<List.Item>
-            {config.id}
+        return (<List.Item actions={[
+            (<Button icon={<EditOutlined/>} shape="round">Edit</Button>),
+            (<Button icon={<DeleteOutlined/>} shape="round">Delete</Button>),
+        ]} className="destination-list-item">
+            <List.Item.Meta
+                avatar={<Avatar shape="square" src={DestinationsList.getIcon(config)}/>}
+                title={config.id}
+                description="Description"
+            />
         </List.Item>)
+    }
+
+    private static getIcon(config: DestinationConfig): any {
+        try {
+            return require('../../../icons/destinations/' + config.type + '.svg');
+        } catch (e) {
+            console.log("Icon for " + config.type + " is not found")
+            return null
+        }
+
     }
 
     render() {
         return ([
-            <Tooltip title="Add destination">
-                <Button type="primary" icon={<PlusOutlined />}>Add destination</Button>
-            </Tooltip>,
-            <List className="destinations-list" itemLayout="horizontal">
+            <List className="destinations-list" itemLayout="horizontal"
+                  header={this.addButton()} split={true}>
                 {this.state.destinations.map(this.destinationComponent)}
             </List>
         ]);
+    }
+
+    private addButton() {
+        return (<Dropdown trigger={["click"]} overlay={this.addMenu()}>
+            <Button type="primary" icon={<PlusOutlined/>}>Add destination</Button>
+        </Dropdown>)
+    }
+
+    addMenu() {
+        return (<Menu>
+            {destinationConfigTypes.map(type => <Menu.Item key={type.type}>Add {type.name}</Menu.Item>)}
+        </Menu>);
     }
 
 
