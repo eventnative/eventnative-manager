@@ -30,7 +30,7 @@ export default function OnboardingForm(props: Props) {
         form
             .validateFields()
             .then((values) => {
-                let user = services.userServices.getUser();
+                let user = services.userService.getUser();
                 user.onboarded = true;
                 user.projects = [new Project(
                     Utils.randomId(),
@@ -38,7 +38,7 @@ export default function OnboardingForm(props: Props) {
                 )];
                 user.name = values['userDisplayName']
 
-                services.userServices.update(user).then(reloadPage).catch((error) => {
+                services.userService.update(user).then(reloadPage).catch((error) => {
                     console.error("Failed to update user", error);
                     setState({loading: false});
                     message.error("Cannot update user info: " + error.message)
@@ -53,7 +53,7 @@ export default function OnboardingForm(props: Props) {
         closable={false}
         footer={[
             <Button key="submit" onClick={() => {
-                services.userServices.removeAuth(reloadPage);
+                services.userService.removeAuth(reloadPage);
             }}>Logout</Button>,
             <Button key="submit" type="primary" loading={state.loading} onClick={() => {
                 onSubmit()

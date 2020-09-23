@@ -1,3 +1,4 @@
+
 import * as React from 'react'
 
 import {NavLink, Route, Switch} from 'react-router-dom';
@@ -6,12 +7,14 @@ import {AreaChartOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined,
 import './App.less';
 import Popover from "antd/es/popover";
 import SubMenu from "antd/es/menu/SubMenu";
-import {ExclamationCircleOutlined, UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
+import {KeyOutlined, LockOutlined, ExclamationCircleOutlined, UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "./lib/services/ApplicationServices";
 import {GlobalError, Preloader} from "./lib/components/components";
 import LoginForm from "./lib/components/LoginForm/LoginForm";
 import SignupForm from "./lib/components/SignupForm/SignupForm";
 import {navigateAndReload, reloadPage} from "./lib/commons/utils";
+import ApiKeys from "./lib/components/ApiKeys/ApiKeys"
+import {reloadPage} from "./lib/commons/utils";
 import {User} from "./lib/services/model";
 import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
 import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
@@ -58,7 +61,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                 this.setState({lifecycle: AppLifecycle.ERROR, globalErrorDetails: "Timout"})
             }
         }, LOGIN_TIMEOUT);
-        this.services.userServices.waitForUser().then((loginStatus) => {
+        this.services.userService.waitForUser().then((loginStatus) => {
             this.setState({
                 lifecycle: loginStatus.user ? AppLifecycle.APP : AppLifecycle.REQUIRES_LOGIN,
                 user: loginStatus.user,
@@ -136,6 +139,9 @@ export default class App extends React.Component<AppProperties, AppState> {
                 <Menu.Item key="destinations" icon={<AreaChartOutlined/>}>
                     <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
                 </Menu.Item>
+                <Menu.Item key="api_keys" icon={<KeyOutlined/>}>
+                    <NavLink to="/api_keys" activeClassName="selected">API Keys</NavLink>
+                </Menu.Item>
                 <SubMenu title="Project Settings" icon={<SlidersOutlined/>}>
                     <Menu.Item key="general_settins" icon={<AreaChartOutlined/>}>
                         <NavLink to="/project_settings" activeClassName="selected">Access & General</NavLink>
@@ -174,7 +180,7 @@ export default class App extends React.Component<AppProperties, AppState> {
             okText: 'Reset password',
             cancelText: 'Cancel',
             onOk: () => {
-                this.services.userServices.sendPasswordReset()
+                this.services.userService.sendPasswordReset()
                     .then(() => message.info("Reset password instructions has been sent. Please, check your mailbox"))
                     .catch((error) => {
                         message.error("Can't reset password: " + error.message);
@@ -194,11 +200,10 @@ export default class App extends React.Component<AppProperties, AppState> {
                 <Menu.Item key="profile" icon={<SlidersOutlined/>} onClick={() => this.resetPassword()}>
                     Reset Password
                 </Menu.Item>
-                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userServices.removeAuth(() => navigateAndReload("#/"))}>
+                <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userServices.removeAuth(reloadPage)}>
                     Logout
                 </Menu.Item>
             </Menu>
         </div>;
     }
 }
-

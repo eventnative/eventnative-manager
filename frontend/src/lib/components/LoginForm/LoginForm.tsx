@@ -129,7 +129,7 @@ export default class LoginForm extends React.Component<Props, State> {
 
     private passwordLogin(values) {
         this.setState({loading: true});
-        this.services.userServices.login(values['username'], values['password']).then(() => {
+        this.services.userService.login(values['username'], values['password']).then(() => {
             message.destroy()
             this.setState({loading: false});
             reloadPage();
@@ -142,7 +142,7 @@ export default class LoginForm extends React.Component<Props, State> {
     }
 
     private googleLogin() {
-        this.services.userServices.initiateGoogleLogin().then(() => {
+        this.services.userService.initiateGoogleLogin().then(() => {
             message.destroy()
             this.setState({loading: false});
             reloadPage();
@@ -154,7 +154,7 @@ export default class LoginForm extends React.Component<Props, State> {
     }
 
     private githubLogin() {
-        this.services.userServices.initiateGithubLogin().then(() => {
+        this.services.userService.initiateGithubLogin().then(() => {
             message.destroy()
             this.setState({loading: false});
             reloadPage();
@@ -179,7 +179,7 @@ function PasswordResetForm({visible, onSuccess, close}) {
         form
             .validateFields()
             .then((values) => {
-                services.userServices.sendPasswordReset(values['email']).then(() => {
+                services.userService.sendPasswordReset(values['email']).then(() => {
                     onSuccess();
                     close()
                     setState({loading: false, errorMessage: null})
