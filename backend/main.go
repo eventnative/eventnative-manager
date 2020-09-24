@@ -5,6 +5,8 @@ import (
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/ksensehq/enhosted/appconfig"
+	"github.com/ksensehq/enhosted/database"
+	"github.com/ksensehq/enhosted/handlers"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
@@ -64,9 +66,22 @@ func ReadConfiguration(configFilePath string) {
 func SetupRouter(staticContentDirectory string) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
-	router.GET("/api/", func(c *gin.Context) {
-		c.String(http.StatusOK, "This is %s. Hello, user!\n", appconfig.Instance.ServerName)
-	})
+	dbProviderConfig := viper.Sub("db_provider")
+	if dbProviderConfig == nil {
+		log.Fatal("db_provider is not configured")
+	}
+	provider, err := database.NewDatabaseProvider(dbProviderConfig)
+	if err != nil {
+		log.Fatalf("Failed to create db_provider: %s", err)
+	}
+	dbHandler := handlers.NewDatabaseHandler(provider).Handler
+	apiV1 := router.Group("/api/v1")
+	{
+		apiV1.POST("/database", dbHandler)
+		apiV1.GET("/", func(c *gin.Context) {
+			c.String(http.StatusOK, "This is %s. Hello, user!\n", appconfig.Instance.ServerName)
+		})
+	}
 	router.Use(static.Serve("/", static.LocalFile(staticContentDirectory, false)))
 	return router
 }
