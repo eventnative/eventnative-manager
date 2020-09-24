@@ -1,18 +1,10 @@
-import React from 'react';
-import {Button, Col, Input, List, Mentions, message, Row, Spin, Tag} from "antd";
+import React, {ReactNode} from 'react';
+import {Button, Form, Input, List, Mentions, message, Modal, Tag, Tooltip} from "antd";
 import ApplicationServices from "../../services/ApplicationServices";
-import {CopyTwoTone, MinusCircleTwoTone, PlusOutlined} from "@ant-design/icons/lib";
-import TweenOneGroup from 'rc-tween-one'
-
-import * as uuid from 'uuid';
+import {DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, SaveOutlined} from "@ant-design/icons/lib";
 import './ApiKeys.less'
-import {CenteredSpin, GlobalError} from "../components";
-
-enum PageLifecycle {
-    LOADING, //Data is loading
-    DATA, //Api keys
-    ERROR //Error
-}
+import {CenteredSpin, LabelWithTooltip} from "../components";
+import * as uuid from 'uuid';
 
 type Token = {
     auth: string
@@ -25,6 +17,7 @@ type Record = {
 
     inputOrigin: string
     inputVisible: boolean
+    inputRef: React.RefObject<any>
 }
 
 type Payload = {
@@ -32,8 +25,8 @@ type Payload = {
 }
 
 type State = {
+    globalLoading: boolean
     loading: boolean
-    lifecycle: PageLifecycle
     payload: Payload
 }
 
@@ -44,10 +37,10 @@ export default class ApiKeys extends React.Component<{}, State> {
         super(props, context);
         this.services = ApplicationServices.get();
         this.state = {
+            globalLoading: true,
             loading: false,
-            lifecycle: PageLifecycle.LOADING,
             payload: {records: []} as Payload,
-        }
+        };
     }
 
     public componentDidMount() {
@@ -55,45 +48,61 @@ export default class ApiKeys extends React.Component<{}, State> {
             .then((payload: any) => {
                 if (payload.exists === true && payload.data() && payload.data().tokens) {
                     let records = payload.data().tokens.map(t => {
-                        return {token: t, inputOrigin: '', inputVisible: false}
+                        return {token: t, inputOrigin: '', inputVisible: false, inputRef: React.createRef()}
                     });
-                    this.setState({
-                        payload: {records: records}
-                    })
+                    this.setState({payload: {records: records}})
                 }
-                this.setState({
-                    lifecycle: PageLifecycle.DATA
-                })
             })
             .catch(error => {
                 message.error('Error loading api keys ' + error.message)
-                this.setState({lifecycle: PageLifecycle.ERROR})
             })
-    }
-
-    private saveApiKeys(payload: Payload) {
-        this.setState({loading: true})
-        this.services.apiKeyService.save({tokens: payload.records.map(t => t.token)})
-            .then(() => {
-                this.setState({lifecycle: PageLifecycle.DATA, loading: false})
-                message.success('Keys have been saved!')
-            })
-            .catch(error => {
-                this.setState({lifecycle: PageLifecycle.DATA, loading: false})
-                message.error('Error saving keys: ' + error.message)
+            .finally(() => {
+                this.setState({globalLoading: false})
             })
     }
 
     render() {
-        switch (this.state.lifecycle) {
-            case PageLifecycle.DATA:
-                return this.data();
-            case PageLifecycle.ERROR:
-                return (<GlobalError/>);
-            case PageLifecycle.LOADING:
-                return (<CenteredSpin/>);
+        if (this.state.globalLoading) {
+            return <CenteredSpin/>
+        }
+        return ([
+            <List className="destinations-list" itemLayout="horizontal"
+                  header={[this.generateButton(), this.saveButton()]} split={true}>
+                {this.state.payload.records.map((record, index) => this.tokenComponent(record, index))}
+            </List>,
+        ])
+    }
+
+    generateButton() {
+        let onClick = () => {
+            this.state.payload.records.push({
+                token: {
+                    auth: uuid.v4(),
+                    s2s_auth: uuid.v4(),
+                    origins: []
+                }, inputOrigin: '', inputVisible: false, inputRef: React.createRef()
+            });
+            this.setState({payload: this.state.payload})
 
         }
+        return (<Button type="primary" icon={<PlusOutlined/>} style={{marginRight: 20}} onClick={onClick}>Generate New Token</Button>)
+    }
+
+    saveButton() {
+        let onClick = () => {
+            this.setState({loading: true})
+            this.services.apiKeyService.save({tokens: this.state.payload.records.map(t => t.token)})
+                .then(() => {
+                    message.success('Keys have been saved!')
+                })
+                .catch(error => {
+                    message.error('Error saving keys: ' + error.message)
+                }).finally(() => {
+                this.setState({loading: false})
+            })
+
+        }
+        return (<Button type="primary" icon={<SaveOutlined />} onClick={onClick}>Save</Button>)
     }
 
     copyToClipboard = (value) => {
@@ -105,142 +114,118 @@ export default class ApiKeys extends React.Component<{}, State> {
         document.body.removeChild(el);
     };
 
-    handleInputConfirm = (e, item, index) => {
-        console.log(item)
-        if (item.inputOrigin && item.token.origins.indexOf(item.inputOrigin) === -1) {
-            item.token.origins.push(item.inputOrigin)
-        }
-        item.inputOrigin = ''
-        item.inputVisible = false
-        this.state.payload.records[index] = item
-        this.setState({payload: this.state.payload})
-    };
-
-
-    data() {
-        return (
-            <div className="api-keys-container">
-                <div className="api-keys-content">
-                    <List
-                        itemLayout="horizontal"
-                        dataSource={this.state.payload.records}
-                        renderItem={(item, index) => (
-                            <List.Item>
-                                <Row>
-                                    <Col style={{marginRight: 10}}>
-                                        Token: <Mentions value={item.token.auth} placeholder="Token" readOnly
-                                                         style={{width: 350, marginRight: 5}}/>
-
-                                        <CopyTwoTone
-                                            style={{marginBottom: 10}}
-                                            onClick={() => {
-                                                this.copyToClipboard(item.token.auth)
-                                                message.success('Copied!')
-                                            }}
-                                        />
-                                    </Col>
-                                    <Col style={{marginRight: 10}}>
-                                        S2S Token: <Mentions value={item.token.s2s_auth} placeholder="S2S Token" readOnly
-                                                             style={{width: 350, marginRight: 5}}/>
-
-                                        <CopyTwoTone
-                                            style={{marginRight: 5, marginBottom: 10}}
-                                            onClick={() => {
-                                                this.copyToClipboard(item.token.s2s_auth)
-                                                message.success('Copied!')
-                                            }}
-                                        />
-                                        <MinusCircleTwoTone
-                                            style={{marginBottom: 10}}
-                                            twoToneColor={'red'}
-                                            onClick={() => {
-                                                this.state.payload.records.splice(index, 1)
-                                                this.setState({payload: this.state.payload})
-                                            }}
-                                        />
-                                    </Col>
-                                    <Col>
-                                        <div style={{marginTop: 5}}>
-                                            <TweenOneGroup>
-                                                {(item.token.origins && (item.token.origins.map((origin, originIndex) => {
-                                                    return (
-                                                        <span key={origin}
-                                                              style={{display: 'inline-block'}}>
-                                                            <Tag
-                                                                closable
-                                                                onClose={e => {
-                                                                    this.state.payload.records[index].token.origins.splice(originIndex, 1)
-                                                                    this.setState({payload: this.state.payload})
-                                                                }}
-                                                            >
-                                                             {origin}
-                                                         </Tag>
-                                                         </span>
-                                                    );
-                                                })))}
-                                            </TweenOneGroup>
-                                        </div>
-                                        {item.inputVisible && (
-                                            <Input
-                                                id={"origin_input_" + index}
-                                                type="text"
-                                                size="small"
-                                                style={{width: 78, marginRight: 5}}
-                                                value={item.inputOrigin}
-                                                onChange={e => {
-                                                    this.state.payload.records[index].inputOrigin = e.target.value
-                                                    this.setState({payload: this.state.payload})
-                                                }}
-                                                onBlur={e => {
-                                                    this.handleInputConfirm(e, item, index)
-                                                }}
-                                                onPressEnter={e => {
-                                                    this.handleInputConfirm(e, item, index)
-                                                }}
-                                            />
-                                        )}
-                                        {!item.inputVisible && (
-                                            <Tag
-                                                onClick={() => {
-                                                    this.state.payload.records[index].inputVisible = true
-                                                    this.setState({payload: this.state.payload})
-                                                }}
-                                                className="site-tag-plus">
-                                                <PlusOutlined/> Add Origin
-                                            </Tag>
-                                        )}
-                                    </Col>
-                                </Row>
-                            </List.Item>
-                        )}
-                    />
-                </div>
-                <div className="apikeys-action-buttons">
-                    <Row>
-                        <Button
-                            type="dashed"
-                            style={{width: 200}}
-                            onClick={() => {
-                                this.state.payload.records.push({token: {auth: uuid.v4(), s2s_auth: uuid.v4(), origins: []}, inputOrigin: '', inputVisible: false});
-                                this.setState({payload: this.state.payload})
-                            }}
-                            block
-                        >
-                            <PlusOutlined/> Generate
-                        </Button>
-                        <Button type="primary" htmlType="submit" loading={this.state.loading}
-                                onClick={() => this.saveApiKeys(this.state.payload)}>
-                            Save
-                        </Button>
-                    </Row>
-                </div>
-            </div>
-        );
+    tokenComponent(record: Record, index: number): ReactNode {
+        let onClick = () => {
+            Modal.confirm({
+                title: 'Please confirm deletion of key',
+                icon: <ExclamationCircleOutlined/>,
+                content: 'Are you sure you want to delete selected key?',
+                okText: 'Delete',
+                cancelText: 'Cancel',
+                onOk: () => {
+                    this.state.payload.records.splice(index, 1)
+                    this.setState({payload: this.state.payload})
+                },
+                onCancel: () => {
+                }
+            });
+        };
+        return (<List.Item actions={[
+            (<Button icon={<DeleteOutlined/>} shape="round" onClick={onClick}>Delete</Button>),
+        ]} className="api-keys-list-item" key={record.token.auth}>
+            <List.Item.Meta
+                title={this.tokenForm(record)}
+                description={this.originsComponent(record, index)}
+            />
+        </List.Item>)
     }
 
-    empty() {
+    tokenForm(record: Record): ReactNode {
+        return (<Form layout="inline">
+            <Form.Item label={LabelWithTooltip({label: "Token", documentation: "Token for javascript integration."})}>
+                <Mentions className="token-field" value={record.token.auth} placeholder="Token" readOnly/>
+                <div className="copy-to-clipboard-button" onClick={() => {
+                    this.copyToClipboard(record.token.auth)
+                    message.success('Token copied!')
+                }}>Copy to clipboard</div>
+            </Form.Item>
+            <Form.Item label={LabelWithTooltip({label: "S2S Token", documentation: "Token for server2server integration."})}>
+                <Mentions className="token-field" value={record.token.s2s_auth} placeholder="S2S Token" readOnly/>
+                <div className="copy-to-clipboard-button" onClick={() => {
+                    this.copyToClipboard(record.token.s2s_auth)
+                    message.success('S2S Token copied!')
+                }}>Copy to clipboard</div>
+            </Form.Item>
+        </Form>)
+    }
+
+    originsComponent(record: Record, index: number): ReactNode {
+        let onTagClose = (tagIndex: number) => {
+            this.state.payload.records[index].token.origins.splice(tagIndex, 1);
+            this.setState({payload: this.state.payload})
+        };
+        let onInputChange = e => {
+            this.state.payload.records[index].inputOrigin = e.target.value
+            this.setState({payload: this.state.payload})
+        };
+        let handleInputConfirm = e => {
+            if (record.inputOrigin && record.token.origins.indexOf(record.inputOrigin) === -1) {
+                record.token.origins.push(record.inputOrigin)
+            }
+            record.inputOrigin = '';
+            record.inputVisible = false;
+            this.state.payload.records[index] = record;
+            this.setState({payload: this.state.payload})
+        };
+        let showInput = () => {
+            this.state.payload.records[index].inputVisible = true
+            this.setState({payload: this.state.payload}, () => this.state.payload.records[index].inputRef.current.focus())
+        };
         return (
-            <h1>empty</h1>
-        );
+            <Form layout="inline">
+                <Form.Item label={LabelWithTooltip({label: "Origins", documentation: "Allow access with tokens only for selected Origins. Allow access to all Origins if empty."})}>
+                    {record.token.origins && (record.token.origins.map((originTag, oIndex) => {
+                        const isLongTag = originTag.length > 20;
+
+                        const tagElem = (
+                            <Tag
+                                key={originTag}
+                                closable
+                                onClose={() => onTagClose(oIndex)}
+                            >
+                            <span>
+                                {isLongTag ? `${originTag.slice(0, 20)}...` : originTag}
+                            </span>
+                            </Tag>
+                        );
+                        return isLongTag ? (
+                            <Tooltip title={originTag} key={originTag}>
+                                {tagElem}
+                            </Tooltip>
+                        ) : (
+                            tagElem
+                        );
+                    }))}
+                    {record.inputVisible && (
+                        <Input
+                            ref={record.inputRef}
+                            id={"origin_input_" + index}
+                            type="text"
+                            size="small"
+                            className="tag-input"
+                            value={this.state.payload.records[index].inputOrigin}
+                            onChange={onInputChange}
+                            onBlur={handleInputConfirm}
+                            onPressEnter={handleInputConfirm}
+                        />
+                    )}
+                    {!record.inputVisible && (
+                        <Tag className="site-tag-plus" onClick={showInput}>
+                            <PlusOutlined/> Origin
+                        </Tag>
+                    )}
+                </Form.Item>
+            </Form>
+        )
     }
 }

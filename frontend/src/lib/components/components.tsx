@@ -3,11 +3,12 @@
  */
 
 import React from "react";
+import './components.less'
+import {Spin, Tooltip} from "antd";
+import {QuestionCircleOutlined} from "@ant-design/icons/lib";
+
 const loader = require("../../icons/loading.gif");
 const plumber = require("../../icons/plumber.png");
-import './components.less'
-import Icon from "antd/es/icon";
-import {Spin} from "antd";
 
 type IPreloaderProps = {
     text?: string
@@ -42,6 +43,16 @@ export function GlobalError(props) {
 
 export function CenteredSpin() {
     return (<div className="common-centered-spin"><Spin size="large" /></div>)
+}
 
+export function LabelWithTooltip({label, documentation}){
+    return (
+        <span>
+              {label}&nbsp;
+            <Tooltip title={documentation}>
+               <QuestionCircleOutlined />
+              </Tooltip>
+            </span>
+    )
 }
 
