@@ -5,7 +5,7 @@ import (
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/ksensehq/enhosted/appconfig"
-	"github.com/ksensehq/enhosted/database"
+	"github.com/ksensehq/enhosted/db_provider"
 	"github.com/ksensehq/enhosted/handlers"
 	"github.com/spf13/viper"
 	"log"
@@ -70,7 +70,7 @@ func SetupRouter(staticContentDirectory string) *gin.Engine {
 	if dbProviderConfig == nil {
 		log.Fatal("db_provider is not configured")
 	}
-	provider, err := database.NewDatabaseProvider(dbProviderConfig)
+	provider, err := db_provider.NewDatabaseProvider(dbProviderConfig)
 	if err != nil {
 		log.Fatalf("Failed to create db_provider: %s", err)
 	}

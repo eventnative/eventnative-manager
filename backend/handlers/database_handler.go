@@ -2,15 +2,15 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/database"
+	"github.com/ksensehq/enhosted/db_provider"
 	"net/http"
 )
 
 type DatabaseHandler struct {
-	dbProvider database.DBProvider
+	dbProvider db_provider.DBProvider
 }
 
-func NewDatabaseHandler(provider database.DBProvider) *DatabaseHandler {
+func NewDatabaseHandler(provider db_provider.DBProvider) *DatabaseHandler {
 	return &DatabaseHandler{provider}
 }
 
@@ -19,6 +19,9 @@ func (eh *DatabaseHandler) Handler(c *gin.Context) {
 	//iface, _ := c.Get("token")
 	//token := iface.(string)
 
-	response := eh.dbProvider.CreateDatabase(token[0])
+	response, err := eh.dbProvider.CreateDatabase(token[0])
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err)
+	}
 	c.JSON(http.StatusOK, response)
 }
