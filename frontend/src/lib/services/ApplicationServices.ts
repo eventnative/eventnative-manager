@@ -4,8 +4,9 @@ import {message} from "antd";
 import {randomId} from "../commons/utils";
 
 export default class ApplicationServices {
-    private readonly _userService: FirebaseUserService;
-    private readonly _apiKeyService: FirebaseApiKeyService;
+    private readonly _userService: UserService;
+    private readonly _storageService: FirebaseServerStorage;
+    private _backendApiClient: BackendApiClient;
 
     constructor() {
 
@@ -24,15 +25,20 @@ export default class ApplicationServices {
             window.firebase = firebase;
         }
         this._userService = new FirebaseUserService();
-        this._apiKeyService = new FirebaseApiKeyService();
+        this._storageService = new FirebaseServerStorage();
+        this._backendApiClient = new JWTBackendClient(() => this._userService.getUser().authToken);
     }
 
-    get userService(): FirebaseUserService {
+    get userService(): UserService {
         return this._userService;
     }
 
-    get apiKeyService(): FirebaseApiKeyService {
-        return this._apiKeyService;
+    get activeProject(): Project {
+        return this.userService.getUser().projects[0];
+    }
+
+    get storageService(): ServerStorage {
+        return this._storageService;
     }
 
     static _instance = null;
@@ -45,6 +51,9 @@ export default class ApplicationServices {
     }
 
 
+    get backendApiClient(): BackendApiClient {
+        return this._backendApiClient;
+    }
 }
 
 type UserLoginStatus = {
@@ -90,6 +99,21 @@ export interface UserService {
     removeAuth(callback: () => void)
 
     createUser(email: string, password: string, name: string, company: string): Promise<void>;
+}
+
+/**
+ * Sets debug info that is available as __enUIDebug in dev console. So far
+ * sets the field in any case, later it will be possible to do in only in dev mode
+ * @param field
+ * @param obj
+ */
+export function setDebugInfo(field: string, obj: any) {
+    if (window) {
+        if (!window['__enUIDebug']) {
+            window['__enUIDebug'] = {}
+        }
+        window['__enUIDebug'][field] = Object.assign({}, obj);
+    }
 }
 
 class FirebaseUserService implements UserService {
@@ -161,12 +185,14 @@ class FirebaseUserService implements UserService {
             }
             firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.uid).get()
                 .then((doc) => {
-                    let suggestedInfo = this.suggestedInfoFromFirebaseUser(user);
-                    if (doc.exists) {
-                        resolve(this.user = new User(user.uid, suggestedInfo, doc.data()));
-                    } else {
-                        resolve(this.user = new User(user.uid, suggestedInfo));
-                    }
+                    user.getIdToken(false).then((token) => {
+                        let suggestedInfo = this.suggestedInfoFromFirebaseUser(user);
+                        if (doc.exists) {
+                            resolve(this.user = new User(user.uid, token, suggestedInfo, doc.data()));
+                        } else {
+                            resolve(this.user = new User(user.uid,token, suggestedInfo));
+                        }
+                    }).catch(reject);
                 })
                 .catch(reject)
         })
@@ -215,39 +241,78 @@ class FirebaseUserService implements UserService {
         return new Promise<void>((resolve, reject) => {
             firebase.auth().createUserWithEmailAndPassword(email, password)
                 .then((user) => {
-                    this.update(new User(user.user.uid, this.suggestedInfoFromFirebaseUser(user.user), {
-                        "_name": name,
-                        "_project": new Project(randomId(), company)
-                    })).then(resolve).catch(reject)
+                    user.user.getIdToken(false).then((token) => {
+                        this.update(new User(user.user.uid, token, this.suggestedInfoFromFirebaseUser(user.user), {
+                            "_name": name,
+                            "_project": new Project(randomId(), company)
+                        })).then(resolve).catch(reject)
+                    }).catch(reject)
                 })
                 .catch(reject);
         })
     }
 }
 
-export interface ApiKeyService {
-    /**
-     * Return api keys
-     * @returns a promise
-     */
-    get(): Promise<any>
 
-    /**
-     * Save api keys
-     */
-    save(apiKeys: any)
+/**
+ * Backend API client. Authorization is handled by implementation
+ */
+export interface BackendApiClient {
+    post(url, data: any): Promise<any>
+    get(url): Promise<any>
 }
 
-class FirebaseApiKeyService implements ApiKeyService {
-    private static readonly API_KEYS_COLLECTION = "api_keys";
+export class JWTBackendClient implements BackendApiClient {
+    private tokenAccessor: () => string;
 
-    get(): Promise<any> {
-        let userId = firebase.auth().currentUser.uid
-        return firebase.firestore().collection(FirebaseApiKeyService.API_KEYS_COLLECTION).doc(userId).get()
+
+    constructor(tokenAccessor: () => string) {
+        this.tokenAccessor = tokenAccessor;
     }
 
-    save(payload: any): Promise<any> {
-        let userId = firebase.auth().currentUser.uid
-        return firebase.firestore().collection(FirebaseApiKeyService.API_KEYS_COLLECTION).doc(userId).set(payload)
+    get(url): Promise<any> {
+        return Promise.resolve(undefined);
+    }
+
+    post(url, data: any): Promise<any> {
+        return Promise.resolve(undefined);
+    }
+
+}
+
+/**
+ * A generic object storage
+ */
+export interface ServerStorage {
+    /**
+     * Returns an object by key. If key is not set, user id will be used as key
+     */
+    get(collectionName: string, key?: string): Promise<any>
+
+    /**
+     * Saves an object by key. If key is not set, user id will be used as key
+     */
+    save(collectionName: string, data: any, key?: string): Promise<void>
+}
+
+
+class FirebaseServerStorage implements ServerStorage {
+
+
+
+    get(collectionName: string, key?: string): Promise<any> {
+        if (!key) {
+            key = firebase.auth().currentUser.uid;
+        }
+        return firebase.firestore().collection(collectionName).doc(key).get().then((doc) => doc.data())
+    }
+
+    save(collectionName: string, data: any, key?: string): Promise<void> {
+        console.log("Key = " + key);
+        if (!key) {
+            key = firebase.auth().currentUser.uid;
+        }
+        console.log("Saving " + key + " = ", data)
+        return firebase.firestore().collection(collectionName).doc(key).set(data)
     }
 }
