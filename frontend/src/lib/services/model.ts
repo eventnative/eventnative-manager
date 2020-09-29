@@ -4,9 +4,15 @@ export class Project {
     private readonly _id: string
     private readonly _name: string
 
-    constructor(id: string, name: string) {
-        this._id = id;
-        this._name = name;
+    constructor(data : any);
+    constructor(id: string, name: string);
+    constructor(data?: any, id?: string, name?: string) {
+        if (data) {
+            Object.assign(this, data);
+        } else {
+            this._id = id;
+            this._name = name;
+        }
     }
 
 
@@ -33,6 +39,7 @@ export type SuggestedUserInfo = {
 
 
 export class User {
+    private readonly _authToken: string;
     private readonly _uid: string;
     private readonly _email: string;
     private _name: string;
@@ -40,7 +47,8 @@ export class User {
     private _onboarded = false;
     private readonly _suggestedInfo: SuggestedUserInfo;
 
-    constructor(uid: string, suggested: SuggestedUserInfo, data?: any) {
+    constructor(uid: string, authToken: string, suggested: SuggestedUserInfo, data?: any) {
+        this._authToken = authToken;
         this._uid = uid;
         console.info(suggested, data);
         this._suggestedInfo = suggested;
@@ -50,7 +58,7 @@ export class User {
             delete data['_project'];
             Object.assign(this, data);
             if (projectSingleton) {
-                this._projects = [projectSingleton];
+                this._projects = [new Project(projectSingleton)];
             }
             this._onboarded = true;
         } else {
@@ -58,6 +66,10 @@ export class User {
         }
     }
 
+
+    get authToken(): string {
+        return this._authToken;
+    }
 
     get uid(): string {
         return this._uid;

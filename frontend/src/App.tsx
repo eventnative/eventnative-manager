@@ -8,12 +8,11 @@ import './App.less';
 import Popover from "antd/es/popover";
 import SubMenu from "antd/es/menu/SubMenu";
 import {KeyOutlined, LockOutlined, ExclamationCircleOutlined, UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
-import ApplicationServices from "./lib/services/ApplicationServices";
+import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
 import {GlobalError, Preloader} from "./lib/components/components";
 import LoginForm from "./lib/components/LoginForm/LoginForm";
 import SignupForm from "./lib/components/SignupForm/SignupForm";
 import {navigateAndReload, reloadPage} from "./lib/commons/utils";
-import ApiKeys from "./lib/components/ApiKeys/ApiKeys"
 import {User} from "./lib/services/model";
 import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
 import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
@@ -61,6 +60,7 @@ export default class App extends React.Component<AppProperties, AppState> {
             }
         }, LOGIN_TIMEOUT);
         this.services.userService.waitForUser().then((loginStatus) => {
+            setDebugInfo('user', loginStatus.user);
             this.setState({
                 lifecycle: loginStatus.user ? AppLifecycle.APP : AppLifecycle.REQUIRES_LOGIN,
                 user: loginStatus.user,
@@ -79,7 +79,7 @@ export default class App extends React.Component<AppProperties, AppState> {
             case AppLifecycle.REQUIRES_LOGIN:
                 return (<Switch>
                     {PUBLIC_PAGES.map(route => {
-                        return (<Route path={route.getPrefixedPath()} exact>
+                        return (<Route key={route.getPrefixedPath()} path={route.getPrefixedPath()} exact>
                             {route.getComponent()}
                         </Route>)
                     })}
@@ -110,13 +110,13 @@ export default class App extends React.Component<AppProperties, AppState> {
             <Layout className="app-layout-root">
                 {this.headerComponent()}
                 <Layout className="app-layout-header-and-content">
-                    <Layout.Sider  className="side-bar" theme="light">
+                    <Layout.Sider key="sider" className="side-bar" theme="light">
                         {App.leftMenu()}
                     </Layout.Sider>
-                    <Layout.Content className="app-layout-content">
+                    <Layout.Content key="content" className="app-layout-content">
                         <Switch>
                             {PRIVATE_PAGES.map(route => {
-                                return (<Route path={route.getPrefixedPath()} exact>
+                                return (<Route key={route.getPrefixedPath()} path={route.getPrefixedPath()} exact>
                                     {this.wrapInternalPage(route)}
                                 </Route>)
                             })}
@@ -134,23 +134,12 @@ export default class App extends React.Component<AppProperties, AppState> {
                 <Menu.Item key="status" icon={<PartitionOutlined/>}>
                     <NavLink to="/dashboard" activeClassName="selected">Status</NavLink>
                 </Menu.Item>
-                <Menu.Item key="connections" icon={<AreaChartOutlined/>}>
-                    <NavLink to="/connectors" activeClassName="selected">Connections</NavLink>
+                <Menu.Item key="api_keys" icon={<KeyOutlined/>}>
+                    <NavLink to="/api_keys" activeClassName="selected">Event API Keys</NavLink>
                 </Menu.Item>
                 <Menu.Item key="destinations" icon={<AreaChartOutlined/>}>
                     <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
                 </Menu.Item>
-                <Menu.Item key="api_keys" icon={<KeyOutlined/>}>
-                    <NavLink to="/api_keys" activeClassName="selected">API Keys</NavLink>
-                </Menu.Item>
-                <SubMenu title="Project Settings" icon={<SlidersOutlined/>}>
-                    <Menu.Item key="general_settins" icon={<AreaChartOutlined/>}>
-                        <NavLink to="/project_settings" activeClassName="selected">Access & General</NavLink>
-                    </Menu.Item>
-                    <Menu.Item key="users" icon={<UsergroupAddOutlined/>}>
-                        <NavLink to="/users" activeClassName="selected">Users</NavLink>
-                    </Menu.Item>
-                </SubMenu>
             </Menu>
         </Switch>;
     }
@@ -187,7 +176,6 @@ export default class App extends React.Component<AppProperties, AppState> {
                         message.error("Can't reset password: " + error.message);
                         console.log("Can't reset password", error)
                     })
-
             },
             onCancel: () => {}
         });

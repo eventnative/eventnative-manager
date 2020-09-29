@@ -1,4 +1,4 @@
-import React, {ReactNode} from 'react';
+import React, {ReactElement, ReactNode} from 'react';
 import {Button, Form, Input, List, Mentions, message, Modal, Row, Tag, Tooltip} from "antd";
 import ApplicationServices from "../../services/ApplicationServices";
 import {DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, SaveOutlined} from "@ant-design/icons/lib";
@@ -44,17 +44,16 @@ export default class ApiKeys extends React.Component<{}, State> {
     }
 
     public componentDidMount() {
-        this.services.apiKeyService.get()
+        this.services.storageService.get("api_keys", this.services.activeProject.id)
             .then((payload: any) => {
-                if (payload.exists === true && payload.data() && payload.data().tokens) {
-                    let records = payload.data().tokens.map(t => {
-                        return {token: t, inputOrigin: '', inputVisible: false, inputRef: React.createRef()}
-                    });
-                    this.setState({payload: {records: records}})
-                }
+                let records = payload ? payload.tokens.map(t => {
+                    return {token: t, inputOrigin: '', inputVisible: false, inputRef: React.createRef()}
+                }) : [];
+                this.setState({payload: {records: records}})
             })
             .catch(error => {
-                message.error('Error loading api keys ' + error.message)
+                message.error('Error loading api keys: ' + error.message)
+                console.log("Error", error)
             })
             .finally(() => {
                 this.setState({globalLoading: false})
@@ -65,12 +64,18 @@ export default class ApiKeys extends React.Component<{}, State> {
         if (this.state.globalLoading) {
             return <CenteredSpin/>
         }
-        return ([
-            <List className="destinations-list" itemLayout="horizontal"
-                  header={[this.generateButton(), this.saveButton()]} split={true}>
+        let header = (<span>{this.generateButton()}{this.saveButton()}</span>)
+
+        return (
+            <List className="destinations-list" itemLayout="horizontal" header={header} split={true}>
                 {this.state.payload.records.map((record, index) => this.tokenComponent(record, index))}
-            </List>,
-        ])
+            </List>
+        );
+    }
+
+    private static keys(nodes: ReactElement[]): ReactElement[] {
+        nodes.forEach((node, idx) => node.key = idx)
+        return nodes;
     }
 
     generateButton() {
@@ -92,7 +97,7 @@ export default class ApiKeys extends React.Component<{}, State> {
     saveButton() {
         let onClick = () => {
             this.setState({loading: true})
-            this.services.apiKeyService.save({tokens: this.state.payload.records.map(t => t.token)})
+            this.services.storageService.save("api_keys", {tokens: this.state.payload.records.map(t => t.token)}, this.services.activeProject.id)
                 .then(() => {
                     message.success('Keys have been saved!')
                 })
@@ -103,7 +108,7 @@ export default class ApiKeys extends React.Component<{}, State> {
             })
 
         }
-        return (<Button type="primary" icon={<SaveOutlined/>} onClick={onClick}>Save</Button>)
+        return (<Button type="primary" loading={this.state.loading} icon={<SaveOutlined/>} onClick={onClick}>Save</Button>)
     }
 
     copyToClipboard = (value) => {

@@ -19,6 +19,11 @@ export class DestinationConfigFactory<T extends DestinationConfig> {
     get name(): string {
         return this._name;
     }
+
+
+    get factory(): (id) => T {
+        return this._factory;
+    }
 }
 
 export const destinationConfigTypes = [
@@ -44,6 +49,8 @@ export abstract class DestinationConfig {
         this._type = type;
     }
 
+    abstract update(formValues: any): void;
+
     abstract toJson(): any
 
 
@@ -65,6 +72,9 @@ export class PostgresConfig extends DestinationConfig {
 
     toJson(): any {
     }
+
+    update(formValues: any): void {
+    }
 }
 
 export class ClickHouseConfig extends DestinationConfig {
@@ -74,6 +84,9 @@ export class ClickHouseConfig extends DestinationConfig {
     }
 
     toJson(): any {
+    }
+
+    update(formValues: any): void {
     }
 }
 
@@ -86,6 +99,9 @@ export class SnowflakeConfig extends DestinationConfig {
 
     toJson(): any {
     }
+
+    update(formValues: any): void {
+    }
 }
 
 export class Redshift extends DestinationConfig {
@@ -96,6 +112,9 @@ export class Redshift extends DestinationConfig {
 
     toJson(): any {
     }
+
+    update(formValues: any): void {
+    }
 }
 
 export class BQConfig extends DestinationConfig {
@@ -105,5 +124,8 @@ export class BQConfig extends DestinationConfig {
     }
 
     toJson(): any {
+    }
+
+    update(formValues: any): void {
     }
 }
