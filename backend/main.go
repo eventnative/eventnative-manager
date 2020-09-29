@@ -5,6 +5,7 @@ import (
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/ksensehq/enhosted/appconfig"
+	"github.com/ksensehq/enhosted/auth"
 	"github.com/ksensehq/enhosted/db_provider"
 	"github.com/ksensehq/enhosted/handlers"
 	"github.com/spf13/viper"
@@ -74,7 +75,11 @@ func SetupRouter(staticContentDirectory string) *gin.Engine {
 	if err != nil {
 		log.Fatalf("Failed to create db_provider: %s", err)
 	}
-	dbHandler := handlers.NewDatabaseHandler(provider).Handler
+	authenticator, err := auth.NewAuthenticator(viper.Sub("auth"))
+	if err != nil {
+		log.Fatalf("Failed to configure auth service: %s", err)
+	}
+	dbHandler := handlers.NewDatabaseHandler(&provider, &authenticator).Handler
 	apiV1 := router.Group("/api/v1")
 	{
 		apiV1.POST("/database", dbHandler)
