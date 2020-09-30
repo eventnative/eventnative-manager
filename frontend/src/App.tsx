@@ -1,18 +1,13 @@
-
 import * as React from 'react'
 
-import {NavLink, Route, Switch} from 'react-router-dom';
+import {NavLink, Route, Switch, DefaultRoute, Redirect} from 'react-router-dom';
 import {Button, Col, Dropdown, Layout, Menu, message, Modal, Row, Select} from "antd";
 import {AreaChartOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, PartitionOutlined, SlidersOutlined} from "@ant-design/icons";
 import './App.less';
-import Popover from "antd/es/popover";
-import SubMenu from "antd/es/menu/SubMenu";
 import {KeyOutlined, LockOutlined, ExclamationCircleOutlined, UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
 import {GlobalError, Preloader} from "./lib/components/components";
-import LoginForm from "./lib/components/LoginForm/LoginForm";
-import SignupForm from "./lib/components/SignupForm/SignupForm";
-import {navigateAndReload, reloadPage} from "./lib/commons/utils";
+import {reloadPage} from "./lib/commons/utils";
 import {User} from "./lib/services/model";
 import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
 import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
@@ -35,8 +30,7 @@ type AppState = {
     user?: User
 }
 
-type AppProperties = {
-}
+type AppProperties = {}
 
 const LOGIN_TIMEOUT = 5000;
 export default class App extends React.Component<AppProperties, AppState> {
@@ -83,6 +77,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                             {route.getComponent()}
                         </Route>)
                     })}
+                    <Redirect to="/" />
                 </Switch>);
             case AppLifecycle.APP:
                 return this.appLayout();
@@ -165,7 +160,7 @@ export default class App extends React.Component<AppProperties, AppState> {
     private resetPassword() {
         Modal.confirm({
             title: 'Password reset',
-            icon: <ExclamationCircleOutlined />,
+            icon: <ExclamationCircleOutlined/>,
             content: 'Please confirm password reset. Instructions will be sent to your email',
             okText: 'Reset password',
             cancelText: 'Cancel',
@@ -177,7 +172,8 @@ export default class App extends React.Component<AppProperties, AppState> {
                         console.log("Can't reset password", error)
                     })
             },
-            onCancel: () => {}
+            onCancel: () => {
+            }
         });
 
     }

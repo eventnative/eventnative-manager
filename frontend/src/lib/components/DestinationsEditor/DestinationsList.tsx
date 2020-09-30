@@ -1,13 +1,40 @@
 import * as React from 'react'
 import {ReactNode, useState} from 'react'
-import {ClickHouseConfig, DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig} from "../../services/destinations";
-import {Avatar, Button, Col, Dropdown, Form, Input, List, Menu, message, Modal, Radio, Row} from "antd";
+import {ClickHouseConfig, DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig, RedshiftConfig} from "../../services/destinations";
+import {Avatar, Button, Col, Divider, Dropdown, Form, Input, List, Menu, message, Modal, Radio, Row, Select, Switch} from "antd";
 import {DatabaseOutlined, DeleteOutlined, EditOutlined, ExclamationCircleOutlined, PlusOutlined} from "@ant-design/icons/lib";
 import './DestinationEditor.less'
 import {CenteredSpin, defaultErrorHandler, LabelWithTooltip} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {IndexedList} from "../../commons/utils";
 import Marshal from "../../commons/marshalling";
+import {Option} from "antd/es/mentions";
+
+const AWS_ZONES = [
+    "us-east-2",
+    "us-east-1",
+    "us-west-1",
+    "us-west-2",
+    "ap-south-1",
+    "ap-northeast-3",
+    "ap-northeast-2",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ca-central-1",
+    "cn-north-1",
+    "cn-northwest-1",
+    "eu-central-1",
+    "eu-west-1",
+    "eu-west-2",
+    "eu-south-1",
+    "eu-west-3",
+    "eu-north-1",
+    "me-south-1",
+    "sa-east-1",
+    "us-gov-east-1",
+    "us-gov-west-1"
+];
 
 type State = {
     loading: boolean
@@ -38,7 +65,7 @@ export class DestinationsList extends React.Component<any, State> {
         this.setState({loading: true});
         this.services.storageService.get("destinations", this.services.activeProject.id).then((destinations) => {
             this.setState({
-                destinations: this.newDestinationsList(destinations ? Marshal.newInstance(destinations.destinations, [DestinationConfig, PostgresConfig, ClickHouseConfig]) : []),
+                destinations: this.newDestinationsList(destinations ? Marshal.newInstance(destinations.destinations, [DestinationConfig, PostgresConfig, ClickHouseConfig, RedshiftConfig]) : []),
                 loading: false
             });
         }).catch((error) => {
@@ -214,7 +241,7 @@ abstract class DestinationDialog<T extends DestinationConfig> extends React.Comp
         return (
             <Form layout="horizontal" form={this.props.form} initialValues={this.state.currentValue.formData}>
                 <Form.Item label="Mode" name="mode" labelCol={{span: 4}} wrapperCol={{span: 18}}>
-                    <Radio.Group optionType="button" buttonStyle="solid">
+                    <Radio.Group optionType="button" buttonStyle="solid" onChange={() => this.refreshStateFromForm()}>
                         <Radio.Button value="streaming">Streaming</Radio.Button>
                         <Radio.Button value="batch">Batch</Radio.Button>
                     </Radio.Group>
@@ -231,6 +258,11 @@ abstract class DestinationDialog<T extends DestinationConfig> extends React.Comp
     }
 
     public abstract items(): ReactNode
+
+    public refreshStateFromForm() {
+        this.state.currentValue.update(this.props.form.getFieldsValue());
+        this.forceUpdate()
+    }
 }
 
 type IDestinationEditorModalProps = {
@@ -260,7 +292,9 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
         footer={[
             <Button className="destination-connection-test" loading={connectionTesting} onClick={() => {
                 setConnectionTesting(true);
-                form.validateFields().then((values) => {
+                console.log("====FIELDS", form.getFieldsValue());
+                form
+                    .validateFields().then((values) => {
                     testConnection(values).then(() => {
                         message.success("Successfully connected! " + JSON.stringify(values));
                     }).catch(error => {
@@ -274,8 +308,7 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
                 form.validateFields().then(testConnection).then(values => {
                     onSave(values);
                 }).catch(error => {
-                    message.info("Failed to save connection " + error.message);
-                    console.log("Error during saving connection", error);
+                    defaultErrorHandler(error, "Failed to save connection ");
                 }).finally(() => setSaving(false));
             }}>Save</Button>,
         ]}
@@ -327,31 +360,105 @@ class PostgresDestinationDialog extends DestinationDialog<PostgresConfig> {
 
     items(): React.ReactNode {
         return (
-            <span>
+            <>
                 <Row>
                     <Col span={16}>
                         <Form.Item label="Host" name="pghost" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Host is required'}]}><Input type="text"/></Form.Item>
                     </Col>
                     <Col span={8}>
-                    <Form.Item label="Port" name="pgport" labelCol={{span: 6}} wrapperCol={{span: 6}} rules={[{required: true, message: 'Port is required'}]}>
-                        <Input type="number"/>
-                    </Form.Item>
+                        <Form.Item label="Port" name="pgport" labelCol={{span: 6}} wrapperCol={{span: 6}} rules={[{required: true, message: 'Port is required'}]}>
+                            <Input type="number"/>
+                        </Form.Item>
                     </Col>
                 </Row>
-                    <Form.Item label="Database" name="pgdatabase" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'DB is required'}]}>
-                        <Input type="text"/>
-                    </Form.Item>
-                    <Form.Item label="Username" name="pguser" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Username is required'}]}>
-                        <Input type="text"/>
-                    </Form.Item>
-                    <Form.Item label="Password" name="pgpassword" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Password is required'}]}>
-                        <Input type="password"/>
-                    </Form.Item>
-            </span>);
+                <Form.Item label="Schema" name="pgschema" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Schema is required'}]}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item label="Database" name="pgdatabase" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'DB is required'}]}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item label="Username" name="pguser" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Username is required'}]}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item label="Password" name="pgpassword" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Password is required'}]}>
+                    <Input type="password"/>
+                </Form.Item>
+            </>);
     }
 }
 
+class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
+
+    s3CredentialsEnabled() {
+        return !this.state.currentValue.formData['redshiftUseHostedS3'] && this.state.currentValue.formData['mode'] === "batch";
+    }
+
+    s3ConfigEnabled() {
+        return this.state.currentValue.formData['mode'] === "batch";
+    }
+
+    items(): React.ReactNode {
+        let s3Doc = (<>
+            If the switch is enabled internal S3 bucket will be used. You won't be able to see raw logs. However, the data will be streamed to RedShift as-is.
+            You still need to choose a S3 region which is most close to your redshift server
+            to get the best performance
+        </>);
+        return (
+            <>
+                <Row>
+                    <Col span={16}>
+                        <Form.Item label="Host" name="redhsiftHost" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Host is required'}]}><Input
+                            type="text"/></Form.Item>
+                    </Col>
+                </Row>
+                <Form.Item label="Database" name="redshiftDB" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'DB is required'}]}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item label="Schema" name="redshiftSchema" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Schema is required'}]}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item label="Username" name="redshiftUser" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Username is required'}]}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item label="Password" name="redshiftPassword" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Password is required'}]}>
+                    <Input type="password"/>
+                </Form.Item>
+                <Divider plain>
+                    <LabelWithTooltip label="S3 configuration" documentation={(<>If destination is working in batch mode (read about modes differences here), intermediate
+                    batches is stored on S3. You need tp provide S3 credentials. You can use S3 hosted by us as well, just switch off 'Use hosted S3 bucket' setting</>)}/>
+                </Divider>
+                <Row>
+                    <Col span={16}>
+                        <Form.Item label="S3 Region" name="redshiftS3Region" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: this.s3ConfigEnabled(), message: 'DB is required'}]}>
+                            <Select disabled={!this.s3ConfigEnabled()}>
+                                {AWS_ZONES.map(zone => (<Option value={zone}>{zone}</Option>))}
+                            </Select>
+                        </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                        <Form.Item label={<LabelWithTooltip label="Use hosted S3 bucket" documentation={s3Doc}/>} name="redshiftUseHostedS3" labelCol={{span: 16}} wrapperCol={{span: 8}} rules={[{required: this.s3ConfigEnabled(), message: 'Required'}]}>
+                            <Switch disabled={!this.s3ConfigEnabled()} onChange={() => this.refreshStateFromForm()} />
+                        </Form.Item>
+                    </Col>
+                </Row>
+                <Form.Item label="S3 Bucket" name="redshiftS3Bucket" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: this.s3CredentialsEnabled(), message: 'S3 Bucket is required'}]}>
+                    <Input type="text" disabled={!this.s3CredentialsEnabled()}/>
+                </Form.Item>
+
+                <Form.Item label="S3 Access Key" name="redshiftS3AccessKey" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: this.s3CredentialsEnabled(), message: 'S3 Access Key is required'}]}>
+                    <Input type="text" disabled={!this.s3CredentialsEnabled()}/>
+                </Form.Item>
+                <Form.Item label="S3 Secret Key" name="redshiftS3SecretKey" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: this.s3CredentialsEnabled(), message: 'S3 Secret Key is required'}]}>
+                    <Input type="password" disabled={!this.s3CredentialsEnabled()}/>
+                </Form.Item>
+
+            </>);
+    }
+}
+
+
 const dialogsByType = {
     'postgres': PostgresDestinationDialog,
-    'clickhouse': ClickHouseDialog
+    'clickhouse': ClickHouseDialog,
+    'redshift': RedshiftDestinationDialog
 }

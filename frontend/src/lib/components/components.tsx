@@ -2,7 +2,7 @@
  * Library of small components that are usefull for different purposes 
  */
 
-import React from "react";
+import React, {ReactNode, useState} from "react";
 import './components.less'
 import {message, Spin, Tooltip} from "antd";
 import {QuestionCircleOutlined} from "@ant-design/icons/lib";
@@ -60,6 +60,7 @@ export function LabelWithTooltip({label, documentation}){
  * Default handler for error: show message and log error to console
  */
 export function defaultErrorHandler(error: any, errorDescription: string) {
+    
     if (errorDescription !== undefined) {
         if (error.message) {
             message.error(`${errorDescription}: ${error.message}`)
@@ -77,5 +78,10 @@ export function defaultErrorHandler(error: any, errorDescription: string) {
             console.error(`Error occurred`, error);
         }
     }
+}
+
+interface IFloatingLabelProps {
+    children: ReactNode
+    label: string
 }
 
