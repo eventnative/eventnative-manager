@@ -26,5 +26,5 @@ func String(length int) string {
 }
 
 func AlphabeticalString(length int) string {
-	return StringWithCharset(length, charset)
+	return StringWithCharset(length, alphabeticalCharset)
 }

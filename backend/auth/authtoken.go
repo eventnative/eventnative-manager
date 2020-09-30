@@ -7,7 +7,6 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
-	"log"
 )
 
 type Authenticator interface {
@@ -23,7 +22,6 @@ func (authenticator FirebaseAuthenticator) Authenticate(ctx context.Context, tok
 	if err != nil {
 		return "", err
 	}
-	log.Printf("Verified ID token: %v\n", verifiedToken)
 	return verifiedToken.UID, nil
 }
 
