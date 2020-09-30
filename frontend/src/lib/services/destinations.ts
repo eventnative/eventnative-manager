@@ -39,20 +39,17 @@ export const destinationsByTypeId = destinationConfigTypes.reduce((map: Record<s
 export abstract class DestinationConfig {
     protected readonly _id: string
     protected readonly _type: string
-    protected _mode: "streaming" | "batch" = "batch"
-    protected _originalFormData: any = null;
-    protected _tableNamePattern: string = "events"
+    private _formData: any = {};
 
 
     constructor(type: string, id: string) {
         this._id = id;
         this._type = type;
+        this.fillInitialValues(this._formData);
     }
 
-    update(formValues: any): void {
-        this._originalFormData = formValues;
-        this._tableNamePattern = formValues['tableName']
-        this._mode = formValues['mode']
+    public update(formValues: any): void {
+        this._formData = formValues;
     }
 
     get id(): string {
@@ -64,75 +61,61 @@ export abstract class DestinationConfig {
     }
 
 
-    get mode(): "streaming" | "batch" {
-        return this._mode;
-    }
-
-    get tableNamePattern(): string {
-        return this._tableNamePattern;
+    get formData(): any {
+        return this._formData;
     }
 
     abstract describe();
+
+    protected fillInitialValues(_formData: any) {
+        _formData['mode'] = "streaming";
+    }
 }
 
 
 export class PostgresConfig extends DestinationConfig {
-    private _database: string = "";
-    private _host: string = "";
-    private _password: string = "";
-    private _port: number = 5432;
-    private _user: string = "";
-
     constructor(id: string) {
         super("postgres", id);
     }
 
-    update(formValues: any): void {
-        super.update(formValues);
-        this._database = formValues['pgdatabase']
-        this._host = formValues['pghost'];
-        this._password = formValues['pgpassword']
-        this._port = formValues['pgport']
-        this._user = formValues['pguser']
-    }
 
-
-    get database(): string {
-        return this._database;
-    }
-
-    get host(): string {
-        return this._host;
-    }
-
-    get password(): string {
-        return this._password;
-    }
-
-    get port(): number {
-        return this._port;
-    }
-
-    get user(): string {
-        return this._user;
-    }
 
     describe() {
-        return `${this.user}@${this.host}:${this.port}/${this.database}, ${this._mode}`
+        return `${this.formData['pguser']}@${this.formData['pghost']}:${this.formData['pgport']}/${this.formData['pgdatabase']}, ${this.formData['mode']}`
+    }
+
+
+    protected fillInitialValues(_formData: any) {
+        super.fillInitialValues(_formData);
+        _formData['pgport'] = 5432;
     }
 }
 
 export class ClickHouseConfig extends DestinationConfig {
+    private _dsns: string = ""
+    private _cluster: string = ""
+    private _database: string = ""
 
     constructor(id: string) {
         super("clickhouse", id);
     }
 
-    update(formValues: any): void {
-        super.update(formValues);
-    }
 
     describe() {
+        return `${this.formData['ch_dsns']}, ${this.formData['mode']}`
+    }
+
+
+    get dsns(): string {
+        return this._dsns;
+    }
+
+    get cluster(): string {
+        return this._cluster;
+    }
+
+    get database(): string {
+        return this._database;
     }
 }
 

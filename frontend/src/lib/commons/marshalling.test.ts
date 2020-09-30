@@ -3,7 +3,7 @@ import Marshal from "./marshalling";
 class Data {
     num = 12
     str = "str"
-    internal: DataEmbedded;
+    internal: DataEmbedded = new DataEmbedded();
 
 
     public method(): number {
@@ -20,7 +20,9 @@ class DataEmbedded {
 }
 
 test("marshalUnmarshal", () => {
-    let pureJson = Marshal.toPureJson(new Data());
+    let data = new Data();
+    console.log("Testing", JSON.stringify(data, null, 2))
+    let pureJson = Marshal.toPureJson(data);
     console.log(pureJson)
     expect(pureJson['num']).toBe(12)
     expect(pureJson['internal']['str2']).toBe("embedded")
@@ -28,7 +30,7 @@ test("marshalUnmarshal", () => {
     pureJson['num'] = 13
     pureJson['internal']['str2'] = 'embedded2'
 
-    let copy = Marshal.newInstance(Data, pureJson);
+    let copy = Marshal.newInstance(pureJson, [Data, DataEmbedded]);
     console.log(copy);
     expect(copy['num']).toBe(13)
     expect(copy['internal']['str2']).toBe("embedded2")
@@ -52,4 +54,18 @@ class Subclass extends Superclass {
         super(a);
         this.b = b;
     }
+
+    public method() {
+        return this.b;
+    }
 }
+
+test("inheritanceUnmarshalling", () => {
+    let object = [new Subclass("a1", "b1"), new Subclass("a2", "b2"), new Superclass("a3")]
+    let pureJson = Marshal.toPureJson(object);
+    console.log("PURE", pureJson)
+    let unmarshalled = Marshal.newInstance(pureJson, [Subclass, Superclass]);
+    console.log("RESTORED", unmarshalled)
+    expect(unmarshalled[0].method()).toBe("b1");
+
+})

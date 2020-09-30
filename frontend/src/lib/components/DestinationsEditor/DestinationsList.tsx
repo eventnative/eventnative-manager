@@ -1,10 +1,10 @@
 import * as React from 'react'
 import {ReactNode, useState} from 'react'
-import {DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig} from "../../services/destinations";
+import {ClickHouseConfig, DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig} from "../../services/destinations";
 import {Avatar, Button, Col, Dropdown, Form, Input, List, Menu, message, Modal, Radio, Row} from "antd";
 import {DatabaseOutlined, DeleteOutlined, EditOutlined, ExclamationCircleOutlined, PlusOutlined} from "@ant-design/icons/lib";
 import './DestinationEditor.less'
-import {CenteredSpin, defaultErrorHandler} from "../components";
+import {CenteredSpin, defaultErrorHandler, LabelWithTooltip} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {IndexedList} from "../../commons/utils";
 import Marshal from "../../commons/marshalling";
@@ -38,7 +38,7 @@ export class DestinationsList extends React.Component<any, State> {
         this.setState({loading: true});
         this.services.storageService.get("destinations", this.services.activeProject.id).then((destinations) => {
             this.setState({
-                destinations: this.newDestinationsList(destinations ? Marshal.newArrayInstance(DestinationConfig, destinations.destinations) : []),
+                destinations: this.newDestinationsList(destinations ? Marshal.newInstance(destinations.destinations, [DestinationConfig, PostgresConfig, ClickHouseConfig]) : []),
                 loading: false
             });
         }).catch((error) => {
@@ -212,15 +212,14 @@ abstract class DestinationDialog<T extends DestinationConfig> extends React.Comp
 
     public render() {
         return (
-
-            <Form layout="horizontal" form={this.props.form}>
-                <Form.Item label="Mode" name="mode" labelCol={{span: 4}} wrapperCol={{span: 18}} initialValue={this.state.currentValue.mode}>
+            <Form layout="horizontal" form={this.props.form} initialValues={this.state.currentValue.formData}>
+                <Form.Item label="Mode" name="mode" labelCol={{span: 4}} wrapperCol={{span: 18}}>
                     <Radio.Group optionType="button" buttonStyle="solid">
                         <Radio.Button value="streaming">Streaming</Radio.Button>
                         <Radio.Button value="batch">Batch</Radio.Button>
                     </Radio.Group>
                 </Form.Item>
-                <Form.Item label="Table Name Pattern" name="tableName" labelCol={{span: 4}} wrapperCol={{span: 12}} required={true} initialValue={this.state.currentValue.tableNamePattern}>
+                <Form.Item label="Table Name Pattern" name="tableName" labelCol={{span: 4}} wrapperCol={{span: 12}} required={true}>
                     <Input type="text"/>
                 </Form.Item>
                 {this.items()}
@@ -288,34 +287,64 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
 
 }
 
-class PostgresDestinationDialog extends DestinationDialog<PostgresConfig> {
+class ClickHouseDialog extends DestinationDialog<PostgresConfig> {
+    items(): React.ReactNode {
+        let dsnDocs = (<>Comma separated list of data sources names (DSNs). See <a href='https://github.com/ClickHouse/clickhouse-go#dsn'>documentation</a></>);
+        let clusterDoc = (<>Cluster name. See <a href='https://github.com/ClickHouse/clickhouse-go#dsn'>documentation</a></>);
+        let databaseDoc = (<>Database name. See <a href='https://github.com/ClickHouse/clickhouse-go#dsn'>documentation</a></>);
 
+        return (
+            <>
+                <Row>
+                    <Col span={16}>
+                        <Form.Item label={<LabelWithTooltip label="Datasources Names (DSNs)" documentation={dsnDocs}/>} name="ch_dsns"
+                                   rules={[{required: true, message: 'Host is required'}]}
+                                   labelCol={{span: 6}}
+                                   wrapperCol={{span: 18}}><Input type="text"/></Form.Item>
+                    </Col>
+                </Row>
+                <Form.Item label={<LabelWithTooltip label="Cluster" documentation={clusterDoc}/>}
+                           rules={[{required: true, message: 'Cluster name is required'}]}
+                           name="ch_cluster" labelCol={{span: 4}} wrapperCol={{span: 12}}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item
+                    label={<LabelWithTooltip label="Database" documentation={databaseDoc}/>} rules={[{required: true, message: 'DB is required'}]}
+                    name="ch_database" labelCol={{span: 4}} wrapperCol={{span: 12}}>
+                    <Input type="text"/>
+                </Form.Item>
+            </>);
+    }
+
+}
+
+
+class PostgresDestinationDialog extends DestinationDialog<PostgresConfig> {
 
     constructor(props: Readonly<IDestinationDialogProps<PostgresConfig>> | IDestinationDialogProps<PostgresConfig>) {
         super(props);
     }
 
     items(): React.ReactNode {
-        let config: PostgresConfig = this.state.currentValue;
         return (
             <span>
                 <Row>
                     <Col span={16}>
-                        <Form.Item initialValue={config.host} label="Host" name="pghost" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Host is required'}]}><Input type="text"/></Form.Item>
+                        <Form.Item label="Host" name="pghost" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Host is required'}]}><Input type="text"/></Form.Item>
                     </Col>
                     <Col span={8}>
-                    <Form.Item initialValue={config.port} label="Port" name="pgport" labelCol={{span: 6}} wrapperCol={{span: 6}} rules={[{required: true, message: 'Port is required'}]}>
+                    <Form.Item label="Port" name="pgport" labelCol={{span: 6}} wrapperCol={{span: 6}} rules={[{required: true, message: 'Port is required'}]}>
                         <Input type="number"/>
                     </Form.Item>
                     </Col>
                 </Row>
-                    <Form.Item label="Database" initialValue={config.database} name="pgdatabase" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'DB is required'}]}>
+                    <Form.Item label="Database" name="pgdatabase" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'DB is required'}]}>
                         <Input type="text"/>
                     </Form.Item>
-                    <Form.Item label="Username" initialValue={config.user} name="pguser" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Username is required'}]}>
+                    <Form.Item label="Username" name="pguser" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Username is required'}]}>
                         <Input type="text"/>
                     </Form.Item>
-                    <Form.Item label="Password" initialValue={config.password} name="pgpassword" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Password is required'}]}>
+                    <Form.Item label="Password" name="pgpassword" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Password is required'}]}>
                         <Input type="password"/>
                     </Form.Item>
             </span>);
@@ -323,5 +352,6 @@ class PostgresDestinationDialog extends DestinationDialog<PostgresConfig> {
 }
 
 const dialogsByType = {
-    'postgres': PostgresDestinationDialog
+    'postgres': PostgresDestinationDialog,
+    'clickhouse': ClickHouseDialog
 }
