@@ -4,11 +4,11 @@
 
 import React from "react";
 import './components.less'
-import {Spin, Tooltip} from "antd";
+import {message, Spin, Tooltip} from "antd";
 import {QuestionCircleOutlined} from "@ant-design/icons/lib";
 
-const loader = require("../../icons/loading.gif");
-const plumber = require("../../icons/plumber.png");
+const loader = require("../../icons/loading.gif").default;
+const plumber = require("../../icons/plumber.png").default;
 
 type IPreloaderProps = {
     text?: string
@@ -54,5 +54,28 @@ export function LabelWithTooltip({label, documentation}){
               </Tooltip>
             </span>
     )
+}
+
+/**
+ * Default handler for error: show message and log error to console
+ */
+export function defaultErrorHandler(error: any, errorDescription: string) {
+    if (errorDescription !== undefined) {
+        if (error.message) {
+            message.error(`${errorDescription}: ${error.message}`)
+            console.error(`Error occurred - ${errorDescription} - ${error.message}`, error);
+        } else {
+            message.error(`${errorDescription}`)
+            console.error(`Error occurred - ${errorDescription}`, error);
+        }
+    } else {
+        if (error.message) {
+            message.error(`${error.message}`)
+            console.error(`Error occurred - ${error.message}`, error);
+        } else {
+            message.error('Unknown error')
+            console.error(`Error occurred`, error);
+        }
+    }
 }
 

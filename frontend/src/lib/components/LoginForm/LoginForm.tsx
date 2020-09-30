@@ -3,9 +3,9 @@ import {Button, Card, Col, Form, Input, message, Modal, Row} from "antd";
 import {LockOutlined, UserOutlined, MailOutlined} from "@ant-design/icons/lib";
 import {useHistory} from "react-router-dom";
 
-const logo = require('../../../icons/ksense_icon.svg');
-const googleLogo = require('../../../icons/google.svg');
-const githubLogo = require('../../../icons/github.svg');
+const logo = require('../../../icons/ksense_icon.svg').default;
+const googleLogo = require('../../../icons/google.svg').default;
+const githubLogo = require('../../../icons/github.svg').default;
 import './LoginForm.less'
 import ApplicationServices from "../../services/ApplicationServices";
 import * as firebase from "firebase";

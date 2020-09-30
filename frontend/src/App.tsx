@@ -18,7 +18,7 @@ import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
 import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
 import {ReactNode} from "react";
 
-const logo = require('./icons/ksense_icon.svg');
+const logo = require('./icons/ksense_icon.svg').default;
 
 enum AppLifecycle {
     LOADING, //Application is loading

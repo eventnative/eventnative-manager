@@ -1,5 +1,3 @@
-
-
 export class DestinationConfigFactory<T extends DestinationConfig> {
     private readonly _name: string;
     private readonly _type: string;
@@ -38,10 +36,12 @@ export const destinationsByTypeId = destinationConfigTypes.reduce((map: Record<s
 }, {})
 
 
-
 export abstract class DestinationConfig {
-    private readonly _id: string
-    private readonly _type: string
+    protected readonly _id: string
+    protected readonly _type: string
+    protected _mode: "streaming" | "batch" = "batch"
+    protected _originalFormData: any = null;
+    protected _tableNamePattern: string = "events"
 
 
     constructor(type: string, id: string) {
@@ -49,10 +49,11 @@ export abstract class DestinationConfig {
         this._type = type;
     }
 
-    abstract update(formValues: any): void;
-
-    abstract toJson(): any
-
+    update(formValues: any): void {
+        this._originalFormData = formValues;
+        this._tableNamePattern = formValues['tableName']
+        this._mode = formValues['mode']
+    }
 
     get id(): string {
         return this._id;
@@ -61,19 +62,63 @@ export abstract class DestinationConfig {
     get type(): string {
         return this._type;
     }
+
+
+    get mode(): "streaming" | "batch" {
+        return this._mode;
+    }
+
+    get tableNamePattern(): string {
+        return this._tableNamePattern;
+    }
+
+    abstract describe();
 }
 
 
 export class PostgresConfig extends DestinationConfig {
+    private _database: string = "";
+    private _host: string = "";
+    private _password: string = "";
+    private _port: number = 5432;
+    private _user: string = "";
 
     constructor(id: string) {
         super("postgres", id);
     }
 
-    toJson(): any {
+    update(formValues: any): void {
+        super.update(formValues);
+        this._database = formValues['pgdatabase']
+        this._host = formValues['pghost'];
+        this._password = formValues['pgpassword']
+        this._port = formValues['pgport']
+        this._user = formValues['pguser']
     }
 
-    update(formValues: any): void {
+
+    get database(): string {
+        return this._database;
+    }
+
+    get host(): string {
+        return this._host;
+    }
+
+    get password(): string {
+        return this._password;
+    }
+
+    get port(): number {
+        return this._port;
+    }
+
+    get user(): string {
+        return this._user;
+    }
+
+    describe() {
+        return `${this.user}@${this.host}:${this.port}/${this.database}, ${this._mode}`
     }
 }
 
@@ -83,10 +128,11 @@ export class ClickHouseConfig extends DestinationConfig {
         super("clickhouse", id);
     }
 
-    toJson(): any {
+    update(formValues: any): void {
+        super.update(formValues);
     }
 
-    update(formValues: any): void {
+    describe() {
     }
 }
 
@@ -97,23 +143,24 @@ export class SnowflakeConfig extends DestinationConfig {
         super("snowflake", id);
     }
 
-    toJson(): any {
+    update(formValues: any): void {
+        super.update(formValues);
     }
 
-    update(formValues: any): void {
+    describe() {
     }
 }
 
 export class Redshift extends DestinationConfig {
 
     constructor(id: string) {
-        super("redshif", id);
-    }
-
-    toJson(): any {
+        super("redshift", id);
     }
 
     update(formValues: any): void {
+    }
+
+    describe() {
     }
 }
 
@@ -127,5 +174,8 @@ export class BQConfig extends DestinationConfig {
     }
 
     update(formValues: any): void {
+    }
+
+    describe() {
     }
 }

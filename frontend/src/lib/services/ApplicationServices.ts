@@ -2,15 +2,14 @@ import * as firebase from 'firebase';
 import {Project, SuggestedUserInfo, User} from "./model";
 import {message} from "antd";
 import {randomId} from "../commons/utils";
+import Marshal from "../commons/marshalling";
 
-export default class ApplicationServices {
-    private readonly _userService: UserService;
-    private readonly _storageService: FirebaseServerStorage;
-    private _backendApiClient: BackendApiClient;
+export class ApplicationConfiguration {
+    private readonly _firebaseConfig: any;
+    private readonly _backendApiBase: string;
 
     constructor() {
-
-        const firebaseConfig = {
+        this._firebaseConfig = {
             apiKey: "AIzaSyDBm2HqvxleuJyD9xo8rh0vo1TQGp8Vohg",
             authDomain: "back1.eventnative.com",
             databaseURL: "https://tracker-285220.firebaseio.com",
@@ -20,13 +19,40 @@ export default class ApplicationServices {
             appId: "1:942257799287:web:e3b0bd3435f929d6a00672",
             measurementId: "G-6ZMG0NSJP8"
         };
-        firebase.initializeApp(firebaseConfig);
+        if (process.env.BACKEND_API_BASE) {
+            this._backendApiBase = process.env.BACKEND_API_BASE;
+        } else {
+            this._backendApiBase = window.location.protocol + "//" + window.location.hostname + (window.location.port.length > 0 ? (":" + window.location.port) : "") + "/api/";
+        }
+    }
+
+
+    get firebaseConfig(): any {
+        return this._firebaseConfig;
+    }
+
+    get backendApiBase(): string {
+        return this._backendApiBase;
+    }
+}
+
+
+
+export default class ApplicationServices {
+    private readonly _userService: UserService;
+    private readonly _storageService: FirebaseServerStorage;
+    private _backendApiClient: BackendApiClient;
+    private _applicationConfiguration: ApplicationConfiguration
+
+    constructor() {
+        this._applicationConfiguration = new ApplicationConfiguration();
+        firebase.initializeApp(this._applicationConfiguration.firebaseConfig);
         if (window) {
             window.firebase = firebase;
         }
         this._userService = new FirebaseUserService();
         this._storageService = new FirebaseServerStorage();
-        this._backendApiClient = new JWTBackendClient(() => this._userService.getUser().authToken);
+        this._backendApiClient = new JWTBackendClient(this._applicationConfiguration.backendApiBase, () => this._userService.getUser().authToken);
     }
 
     get userService(): UserService {
@@ -264,17 +290,23 @@ export interface BackendApiClient {
 
 export class JWTBackendClient implements BackendApiClient {
     private tokenAccessor: () => string;
+    private baseUrl: string;
 
 
-    constructor(tokenAccessor: () => string) {
+    constructor(baseUrl: string, tokenAccessor: () => string) {
+        this.baseUrl = baseUrl;
         this.tokenAccessor = tokenAccessor;
     }
 
-    get(url): Promise<any> {
+    get(url: string): Promise<any> {
         return Promise.resolve(undefined);
     }
 
-    post(url, data: any): Promise<any> {
+    private fullUrl(url) {
+        return this.baseUrl + url;
+    }
+
+    post(url: string, data: any): Promise<any> {
         return Promise.resolve(undefined);
     }
 
@@ -308,11 +340,10 @@ class FirebaseServerStorage implements ServerStorage {
     }
 
     save(collectionName: string, data: any, key?: string): Promise<void> {
-        console.log("Key = " + key);
         if (!key) {
             key = firebase.auth().currentUser.uid;
         }
-        console.log("Saving " + key + " = ", data)
-        return firebase.firestore().collection(collectionName).doc(key).set(data)
+        console.log("Saving to storage: " + key + " = ", data)
+        return firebase.firestore().collection(collectionName).doc(key).set(Marshal.toPureJson(data))
     }
 }
