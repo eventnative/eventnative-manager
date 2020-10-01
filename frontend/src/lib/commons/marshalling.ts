@@ -7,6 +7,7 @@ const TYPE_PROPERTY = '$type';
 interface IMarshal {
     toPureJson(object: any);
     newInstance(json: any, classes?: any[]): any;
+    newKnownInstance(cls: any, json: any, classes?: any[]): any;
 }
 
 function newInstance(className: string, classes: Record<string, any>) {
@@ -30,24 +31,24 @@ function classesMap(classes?: any[]) {
     return map;
 }
 
-function newInstanceInternal(json: any, classes: Record<string, any>) {
+function newInstanceInternal(initialInstance: any, json: any, classes: Record<string, any>) {
     if (json == null) {
         return null;
     } else if (typeof json !== 'object' && typeof json !== 'function') {
         return json;
     } else if (typeof json == 'object') {
         if (Array.isArray(json)) {
-            return (json as []).map(element => newInstanceInternal(element, classes));
+            return (json as []).map(element => newInstanceInternal(null, element, classes));
         } else {
             let instance;
             if (json[TYPE_PROPERTY] !== undefined) {
                 instance = newInstance(json[TYPE_PROPERTY], classes);
             } else {
-                instance = new Object();
+                instance = initialInstance ? initialInstance : new Object();
             }
             for (let key in json) {
                 if (json.hasOwnProperty(key) && key != TYPE_PROPERTY) {
-                    instance[key] = newInstanceInternal(json[key], classes);
+                    instance[key] = newInstanceInternal(null, json[key], classes);
                 }
             }
             return instance;
@@ -59,8 +60,16 @@ function newInstanceInternal(json: any, classes: Record<string, any>) {
 
 const Marshal: IMarshal = {
 
+    newKnownInstance(cls: any, json: any, classes?: any[]): any {
+        if (!cls) {
+            throw new Error(`Class should be defined, not ${cls}`);
+        }
+        let allClasses = classes ? [...classes, cls] : [cls];
+        return newInstanceInternal(new cls(), json, classesMap(allClasses))
+    },
+
     newInstance: (json: any, classes?: any[]) => {
-        return newInstanceInternal(json, classesMap(classes));
+        return newInstanceInternal(null, json, classesMap(classes));
     },
 
     toPureJson: (object: any) => {

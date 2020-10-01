@@ -140,7 +140,6 @@ export class DestinationsList extends React.Component<any, State> {
                 onSave={(formValues) => {
                     this.state.activeEditorConfig.update(formValues);
                     this.state.destinations.addOrUpdate(this.state.activeEditorConfig);
-                    console.log("New destinations", this.state.destinations.toArray())
                     this.saveCurrentDestinations();
                 }}
             />))
@@ -292,7 +291,6 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
         footer={[
             <Button className="destination-connection-test" loading={connectionTesting} onClick={() => {
                 setConnectionTesting(true);
-                console.log("====FIELDS", form.getFieldsValue());
                 form
                     .validateFields().then((values) => {
                     testConnection(values).then(() => {
@@ -330,19 +328,19 @@ class ClickHouseDialog extends DestinationDialog<PostgresConfig> {
             <>
                 <Row>
                     <Col span={16}>
-                        <Form.Item label={<LabelWithTooltip label="Datasources Names (DSNs)" documentation={dsnDocs}/>} name="ch_dsns"
+                        <Form.Item label={<LabelWithTooltip documentation={dsnDocs}>Datasources Names (DSNs)</LabelWithTooltip>} name="ch_dsns"
                                    rules={[{required: true, message: 'Host is required'}]}
                                    labelCol={{span: 6}}
                                    wrapperCol={{span: 18}}><Input type="text"/></Form.Item>
                     </Col>
                 </Row>
-                <Form.Item label={<LabelWithTooltip label="Cluster" documentation={clusterDoc}/>}
+                <Form.Item label={<LabelWithTooltip documentation={clusterDoc}>Cluster</LabelWithTooltip>}
                            rules={[{required: true, message: 'Cluster name is required'}]}
                            name="ch_cluster" labelCol={{span: 4}} wrapperCol={{span: 12}}>
                     <Input type="text"/>
                 </Form.Item>
                 <Form.Item
-                    label={<LabelWithTooltip label="Database" documentation={databaseDoc}/>} rules={[{required: true, message: 'DB is required'}]}
+                    label={<LabelWithTooltip documentation={databaseDoc}>Database</LabelWithTooltip>} rules={[{required: true, message: 'DB is required'}]}
                     name="ch_database" labelCol={{span: 4}} wrapperCol={{span: 12}}>
                     <Input type="text"/>
                 </Form.Item>
@@ -424,8 +422,10 @@ class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
                     <Input type="password"/>
                 </Form.Item>
                 <Divider plain>
-                    <LabelWithTooltip label="S3 configuration" documentation={(<>If destination is working in batch mode (read about modes differences here), intermediate
-                    batches is stored on S3. You need tp provide S3 credentials. You can use S3 hosted by us as well, just switch off 'Use hosted S3 bucket' setting</>)}/>
+                    <LabelWithTooltip documentation={(<>If destination is working in batch mode (read about modes differences here), intermediate
+                    batches is stored on S3. You need tp provide S3 credentials. You can use S3 hosted by us as well, just switch off 'Use hosted S3 bucket' setting</>)}>
+                        S3 configuration
+                    </LabelWithTooltip>
                 </Divider>
                 <Row>
                     <Col span={16}>
@@ -436,7 +436,7 @@ class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
                         </Form.Item>
                     </Col>
                     <Col span={8}>
-                        <Form.Item label={<LabelWithTooltip label="Use hosted S3 bucket" documentation={s3Doc}/>} name="redshiftUseHostedS3" labelCol={{span: 16}} wrapperCol={{span: 8}} rules={[{required: this.s3ConfigEnabled(), message: 'Required'}]}>
+                        <Form.Item label={<LabelWithTooltip documentation={s3Doc}>Use hosted S3 bucket</LabelWithTooltip>} name="redshiftUseHostedS3" labelCol={{span: 16}} wrapperCol={{span: 8}} rules={[{required: this.s3ConfigEnabled(), message: 'Required'}]}>
                             <Switch disabled={!this.s3ConfigEnabled()} onChange={() => this.refreshStateFromForm()} />
                         </Form.Item>
                     </Col>

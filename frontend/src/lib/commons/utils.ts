@@ -43,8 +43,9 @@ export function reloadPage() {
     location.reload();
 }
 
-export function randomId() {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+export function randomId(len?: number) {
+    let str = Math.random().toString(36).substring(2, len) + Math.random().toString(36).substring(2, 15);
+    return len ? str.substr(0, len) : str;
 }
 
 /**

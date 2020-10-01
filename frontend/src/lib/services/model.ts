@@ -1,18 +1,13 @@
 import {strict} from "assert";
+import Marshal from "../commons/marshalling";
 
 export class Project {
     private readonly _id: string
     private readonly _name: string
 
-    constructor(data : any);
-    constructor(id: string, name: string);
-    constructor(data?: any, id?: string, name?: string) {
-        if (data) {
-            Object.assign(this, data);
-        } else {
-            this._id = id;
-            this._name = name;
-        }
+    constructor(id: string, name: string) {
+        this._id = id;
+        this._name = name;
     }
 
 
@@ -50,7 +45,6 @@ export class User {
     constructor(uid: string, authToken: string, suggested: SuggestedUserInfo, data?: any) {
         this._authToken = authToken;
         this._uid = uid;
-        console.info(suggested, data);
         this._suggestedInfo = suggested;
         this._email = suggested.email;
         if (data) {
@@ -58,9 +52,9 @@ export class User {
             delete data['_project'];
             Object.assign(this, data);
             if (projectSingleton) {
-                this._projects = [new Project(projectSingleton)];
+                this._projects = [Marshal.newKnownInstance(Project, projectSingleton)];
             }
-            this._onboarded = true;
+            this._onboarded = this._projects.length > 0;
         } else {
             this._name = suggested.name;
         }
