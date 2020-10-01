@@ -1,5 +1,3 @@
-
-
 export class DestinationConfigFactory<T extends DestinationConfig> {
     private readonly _name: string;
     private readonly _type: string;
@@ -38,21 +36,21 @@ export const destinationsByTypeId = destinationConfigTypes.reduce((map: Record<s
 }, {})
 
 
-
 export abstract class DestinationConfig {
-    private readonly _id: string
-    private readonly _type: string
+    protected readonly _id: string
+    protected readonly _type: string
+    private _formData: any = {};
 
 
     constructor(type: string, id: string) {
         this._id = id;
         this._type = type;
+        this.fillInitialValues(this._formData);
     }
 
-    abstract update(formValues: any): void;
-
-    abstract toJson(): any
-
+    public update(formValues: any): void {
+        this._formData = formValues;
+    }
 
     get id(): string {
         return this._id;
@@ -61,32 +59,63 @@ export abstract class DestinationConfig {
     get type(): string {
         return this._type;
     }
+
+
+    get formData(): any {
+        return this._formData;
+    }
+
+    abstract describe();
+
+    protected fillInitialValues(_formData: any) {
+        _formData['mode'] = "streaming";
+    }
 }
 
 
 export class PostgresConfig extends DestinationConfig {
-
     constructor(id: string) {
         super("postgres", id);
     }
 
-    toJson(): any {
+
+
+    describe() {
+        return `${this.formData['pguser']}@${this.formData['pghost']}:${this.formData['pgport']}/${this.formData['pgdatabase']}, ${this.formData['mode']}`
     }
 
-    update(formValues: any): void {
+
+    protected fillInitialValues(_formData: any) {
+        super.fillInitialValues(_formData);
+        _formData['pgport'] = 5432;
     }
 }
 
 export class ClickHouseConfig extends DestinationConfig {
+    private _dsns: string = ""
+    private _cluster: string = ""
+    private _database: string = ""
 
     constructor(id: string) {
         super("clickhouse", id);
     }
 
-    toJson(): any {
+
+    describe() {
+        return `${this.formData['ch_dsns']}, ${this.formData['mode']}`
     }
 
-    update(formValues: any): void {
+
+    get dsns(): string {
+        return this._dsns;
+    }
+
+    get cluster(): string {
+        return this._cluster;
+    }
+
+    get database(): string {
+        return this._database;
     }
 }
 
@@ -97,23 +126,24 @@ export class SnowflakeConfig extends DestinationConfig {
         super("snowflake", id);
     }
 
-    toJson(): any {
+    update(formValues: any): void {
+        super.update(formValues);
     }
 
-    update(formValues: any): void {
+    describe() {
     }
 }
 
 export class Redshift extends DestinationConfig {
 
     constructor(id: string) {
-        super("redshif", id);
-    }
-
-    toJson(): any {
+        super("redshift", id);
     }
 
     update(formValues: any): void {
+    }
+
+    describe() {
     }
 }
 
@@ -127,5 +157,8 @@ export class BQConfig extends DestinationConfig {
     }
 
     update(formValues: any): void {
+    }
+
+    describe() {
     }
 }

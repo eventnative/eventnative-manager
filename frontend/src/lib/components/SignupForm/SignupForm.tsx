@@ -6,10 +6,10 @@ import {NavLink} from 'react-router-dom';
 import {reloadPage} from "../../commons/utils";
 import ApplicationServices from "../../services/ApplicationServices";
 
-const logo = require('../../../icons/ksense_icon.svg');
+const logo = require('../../../icons/ksense_icon.svg').default;
 
-const googleLogo = require('../../../icons/google.svg');
-const githubLogo = require('../../../icons/github.svg');
+const googleLogo = require('../../../icons/google.svg').default;
+const githubLogo = require('../../../icons/github.svg').default;
 
 type State = {
     loading?: boolean

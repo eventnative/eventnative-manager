@@ -1,20 +1,17 @@
 import * as React from 'react'
-import {ComponentElement, ReactNode, RefObject, useState} from 'react'
-import {BQConfig, ClickHouseConfig, DestinationConfig, DestinationConfigFactory, destinationConfigTypes, destinationsByTypeId, PostgresConfig} from "../../services/destinations";
+import {ReactNode, useState} from 'react'
+import {ClickHouseConfig, DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig} from "../../services/destinations";
 import {Avatar, Button, Col, Dropdown, Form, Input, List, Menu, message, Modal, Radio, Row} from "antd";
 import {DatabaseOutlined, DeleteOutlined, EditOutlined, ExclamationCircleOutlined, PlusOutlined} from "@ant-design/icons/lib";
 import './DestinationEditor.less'
-import {CenteredSpin} from "../components";
-import {Project} from "../../services/model";
-import * as Utils from "../../commons/utils";
-import {reloadPage} from "../../commons/utils";
+import {CenteredSpin, defaultErrorHandler, LabelWithTooltip} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
-import {Simulate} from "react-dom/test-utils";
-import error = Simulate.error;
+import {IndexedList} from "../../commons/utils";
+import Marshal from "../../commons/marshalling";
 
 type State = {
     loading: boolean
-    destinations?: DestinationConfig[],
+    destinations?: IndexedList<DestinationConfig>,
     activeEditorConfig?: DestinationConfig
 }
 
@@ -27,16 +24,25 @@ export class DestinationsList extends React.Component<any, State> {
         this.services = ApplicationServices.get();
         this.state = {
             loading: true,
-            destinations: []
+            destinations: this.newDestinationsList([])
         };
+    }
+
+    private newDestinationsList(items?: DestinationConfig[]) {
+        let list = new IndexedList<DestinationConfig>((config: DestinationConfig) => config.id);
+        items.forEach((item) => list.push(item));
+        return list;
     }
 
     componentDidMount() {
         this.setState({loading: true});
         this.services.storageService.get("destinations", this.services.activeProject.id).then((destinations) => {
-            this.setState({destinations: destinations ? destinations : [], loading: false});
+            this.setState({
+                destinations: this.newDestinationsList(destinations ? Marshal.newInstance(destinations.destinations, [DestinationConfig, PostgresConfig, ClickHouseConfig]) : []),
+                loading: false
+            });
         }).catch((error) => {
-            message.error("Failed to load data from server: " + error.message);
+            defaultErrorHandler(error, "Failed to load data from server: ")
             this.setState({loading: false});
         })
     }
@@ -44,6 +50,17 @@ export class DestinationsList extends React.Component<any, State> {
     destinationComponent(config: DestinationConfig): ReactNode {
         let onClick = () => this.delete(config);
         let onEdit = () => {
+            let destinationType = destinationsByTypeId[config.type];
+            if (dialogsByType[config.type]) {
+                this.setState({
+                    activeEditorConfig: config
+                })
+            } else {
+                Modal.warning({
+                    title: 'Not supported',
+                    content: destinationType.name + ' destination is not supported yet',
+                });
+            }
         };
         return (<List.Item actions={[
             (<Button icon={<EditOutlined/>} shape="round" onClick={onEdit}>Edit</Button>),
@@ -52,14 +69,14 @@ export class DestinationsList extends React.Component<any, State> {
             <List.Item.Meta
                 avatar={<Avatar shape="square" src={DestinationsList.getIconSrc(config.type)}/>}
                 title={config.id}
-                description="Description"
+                description={config.describe()}
             />
         </List.Item>)
     }
 
     private static getIconSrc(destinationType: string): any {
         try {
-            return require('../../../icons/destinations/' + destinationType + '.svg');
+            return require('../../../icons/destinations/' + destinationType + '.svg').default;
         } catch (e) {
             console.log("Icon for " + destinationType + " is not found")
             return null
@@ -71,11 +88,6 @@ export class DestinationsList extends React.Component<any, State> {
         return src ? (<img src={src} className="destination-type-icon"/>) : <DatabaseOutlined/>;
     }
 
-    addIfNeeded(destinations: DestinationConfig[], activeEditorConfig: DestinationConfig) {
-        if (!destinations.find(dest => dest.id === activeEditorConfig.id)) {
-            destinations.push(activeEditorConfig);
-        }
-    }
 
     render() {
         if (this.state.loading) {
@@ -84,7 +96,7 @@ export class DestinationsList extends React.Component<any, State> {
 
         let componentList = [
             <List className="destinations-list" itemLayout="horizontal" header={this.addButton()} split={true}>
-                {this.state.destinations.map((config) => this.destinationComponent(config))}
+                {this.state.destinations.toArray().map((config) => this.destinationComponent(config))}
             </List>
         ];
 
@@ -93,23 +105,33 @@ export class DestinationsList extends React.Component<any, State> {
             componentList.push((<DestinationsEditorModal
                 config={this.state.activeEditorConfig}
                 onCancel={() => this.setState({activeEditorConfig: null})}
-                testConnection={() => {
-                    return null
+                testConnection={(values) => {
+                    return new Promise((resolve, reject) => {
+                        setTimeout(() => resolve(values), 200);
+                    })
                 }}
                 onSave={(formValues) => {
                     this.state.activeEditorConfig.update(formValues);
-                    this.addIfNeeded(this.state.destinations, this.state.activeEditorConfig);
-                    this.services.storageService.save("destinations", this.services.activeProject.id).then(() => {
-                        this.setState({activeEditorConfig: null});
-                        message.info("Saved!")
-                    }).catch((error) => {
-                        Modal.error({title: "Save failed :(", content: error.message});
-                    })
-                    this.setState({activeEditorConfig: null})
+                    this.state.destinations.addOrUpdate(this.state.activeEditorConfig);
+                    console.log("New destinations", this.state.destinations.toArray())
+                    this.saveCurrentDestinations();
                 }}
             />))
         }
         return componentList;
+    }
+
+    private saveCurrentDestinations() {
+        this.services.storageService.save("destinations", {destinations: this.state.destinations.toArray()}, this.services.activeProject.id).then(() => {
+            this.setState({
+                destinations: this.state.destinations,
+                activeEditorConfig: null
+            });
+            message.info("Destination configuration has been saved!")
+        }).catch((error) => {
+            Modal.error({title: "Save failed :(", content: error.message});
+            console.log("Save failed", error)
+        })
     }
 
     private addButton() {
@@ -132,7 +154,8 @@ export class DestinationsList extends React.Component<any, State> {
             okText: 'Delete',
             cancelText: 'Cancel',
             onOk: () => {
-                this.setState({loading: true})
+                this.state.destinations.remove(config.id)
+                this.saveCurrentDestinations()
             },
             onCancel: () => {
             }
@@ -156,7 +179,14 @@ export class DestinationsList extends React.Component<any, State> {
     }
 
     private pickId(type) {
-        return type;
+        let id = type;
+        let baseId = type
+        let counter = 1
+        while (this.state.destinations.toArray().find((el) => el.id == id) !== undefined) {
+            id = baseId + counter
+            counter++;
+        }
+        return id;
     }
 }
 
@@ -182,15 +212,14 @@ abstract class DestinationDialog<T extends DestinationConfig> extends React.Comp
 
     public render() {
         return (
-
-            <Form layout="horizontal" form={this.props.form}>
-                <Form.Item label="Mode" name="mode" labelCol={{span: 4}} wrapperCol={{span: 18}} initialValue="streaming">
+            <Form layout="horizontal" form={this.props.form} initialValues={this.state.currentValue.formData}>
+                <Form.Item label="Mode" name="mode" labelCol={{span: 4}} wrapperCol={{span: 18}}>
                     <Radio.Group optionType="button" buttonStyle="solid">
                         <Radio.Button value="streaming">Streaming</Radio.Button>
                         <Radio.Button value="batch">Batch</Radio.Button>
                     </Radio.Group>
                 </Form.Item>
-                <Form.Item label="Table Name Pattern" name="tableName" labelCol={{span: 4}} wrapperCol={{span: 12}} required={true} initialValue="events">
+                <Form.Item label="Table Name Pattern" name="tableName" labelCol={{span: 4}} wrapperCol={{span: 12}} required={true}>
                     <Input type="text"/>
                 </Form.Item>
                 {this.items()}
@@ -208,7 +237,7 @@ type IDestinationEditorModalProps = {
     config: DestinationConfig
     onCancel: () => void
     onSave: (values: any) => void
-    testConnection: (values: any) => Promise<boolean>
+    testConnection: (values: any) => Promise<any>
 
 }
 
@@ -229,28 +258,25 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
         visible={true}
         onCancel={onCancel}
         footer={[
-            <Button onClick={() => {
-//                setConnectionTesting(true);
-                // form.validateFields().then((values) => {
-                //     return testConnection(values)
-                // }).then((result) => {
-                //     if (result)
-                // })catch(())
-
+            <Button className="destination-connection-test" loading={connectionTesting} onClick={() => {
+                setConnectionTesting(true);
+                form.validateFields().then((values) => {
+                    testConnection(values).then(() => {
+                        message.success("Successfully connected! " + JSON.stringify(values));
+                    }).catch(error => {
+                        defaultErrorHandler(error, "Failed to validate connection");
+                    }).finally(() => setConnectionTesting(false));
+                })
             }}>Test connection</Button>,
             <Button onClick={onCancel}>Close</Button>,
             <Button type="primary" loading={saving} onClick={() => {
                 setSaving(true);
-                form.validateFields()
-                    .then((values) => {
-                        onSave(values)
-                    }).catch((error) => {
-                    Modal.error({
-                        title: "Can't save config",
-                        content: error.message
-                    });
-                    setSaving(false);
-                })
+                form.validateFields().then(testConnection).then(values => {
+                    onSave(values);
+                }).catch(error => {
+                    message.info("Failed to save connection " + error.message);
+                    console.log("Error during saving connection", error);
+                }).finally(() => setSaving(false));
             }}>Save</Button>,
         ]}
     >{React.createElement(dialogsByType[configType.type], {
@@ -261,8 +287,39 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
 
 }
 
-class PostgresDestinationDialog extends DestinationDialog<PostgresConfig> {
+class ClickHouseDialog extends DestinationDialog<PostgresConfig> {
+    items(): React.ReactNode {
+        let dsnDocs = (<>Comma separated list of data sources names (DSNs). See <a href='https://github.com/ClickHouse/clickhouse-go#dsn'>documentation</a></>);
+        let clusterDoc = (<>Cluster name. See <a href='https://github.com/ClickHouse/clickhouse-go#dsn'>documentation</a></>);
+        let databaseDoc = (<>Database name. See <a href='https://github.com/ClickHouse/clickhouse-go#dsn'>documentation</a></>);
 
+        return (
+            <>
+                <Row>
+                    <Col span={16}>
+                        <Form.Item label={<LabelWithTooltip label="Datasources Names (DSNs)" documentation={dsnDocs}/>} name="ch_dsns"
+                                   rules={[{required: true, message: 'Host is required'}]}
+                                   labelCol={{span: 6}}
+                                   wrapperCol={{span: 18}}><Input type="text"/></Form.Item>
+                    </Col>
+                </Row>
+                <Form.Item label={<LabelWithTooltip label="Cluster" documentation={clusterDoc}/>}
+                           rules={[{required: true, message: 'Cluster name is required'}]}
+                           name="ch_cluster" labelCol={{span: 4}} wrapperCol={{span: 12}}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item
+                    label={<LabelWithTooltip label="Database" documentation={databaseDoc}/>} rules={[{required: true, message: 'DB is required'}]}
+                    name="ch_database" labelCol={{span: 4}} wrapperCol={{span: 12}}>
+                    <Input type="text"/>
+                </Form.Item>
+            </>);
+    }
+
+}
+
+
+class PostgresDestinationDialog extends DestinationDialog<PostgresConfig> {
 
     constructor(props: Readonly<IDestinationDialogProps<PostgresConfig>> | IDestinationDialogProps<PostgresConfig>) {
         super(props);
@@ -273,21 +330,21 @@ class PostgresDestinationDialog extends DestinationDialog<PostgresConfig> {
             <span>
                 <Row>
                     <Col span={16}>
-                        <Form.Item label="Host" name="pghost" labelCol={{span: 6}} wrapperCol={{span: 18}} required={true}><Input type="text"/></Form.Item>
+                        <Form.Item label="Host" name="pghost" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Host is required'}]}><Input type="text"/></Form.Item>
                     </Col>
                     <Col span={8}>
-                    <Form.Item label="Port" name="pgport" labelCol={{span: 6}} wrapperCol={{span: 6}} required={true} initialValue={5432}>
+                    <Form.Item label="Port" name="pgport" labelCol={{span: 6}} wrapperCol={{span: 6}} rules={[{required: true, message: 'Port is required'}]}>
                         <Input type="number"/>
                     </Form.Item>
                     </Col>
                 </Row>
-                    <Form.Item label="Database" name="pgdatabase" labelCol={{span: 4}} wrapperCol={{span: 12}} required={true}>
+                    <Form.Item label="Database" name="pgdatabase" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'DB is required'}]}>
                         <Input type="text"/>
                     </Form.Item>
-                    <Form.Item label="Username" name="pguser" labelCol={{span: 4}} wrapperCol={{span: 12}} required={true}>
+                    <Form.Item label="Username" name="pguser" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Username is required'}]}>
                         <Input type="text"/>
                     </Form.Item>
-                    <Form.Item label="Password" name="pgpassword" labelCol={{span: 4}} wrapperCol={{span: 12}} required={true}>
+                    <Form.Item label="Password" name="pgpassword" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Password is required'}]}>
                         <Input type="password"/>
                     </Form.Item>
             </span>);
@@ -295,5 +352,6 @@ class PostgresDestinationDialog extends DestinationDialog<PostgresConfig> {
 }
 
 const dialogsByType = {
-    'postgres': PostgresDestinationDialog
+    'postgres': PostgresDestinationDialog,
+    'clickhouse': ClickHouseDialog
 }
