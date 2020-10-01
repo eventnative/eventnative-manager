@@ -73,11 +73,16 @@ export default class App extends React.Component<AppProperties, AppState> {
             case AppLifecycle.REQUIRES_LOGIN:
                 return (<Switch>
                     {PUBLIC_PAGES.map(route => {
-                        return (<Route key={route.getPrefixedPath()} path={route.getPrefixedPath()} exact>
-                            {route.getComponent()}
-                        </Route>)
+                        return (<Route key={route.getPrefixedPath()}
+                                       path={route.getPrefixedPath()}
+                                       exact
+                                       render={() => {
+                                           document.title = route.pageTitle;
+                                           return route.getComponent();
+                                       }}
+                        />)
                     })}
-                    <Redirect to="/" />
+                    <Redirect to="/"/>
                 </Switch>);
             case AppLifecycle.APP:
                 return this.appLayout();
@@ -111,9 +116,14 @@ export default class App extends React.Component<AppProperties, AppState> {
                     <Layout.Content key="content" className="app-layout-content">
                         <Switch>
                             {PRIVATE_PAGES.map(route => {
-                                return (<Route key={route.getPrefixedPath()} path={route.getPrefixedPath()} exact>
-                                    {this.wrapInternalPage(route)}
-                                </Route>)
+                                return (<Route key={route.getPrefixedPath()}
+                                               path={route.getPrefixedPath()}
+                                               exact={true}
+                                               render={() => {
+                                                   document.title = route.pageTitle;
+                                                   return this.wrapInternalPage(route);
+                                               }}
+                                />);
                             })}
                         </Switch>
                     </Layout.Content>

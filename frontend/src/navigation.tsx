@@ -16,9 +16,7 @@ export class Page {
     }
 
     public getComponent(): ReactNode {
-        let component: ReactElement = this.componentFactory();
-        document.title = this.pageTitle;
-        return component;
+        return this.componentFactory();
     }
 
 
