@@ -5,11 +5,12 @@ import (
 )
 
 type DbConfig struct {
-	Host     string
-	Db       string
-	Port     uint
-	Username string
-	Password string
+	Host        string
+	ReplicaHost string
+	Db          string
+	Port        uint
+	Username    string
+	Password    string
 }
 
 func (config *DbConfig) GetConnectionString() string {

@@ -32,7 +32,7 @@ type DBCredentials struct {
 	Password string `json:"pgpassword"`
 }
 
-var usersTableName = "tmp_users_db"
+var usersTableName = "users_table"
 
 func (provider *HostedDBProvider) CreateDatabase(userId string) (*DBCredentials, error) {
 	rows, err := provider.dataSource.Query("SELECT db_user_id, database_id, password FROM " + usersTableName + " where external_user_id = '" + userId + "'")
@@ -79,7 +79,7 @@ func (provider *HostedDBProvider) CreateDatabase(userId string) (*DBCredentials,
 	if commitErr != nil {
 		return nil, commitErr
 	}
-	return &DBCredentials{Host: provider.config.Host, Port: provider.config.Port, Database: db, User: username, Password: password}, nil
+	return &DBCredentials{Host: provider.config.ReplicaHost, Port: provider.config.Port, Database: db, User: username, Password: password}, nil
 }
 
 func executeQueriesInTx(queries []string, transaction *sql.Tx) error {
@@ -96,6 +96,10 @@ func executeQueriesInTx(queries []string, transaction *sql.Tx) error {
 }
 
 func NewDatabaseProvider(dbProviderViper *viper.Viper) (DBProvider, error) {
+	replicaHost := dbProviderViper.GetString("public_host")
+	if replicaHost == "" {
+		replicaHost = dbProviderViper.GetString("host")
+	}
 	host := dbProviderViper.GetString("host")
 	port := dbProviderViper.GetUint("port")
 	username := dbProviderViper.GetString("username")
@@ -104,7 +108,7 @@ func NewDatabaseProvider(dbProviderViper *viper.Viper) (DBProvider, error) {
 	if host == "" || username == "" || password == "" || db == "" {
 		return nil, errors.New("host, database, username and password are required to configure db_provider")
 	}
-	dbConfig := &config.DbConfig{Host: host, Port: port, Username: username, Password: password, Db: db}
+	dbConfig := &config.DbConfig{Host: host, Port: port, Username: username, Password: password, Db: db, ReplicaHost: replicaHost}
 	connectionString := dbConfig.GetConnectionString()
 	dataSource, err := sql.Open("postgres", connectionString)
 	if err != nil {
