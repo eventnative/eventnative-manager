@@ -1,26 +1,35 @@
-.api-keys-list-item {
-  border-bottom: 1px solid lightgray !important;
-}
+.api-keys-key-input, .api-keys-key-id {
+  font-family: monospace;
+  font-size: 10px;
 
-.token-field{
-  width: 350px
 }
-
-.site-tag-plus {
-  background: #fff;
-  border-style: dashed;
+.api-keys-status-deleted .api-keys-key-id {
+  text-decoration: line-through;
 }
-
-.tag-input {
-  width: 78px;
-  margin-right: 8px;
-  vertical-align: top;
-}
-
 .copy-to-clipboard-button{
+  display: inline-block;
+  padding-right: 20px;
   font-size: 10px;
   cursor: pointer;
  span{
    border-bottom: 1px dotted;
  }
+}
+
+.api-keys-column-js-auth .api-keys-status-deleted, .api-keys-column-s2s-auth .api-keys-status-deleted, .api-keys-column-origins .api-keys-status-deleted {
+  display: none;
+}
+
+.api-keys-status-modified .api-keys-key-id {
+  font-weight: bold;
+}
+
+.api-keys-table table td {
+  vertical-align: top;
+  height: 100px;
+  min-height: 100px;
+}
+
+.api-keys-buttons-header {
+  padding-bottom: 20px;
 }

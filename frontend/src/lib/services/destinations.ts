@@ -1,3 +1,5 @@
+import {randomId} from "../commons/utils";
+
 export class DestinationConfigFactory<T extends DestinationConfig> {
     private readonly _name: string;
     private readonly _type: string;
@@ -27,7 +29,8 @@ export class DestinationConfigFactory<T extends DestinationConfig> {
 export const destinationConfigTypes = [
     new DestinationConfigFactory("PostgresSQL", "postgres", (id) => new PostgresConfig(id)),
     new DestinationConfigFactory("ClickHouse", "clickhouse", (id) => new ClickHouseConfig(id)),
-    new DestinationConfigFactory("BigQuery", "bigquery", (id) => new BQConfig(id)),
+    //new DestinationConfigFactory("BigQuery", "bigquery", (id) => new BQConfig(id)),
+    new DestinationConfigFactory("Redshift", "redshift", (id) => new RedshiftConfig(id)),
 ]
 
 export const destinationsByTypeId = destinationConfigTypes.reduce((map: Record<string, DestinationConfigFactory<any>>, obj) => {
@@ -37,9 +40,10 @@ export const destinationsByTypeId = destinationConfigTypes.reduce((map: Record<s
 
 
 export abstract class DestinationConfig {
+    protected readonly _uid = randomId();
     protected readonly _id: string
     protected readonly _type: string
-    private _formData: any = {};
+    protected _formData: any = {};
 
 
     constructor(type: string, id: string) {
@@ -69,6 +73,7 @@ export abstract class DestinationConfig {
 
     protected fillInitialValues(_formData: any) {
         _formData['mode'] = "streaming";
+        _formData['tableName'] = 'events';
     }
 }
 
@@ -88,6 +93,7 @@ export class PostgresConfig extends DestinationConfig {
     protected fillInitialValues(_formData: any) {
         super.fillInitialValues(_formData);
         _formData['pgport'] = 5432;
+        _formData['pgschema'] = 'public';
     }
 }
 
@@ -134,16 +140,22 @@ export class SnowflakeConfig extends DestinationConfig {
     }
 }
 
-export class Redshift extends DestinationConfig {
+export class RedshiftConfig extends DestinationConfig {
 
     constructor(id: string) {
         super("redshift", id);
     }
 
-    update(formValues: any): void {
+
+    protected fillInitialValues(_formData: any) {
+        super.fillInitialValues(_formData);
+        _formData['redshiftS3Region'] = "us-west-1"
+        _formData['redshiftUseHostedS3'] = false;
+        _formData['redshiftSchema'] = 'public'
     }
 
     describe() {
+        return `${this.formData['redhsiftHost']}`
     }
 }
 
@@ -154,9 +166,6 @@ export class BQConfig extends DestinationConfig {
     }
 
     toJson(): any {
-    }
-
-    update(formValues: any): void {
     }
 
     describe() {

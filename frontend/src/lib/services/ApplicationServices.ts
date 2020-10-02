@@ -279,10 +279,9 @@ class FirebaseUserService implements UserService {
             if (user.projects.length != 1) {
                 reject(new Error(`Can't update user projects ( ` + user.projects.length + `), should be 1` + JSON.stringify(user)));
             }
-            let userData: any = Object.assign({}, user)
-            userData['_project'] = Object.assign({}, user.projects[0]);
+            let userData: any = Marshal.toPureJson(user)
+            userData['_project'] = Marshal.toPureJson(user.projects[0]);
             delete userData['_projects']
-            console.log("Sending to FB", userData)
             return firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.uid).set(userData, {merge: true}).then(resolve);
         }))
     }

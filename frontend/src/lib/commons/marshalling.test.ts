@@ -67,5 +67,13 @@ test("inheritanceUnmarshalling", () => {
     let unmarshalled = Marshal.newInstance(pureJson, [Subclass, Superclass]);
     console.log("RESTORED", unmarshalled)
     expect(unmarshalled[0].method()).toBe("b1");
+})
 
+test("testKnownClassMarhsalling", () => {
+    let result = Marshal.newKnownInstance(Data, {
+        num: 14,
+        str: "str"
+    })
+    expect(result.method).toBeDefined()
+    expect(result.method()).toBe(14)
 })

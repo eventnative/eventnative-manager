@@ -3,6 +3,7 @@ import LoginForm from "./lib/components/LoginForm/LoginForm";
 import SignupForm from "./lib/components/SignupForm/SignupForm";
 import {DestinationsList} from "./lib/components/DestinationsEditor/DestinationsList";
 import ApiKeys from "./lib/components/ApiKeys/ApiKeys";
+import ComponentTest from "./lib/components/componentTest";
 
 export class Page {
     componentFactory: () => ReactElement
@@ -15,9 +16,7 @@ export class Page {
     }
 
     public getComponent(): ReactNode {
-        let component: ReactElement = this.componentFactory();
-        document.title = this.pageTitle;
-        return component;
+        return this.componentFactory();
     }
 
 
@@ -36,6 +35,7 @@ export const PUBLIC_PAGES: Page[] = [
 ];
 
 export const PRIVATE_PAGES: Page[] = [
+    new Page("Test Component", "/test", () => (<ComponentTest />), "Component Test"),
     new Page("EventNative | edit destinations", "/destinations", () => (<DestinationsList />), "Edit destinations"),
     new Page("EventNative | edit API keys", "/api_keys", () => (<ApiKeys />), "API Keys")
 ];
