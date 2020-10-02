@@ -80,13 +80,11 @@ export default class ApiKeys extends React.Component<{}, State> {
 
     generateButton() {
         let onClick = () => {
-            this.state.payload.records.push({
-                token: {
-                    auth: uuid.v4(),
-                    s2s_auth: uuid.v4(),
-                    origins: []
-                }, inputOrigin: '', inputVisible: false, inputRef: React.createRef()
-            });
+            const token = this.services.generateToken()
+            token.inputOrigin = ''
+            token.inputVisible = false
+            token.inputRef = React.createRef()
+            this.state.payload.records.push(token);
             this.setState({payload: this.state.payload})
 
         }
@@ -108,7 +106,8 @@ export default class ApiKeys extends React.Component<{}, State> {
             })
 
         }
-        return (<Button type="primary" loading={this.state.loading} icon={<SaveOutlined/>} onClick={onClick}>Save</Button>)
+        return (
+            <Button type="primary" loading={this.state.loading} icon={<SaveOutlined/>} onClick={onClick}>Save</Button>)
     }
 
     copyToClipboard = (value) => {

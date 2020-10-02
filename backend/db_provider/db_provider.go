@@ -25,11 +25,11 @@ type HostedDBProvider struct {
 }
 
 type DBCredentials struct {
-	Host     string `json:"host"`
-	Port     uint   `json:"port"`
-	Database string `json:"database"`
-	User     string `json:"user"`
-	Password string `json:"password"`
+	Host     string `json:"pghost"`
+	Port     uint   `json:"pgport"`
+	Database string `json:"pgdatabase"`
+	User     string `json:"pguser"`
+	Password string `json:"pgpassword"`
 }
 
 var usersTableName = "tmp_users_db"

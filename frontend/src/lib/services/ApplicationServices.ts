@@ -1,8 +1,11 @@
 import * as firebase from 'firebase';
 import {Project, SuggestedUserInfo, User} from "./model";
-import {message} from "antd";
 import {randomId} from "../commons/utils";
 import Marshal from "../commons/marshalling";
+import axios from 'axios';
+import {PostgresConfig} from "./destinations";
+import * as uuid from 'uuid';
+import {message} from "antd";
 
 export class ApplicationConfiguration {
     private readonly _firebaseConfig: any;
@@ -36,13 +39,13 @@ export class ApplicationConfiguration {
     }
 }
 
-
-
 export default class ApplicationServices {
     private readonly _userService: UserService;
     private readonly _storageService: FirebaseServerStorage;
     private _backendApiClient: BackendApiClient;
     private _applicationConfiguration: ApplicationConfiguration
+
+    public onboardingNotCompleteErrorMessage = "Onboarding process hasn't been fully completed. Please, contact the support";
 
     constructor() {
         this._applicationConfiguration = new ApplicationConfiguration();
@@ -79,6 +82,31 @@ export default class ApplicationServices {
 
     get backendApiClient(): BackendApiClient {
         return this._backendApiClient;
+    }
+
+    public initializeDefaultDestination(): void {
+        this._backendApiClient.post("/database", {}).then(result => {
+            console.log("ruak started initialization")
+            const destinationConfig = new PostgresConfig("default_destination");
+            this.storageService.save("api_keys", {tokens: [this.generateToken()]})
+                .then(() => console.log("ruak saved token")).catch(() => message.error(this.onboardingNotCompleteErrorMessage))
+            destinationConfig.update(result)
+            this._storageService.save("destinations", {destinations: [destinationConfig]}, this.activeProject.id)
+                .then(() => console.log("ruak saved destination")).catch(() => message.error(this.onboardingNotCompleteErrorMessage))
+        }).catch(() => {
+            console.log(this.onboardingNotCompleteErrorMessage)
+            message.error(this.onboardingNotCompleteErrorMessage)
+        })
+    }
+
+    generateToken(): any {
+        return {
+            token: {
+                auth: uuid.v4(),
+                s2s_auth: uuid.v4(),
+                origins: []
+            }
+        }
     }
 }
 
@@ -216,7 +244,7 @@ class FirebaseUserService implements UserService {
                         if (doc.exists) {
                             resolve(this.user = new User(user.uid, token, suggestedInfo, doc.data()));
                         } else {
-                            resolve(this.user = new User(user.uid,token, suggestedInfo));
+                            resolve(this.user = new User(user.uid, token, suggestedInfo));
                         }
                     }).catch(reject);
                 })
@@ -285,6 +313,7 @@ class FirebaseUserService implements UserService {
  */
 export interface BackendApiClient {
     post(url, data: any): Promise<any>
+
     get(url): Promise<any>
 }
 
@@ -299,7 +328,11 @@ export class JWTBackendClient implements BackendApiClient {
     }
 
     get(url: string): Promise<any> {
-        return Promise.resolve(undefined);
+        return axios.get(this.fullUrl(url), {
+            headers: {
+                "X-Client-Auth": this.tokenAccessor()
+            }
+        });
     }
 
     private fullUrl(url) {
@@ -307,7 +340,13 @@ export class JWTBackendClient implements BackendApiClient {
     }
 
     post(url: string, data: any): Promise<any> {
-        return Promise.resolve(undefined);
+        const token = this.tokenAccessor();
+        console.log("ruak token: " + token)
+        return axios.post(this.fullUrl(url), {}, {
+            headers: {
+                "X-Client-Auth": token
+            }
+        })
     }
 
 }
@@ -329,7 +368,6 @@ export interface ServerStorage {
 
 
 class FirebaseServerStorage implements ServerStorage {
-
 
 
     get(collectionName: string, key?: string): Promise<any> {

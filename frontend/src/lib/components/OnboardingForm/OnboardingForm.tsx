@@ -31,14 +31,17 @@ export default function OnboardingForm(props: Props) {
             .validateFields()
             .then((values) => {
                 let user = services.userService.getUser();
+                console.log(user.authToken)
                 user.onboarded = true;
                 user.projects = [new Project(
                     Utils.randomId(),
                     values['projectName']
                 )];
                 user.name = values['userDisplayName']
-
-                services.userService.update(user).then(reloadPage).catch((error) => {
+                services.userService.update(user).then(() => {
+                    services.initializeDefaultDestination()
+                    reloadPage()
+                }).catch((error) => {
                     console.error("Failed to update user", error);
                     setState({loading: false});
                     message.error("Cannot update user info: " + error.message)

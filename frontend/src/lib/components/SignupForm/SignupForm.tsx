@@ -26,8 +26,10 @@ export default class SignupForm extends React.Component<any, State> {
 
     googleSignup() {
         this.services.userService.initiateGoogleLogin().then(() => {
+            console.log("ruak Google signup")
             message.destroy()
             reloadPage();
+            // this.services.userService.waitForUser().then(() => )
         }).catch(error => {
             message.destroy()
             console.log("Google auth error", error);
@@ -38,6 +40,7 @@ export default class SignupForm extends React.Component<any, State> {
     githubSignup() {
         this.services.userService.initiateGithubLogin().then(() => {
             message.destroy()
+            // this.services.initializeDefaultDestination().then(() => console.log("initialized") ).catch(() => message.error(this.services.onboardingNotCompleteErrorMessage))
             reloadPage();
         }).catch(error => {
             message.destroy()
@@ -50,6 +53,7 @@ export default class SignupForm extends React.Component<any, State> {
         this.setState({loading: true});
         this.services.userService.createUser(values['email'], values['password'], values['name'],  values['company']).then(() => {
             this.setState({loading: false});
+            // this.services.initializeDefaultDestination().then().catch(() => message.error(this.services.onboardingNotCompleteErrorMessage))
             reloadPage()
         }).catch((error) => {
             message.error("Failed to create user: " + error['message']);

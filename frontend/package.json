@@ -11,6 +11,7 @@
     "@types/react": "^16.9.49",
     "@types/react-dom": "^16.9.8",
     "antd": "^4.6.2",
+    "axios": "^0.20.0",
     "favicons-webpack-plugin": "^4.2.0",
     "firebase": "^7.21.0",
     "lodash": "^4.17.20",
