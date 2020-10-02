@@ -16,6 +16,7 @@ import (
 
 type DBProvider interface {
 	CreateDatabase(userId string) (*DBCredentials, error)
+	GetDatabase(userId string) (*DBCredentials, error)
 }
 
 type HostedDBProvider struct {
@@ -34,18 +35,24 @@ type DBCredentials struct {
 
 var usersTableName = "users_table"
 
+func (provider *HostedDBProvider) GetDatabase(userId string) (*DBCredentials, error) {
+	database, err := getUserDatabase(userId, provider)
+	if err != nil {
+		return nil, err
+	}
+	if database == nil {
+		return nil, errors.New("No database exists for user " + userId)
+	}
+	return database, nil
+}
+
 func (provider *HostedDBProvider) CreateDatabase(userId string) (*DBCredentials, error) {
-	rows, err := provider.dataSource.Query("SELECT db_user_id, database_id, password FROM " + usersTableName + " where external_user_id = '" + userId + "'")
-	if rows != nil && rows.Next() {
-		defer rows.Close()
-		var internalUserId string
-		var database string
-		var password string
-		err := rows.Scan(&internalUserId, &database, &password)
-		if err != nil {
-			return nil, err
-		}
-		return &DBCredentials{Host: provider.config.Host, Port: provider.config.Port, Database: database, User: internalUserId, Password: password}, nil
+	credentials, err := getUserDatabase(userId, provider)
+	if err != nil {
+		return nil, err
+	}
+	if credentials != nil {
+		return credentials, nil
 	}
 	db := strings.ToLower(random.AlphabeticalString(4)) + time.Now().Format("200601021504")
 	log.Println("db " + db)
@@ -80,6 +87,22 @@ func (provider *HostedDBProvider) CreateDatabase(userId string) (*DBCredentials,
 		return nil, commitErr
 	}
 	return &DBCredentials{Host: provider.config.ReplicaHost, Port: provider.config.Port, Database: db, User: username, Password: password}, nil
+}
+
+func getUserDatabase(userId string, provider *HostedDBProvider) (*DBCredentials, error) {
+	rows, _ := provider.dataSource.Query("SELECT db_user_id, database_id, password FROM " + usersTableName + " where external_user_id = '" + userId + "'")
+	if rows != nil && rows.Next() {
+		defer rows.Close()
+		var internalUserId string
+		var database string
+		var password string
+		err := rows.Scan(&internalUserId, &database, &password)
+		if err != nil {
+			return nil, err
+		}
+		return &DBCredentials{Host: provider.config.Host, Port: provider.config.Port, Database: database, User: internalUserId, Password: password}, nil
+	}
+	return nil, nil
 }
 
 func executeQueriesInTx(queries []string, transaction *sql.Tx) error {

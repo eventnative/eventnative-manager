@@ -1,33 +1,29 @@
 import React, {ReactElement, ReactNode} from 'react';
-import {Button, Form, Input, List, Mentions, message, Modal, Row, Tag, Tooltip} from "antd";
+import {Button, Col, Form, Input, List, Mentions, message, Modal, Row, Table, Tag, Tooltip} from "antd";
 import ApplicationServices from "../../services/ApplicationServices";
 import {DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, SaveOutlined} from "@ant-design/icons/lib";
 import './ApiKeys.less'
-import {CenteredSpin, LabelWithTooltip} from "../components";
+import {CenteredSpin, defaultErrorHandler, LabelWithTooltip} from "../components";
 import * as uuid from 'uuid';
+import {randomId} from "../../commons/utils";
+import TagsInput from "../TagsInput/TagsInput";
 
 type Token = {
-    auth: string
-    s2s_auth: string
+    uid: string
+    jsAuth: string
+    serverAuth: string
     origins?: string[]
 }
 
-type Record = {
-    token: Token
-
-    inputOrigin: string
-    inputVisible: boolean
-    inputRef: React.RefObject<any>
+interface TokenDisplay extends Token {
+    status: "deleted" | "modified" | "original"
 }
 
-type Payload = {
-    records: Record[]
-}
 
 type State = {
     globalLoading: boolean
     loading: boolean
-    payload: Payload
+    tokens: TokenDisplay[]
 }
 
 export default class ApiKeys extends React.Component<{}, State> {
@@ -39,38 +35,118 @@ export default class ApiKeys extends React.Component<{}, State> {
         this.state = {
             globalLoading: true,
             loading: false,
-            payload: {records: []} as Payload,
+            tokens: [],
         };
     }
 
     public componentDidMount() {
+        window.addEventListener("beforeunload", e => {
+            if (this.state.tokens.find(tok => tok.status != "original")) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
         this.services.storageService.get("api_keys", this.services.activeProject.id)
             .then((payload: any) => {
-                let records = payload ? payload.tokens.map(t => {
-                    return {token: t, inputOrigin: '', inputVisible: false, inputRef: React.createRef()}
-                }) : [];
-                this.setState({payload: {records: records}})
+                let tokens = this.restoreTokesFromPayload(payload);
+                this.setState({tokens: tokens})
             })
             .catch(error => {
-                message.error('Error loading api keys: ' + error.message)
-                console.log("Error", error)
+                defaultErrorHandler(error, 'Error loading api keys');
             })
             .finally(() => {
                 this.setState({globalLoading: false})
             })
     }
 
+    private restoreTokesFromPayload(payload: any) {
+        return payload ? payload.keys.map(t => {
+            return {...t, status: "original"}
+        }) : [];
+    }
+
     render() {
         if (this.state.globalLoading) {
             return <CenteredSpin/>
         }
-        let header = (<span>{this.generateButton()}{this.saveButton()}</span>)
-
-        return (
-            <List className="destinations-list" itemLayout="horizontal" header={header} split={true}>
-                {this.state.payload.records.map((record, index) => this.tokenComponent(record, index))}
-            </List>
-        );
+        let header = (<div className="api-keys-buttons-header">{this.generateButton()}{this.saveButton()}</div>)
+        const columns = [
+            {
+                width: "250px", className: "api-keys-column-id", dataIndex: 'uid', key: 'uid', render: (text, row, index) => {
+                    return <span className={"api-keys-status-" + this.state.tokens[index].status}>
+                        <span className="api-keys-key-id">{text}</span>
+                    </span>
+                }, title: (<LabelWithTooltip documentation={"Unique ID of the key"}>ID</LabelWithTooltip>),
+            },
+            {
+                width: "250px",
+                className: "api-keys-column-js-auth",
+                dataIndex: 'jsAuth',
+                key: 'jsAuth',
+                render: (text, row, index) => {
+                    return <span className={"api-keys-status-" + this.state.tokens[index].status}>
+                        <Input className={"api-keys-key-input"} type="text" value={text}/>
+                        <ActionLink onСlick={() => this.copyToClipboard(text)}>Copy To Clipboard</ActionLink>
+                        <ActionLink onСlick={() => {
+                            this.state.tokens[index].jsAuth = this.newToken("js");
+                            this.state.tokens[index].status = "modified";
+                            this.forceUpdate();
+                        }}>Generate New Key</ActionLink>
+                    </span>
+                },
+                title: (<LabelWithTooltip documentation={(<>Client API Key. Should be used with <a href="https://docs.eventnative.dev/javascript-reference">JS client</a>.</>)}>Client
+                    Secret</LabelWithTooltip>)
+            },
+            {
+                width: "250px",
+                className: "api-keys-column-s2s-auth",
+                dataIndex: 'serverAuth',
+                key: 'serverAuth',
+                render: (text, row, index) => {
+                    return <span className={"api-keys-status-" + this.state.tokens[index].status}>
+                        <Input className="api-keys-key-input" type="text" value={text}/>
+                        <ActionLink onСlick={() => this.copyToClipboard(text)}>Copy To Clipboard</ActionLink>
+                        <ActionLink onСlick={() => {
+                            this.state.tokens[index].serverAuth = this.newToken("s2s");
+                            this.state.tokens[index].status = "modified";
+                            this.forceUpdate();
+                        }}>Generate New Key</ActionLink>
+                    </span>
+                },
+                title: (<LabelWithTooltip documentation={(<>Server API Key. Should be used with <a href="https://docs.eventnative.dev/api">backend API calls</a>.</>)}>Server Secret</LabelWithTooltip>)
+            },
+            {
+                className: "api-keys-column-origins", dataIndex: 'origins', key: 'origins', render: (text, row, index) => {
+                    return <span className={"api-keys-status-" + this.state.tokens[index].status}>
+                        <TagsInput newButtonText="Add Origin" value={this.state.tokens[index].origins} onChange={(value) => {
+                            console.log("VALUES: ", [...value])
+                            this.state.tokens[index].status = "modified";
+                            this.state.tokens[index].origins = [...value];
+                            this.forceUpdate()
+                        }}/>
+                    </span>
+                }, title: (<LabelWithTooltip documentation={(<>JavaScript origins. If set, only calls from those hosts will be accepted. Wildcards are supported as (*.abc.com). If
+                    you want to whitelist domain abc.com and all subdomains, add abc.com and *.abc.com. If list is empty, traffic will be accepted from all domains</>)}>Origins</LabelWithTooltip>)
+            },
+            {
+                width: "140px", className: "api-keys-column-actions", title: "Actions", dataIndex: 'actions', render: (text, row: TokenDisplay, index) => {
+                    return <Button icon={<DeleteOutlined/>} shape="round" onClick={() => {
+                        this.state.tokens[index]
+                        row.status = row.status == "deleted" ? "modified" : "deleted"
+                        this.state.tokens[index] = row;
+                        this.forceUpdate();
+                    }}>
+                        {row.status == "deleted" ? "Restore" : "Delete"}
+                    </Button>
+                }
+            }
+        ]
+        return <>
+            {header}
+            <Table pagination={false} className="api-keys-table" columns={columns} dataSource={this.state.tokens.map((t) => {
+                return {...t, key: t.uid}
+            })}/></>
     }
 
     private static keys(nodes: ReactElement[]): ReactElement[] {
@@ -80,182 +156,66 @@ export default class ApiKeys extends React.Component<{}, State> {
 
     generateButton() {
         let onClick = () => {
-            const token = this.services.generateToken()
-            token.inputOrigin = ''
-            token.inputVisible = false
-            token.inputRef = React.createRef()
-            this.state.payload.records.push(token);
-            this.setState({payload: this.state.payload})
+            this.state.tokens.push({
+                uid: this.newToken("", 6),
+                serverAuth: this.newToken("s2s"),
+                jsAuth: this.newToken("js"),
+                status: "modified",
+                origins: []
+            } as TokenDisplay);
+            this.setState({tokens: this.state.tokens})
 
         }
-        return (<Button type="primary" icon={<PlusOutlined/>} style={{marginRight: 20}} onClick={onClick}>Generate New
-            Token</Button>)
+        return (<Button type="primary" icon={<PlusOutlined/>} style={{marginRight: 20}} onClick={onClick}>Generate New Token</Button>)
     }
 
     saveButton() {
         let onClick = () => {
             this.setState({loading: true})
-            this.services.storageService.save("api_keys", {tokens: this.state.payload.records.map(t => t.token)}, this.services.activeProject.id)
+            let tokensToSave = this.state.tokens.map((token) => {
+                let tokenToSave: Token = {...token};
+                delete tokenToSave['status']
+                if (token.status == "deleted") {
+                    return null;
+                } else {
+                    return tokenToSave;
+                }
+            }).filter(el => el != null);
+            let payload = {keys: tokensToSave};
+            this.services.storageService.save("api_keys", payload, this.services.activeProject.id)
                 .then(() => {
+                    this.setState({tokens: this.restoreTokesFromPayload(payload)})
                     message.success('Keys have been saved!')
                 })
                 .catch(error => {
-                    message.error('Error saving keys: ' + error.message)
+                    defaultErrorHandler(error, 'Error saving keys');
                 }).finally(() => {
                 this.setState({loading: false})
             })
 
         }
-        return (
-            <Button type="primary" loading={this.state.loading} icon={<SaveOutlined/>} onClick={onClick}>Save</Button>)
+        return (<Button type="primary" loading={this.state.loading} icon={<SaveOutlined/>} onClick={onClick}>Save</Button>)
     }
 
-    copyToClipboard = (value) => {
+    copyToClipboard(value) {
         const el = document.createElement('textarea');
         el.value = value;
         document.body.appendChild(el);
         el.select();
         document.execCommand('copy');
         document.body.removeChild(el);
+        message.success("Key copied to clipboard")
     };
 
-    tokenComponent(record: Record, index: number): ReactNode {
-        let onClick = () => {
-            Modal.confirm({
-                title: 'Please confirm deletion of key',
-                icon: <ExclamationCircleOutlined/>,
-                content: 'Are you sure you want to delete selected key?',
-                okText: 'Delete',
-                cancelText: 'Cancel',
-                onOk: () => {
-                    this.state.payload.records.splice(index, 1)
-                    this.setState({payload: this.state.payload})
-                },
-                onCancel: () => {
-                }
-            });
-        };
-        return (<List.Item actions={[
-            (<Button icon={<DeleteOutlined/>} shape="round" onClick={onClick}>Delete</Button>),
-        ]} className="api-keys-list-item" key={record.token.auth}>
-            <List.Item.Meta
-                description={this.tokenForm(record, index)}
-            />
-        </List.Item>)
-    }
 
-    tokenForm(record: Record, index: number): ReactNode {
-        return (<Form layout="horizontal">
-            <Form.Item>
-                <Row style={{height: 20}}>
-                    <Form.Item
-                        labelCol={{span: 6}} wrapperCol={{span: 10}}
-                        label={LabelWithTooltip({label: "Token", documentation: "Token for javascript integration."})}
-                    >
-                        <Mentions className="token-field" value={record.token.auth} placeholder="Token" readOnly/>
-                        <div className="copy-to-clipboard-button" onClick={() => {
-                            this.copyToClipboard(record.token.auth)
-                            message.success('Token copied!')
-                        }}><span>Copy to clipboard</span></div>
-                    </Form.Item>
-                    <Form.Item
-                        labelCol={{span: 8}} wrapperCol={{span: 12}}
-                        label={LabelWithTooltip({
-                            label: "S2S Token",
-                            documentation: "Token for server2server integration."
-                        })}
-                    >
-                        <Mentions className="token-field" value={record.token.s2s_auth} placeholder="S2S Token"
-                                  readOnly/>
-                        <div className="copy-to-clipboard-button" onClick={() => {
-                            this.copyToClipboard(record.token.s2s_auth)
-                            message.success('S2S Token copied!')
-                        }}><span>Copy to clipboard</span></div>
-                    </Form.Item>
-                </Row>
-            </Form.Item>
-            <Form.Item
-                labelCol={{span: 2}} wrapperCol={{span: 10}}
-                label={LabelWithTooltip({
-                    label: "Origins",
-                    documentation: "Allow access with tokens only for selected Origins. Allow access to all Origins if empty."
-                })}>
-                {this.originsComponent(record, index)}
-            </Form.Item>
-        </Form>)
+    private newToken(type: string, len?: number) {
+        let postfix = `${this.services.activeProject.id}:${randomId(len)}`;
+        return type.length > 0 ? `${type}:${postfix}` : postfix;
     }
+}
 
-    originsComponent(record: Record, index: number): ReactNode {
-        let onTagClose = (tagIndex: number) => {
-            this.state.payload.records[index].token.origins.splice(tagIndex, 1);
-            this.setState({payload: this.state.payload})
-        };
-        let onInputChange = e => {
-            this.state.payload.records[index].inputOrigin = e.target.value
-            this.setState({payload: this.state.payload})
-        };
-        let handleInputConfirm = e => {
-            if (record.inputOrigin && record.token.origins.indexOf(record.inputOrigin) === -1) {
-                record.token.origins.push(record.inputOrigin)
-            }
-            record.inputOrigin = '';
-            record.inputVisible = false;
-            this.state.payload.records[index] = record;
-            this.setState({payload: this.state.payload})
-        };
-        let showInput = () => {
-            this.state.payload.records[index].inputVisible = true
-            this.setState({payload: this.state.payload}, () => this.state.payload.records[index].inputRef.current.focus())
-        };
-        return (
-            <>
-                {
-                    record.token.origins && (record.token.origins.map((originTag, oIndex) => {
-                        const isLongTag = originTag.length > 20;
-
-                        const tagElem = (
-                            <Tag
-                                key={originTag}
-                                closable
-                                onClose={() => onTagClose(oIndex)}
-                            >
-                            <span>
-                                {isLongTag ? `${originTag.slice(0, 20)}...` : originTag}
-                            </span>
-                            </Tag>
-                        );
-                        return isLongTag ? (
-                            <Tooltip title={originTag} key={originTag}>
-                                {tagElem}
-                            </Tooltip>
-                        ) : (
-                            tagElem
-                        );
-                    }))
-                }
-                {
-                    record.inputVisible && (
-                        <Input
-                            ref={record.inputRef}
-                            id={"origin_input_" + index}
-                            type="text"
-                            size="small"
-                            className="tag-input"
-                            value={this.state.payload.records[index].inputOrigin}
-                            onChange={onInputChange}
-                            onBlur={handleInputConfirm}
-                            onPressEnter={handleInputConfirm}
-                        />
-                    )
-                }
-                {
-                    !record.inputVisible && (
-                        <Tag className="site-tag-plus" onClick={showInput}>
-                            <PlusOutlined/> Origin
-                        </Tag>
-                    )
-                }
-            </>
-        );
-    }
+function ActionLink({children, onСlick}: { children: any, onСlick: () => void }) {
+    return (<div className="copy-to-clipboard-button" onClick={() => {
+        onСlick()
+    }}><span>{children}</span></div>)
 }
