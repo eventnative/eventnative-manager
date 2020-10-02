@@ -1,8 +1,17 @@
 const HtmlWebPackPlugin = require("html-webpack-plugin");
+const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = {
     resolve: {
         extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
+    },
+    optimization: {
+        minimize: true,
+        minimizer: [new TerserPlugin({
+            terserOptions: {
+                keep_classnames: true
+            }
+        })]
     },
     module: {
         rules: [

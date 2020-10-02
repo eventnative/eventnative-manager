@@ -4,7 +4,18 @@ import {NavLink, Route, Switch, DefaultRoute, Redirect} from 'react-router-dom';
 import {Button, Col, Dropdown, Layout, Menu, message, Modal, Row, Select} from "antd";
 import {AreaChartOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, PartitionOutlined, SlidersOutlined} from "@ant-design/icons";
 import './App.less';
-import {KeyOutlined, LockOutlined, ExclamationCircleOutlined, UsergroupAddOutlined, UserOutlined} from "@ant-design/icons/lib";
+import {
+    KeyOutlined,
+    LockOutlined,
+    ExclamationCircleOutlined,
+    UsergroupAddOutlined,
+    UserOutlined,
+    UnlockTwoTone,
+    UnlockOutlined,
+    NotificationOutlined,
+    CloudOutlined,
+    ApiOutlined
+} from "@ant-design/icons/lib";
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
 import {GlobalError, Preloader} from "./lib/components/components";
 import {reloadPage} from "./lib/commons/utils";
@@ -136,14 +147,20 @@ export default class App extends React.Component<AppProperties, AppState> {
     private static leftMenu() {
         return <Switch>
             <Menu mode="inline" defaultSelectedKeys={['1']} className="theme-blue-bg sidebar-menu">
-                <Menu.Item key="status" icon={<PartitionOutlined/>}>
+                <Menu.Item key="status" icon={<AreaChartOutlined/>}>
                     <NavLink to="/dashboard" activeClassName="selected">Status</NavLink>
                 </Menu.Item>
-                <Menu.Item key="api_keys" icon={<KeyOutlined/>}>
+                <Menu.Item key="api_keys" icon={<UnlockOutlined />}>
                     <NavLink to="/api_keys" activeClassName="selected">Event API Keys</NavLink>
                 </Menu.Item>
-                <Menu.Item key="destinations" icon={<AreaChartOutlined/>}>
+                <Menu.Item key="sources" icon={<ApiOutlined />}>
+                    <NavLink to="/sources" activeClassName="selected">Sources</NavLink>
+                </Menu.Item>
+                <Menu.Item key="destinations" icon={<NotificationOutlined />}>
                     <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
+                </Menu.Item>
+                <Menu.Item key="domains" icon={<CloudOutlined />}>
+                    <NavLink to="/domains" activeClassName="selected">Custom Domains</NavLink>
                 </Menu.Item>
             </Menu>
         </Switch>;

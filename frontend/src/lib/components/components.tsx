@@ -60,7 +60,7 @@ export function LabelWithTooltip({children, documentation}) {
 /**
  * Default handler for error: show message and log error to console
  */
-export function defaultErrorHandler(error: any, errorDescription: string) {
+export function defaultErrorHandler(error: any, errorDescription?: string) {
 
     if (errorDescription !== undefined) {
         if (error.message) {
