@@ -1,0 +1,22 @@
+server:
+  name: local_test
+  static_files_dir: ./templates
+
+auth:
+  firebase:
+    credentials_file: "<INFRASTRUCTURE_REPOSITORY_PATH>/roles/enhosted-helper-infrastructure/files/firebase_key.json"
+    project_id: "tracker-285220"
+
+db_provider:
+  credentials_storage:
+    firebase:
+      project_id: "tracker-285220"
+      credentials_file: "<INFRASTRUCTURE_REPOSITORY_PATH>/roles/enhosted-helper-infrastructure/files/firebase_key.json"
+  default_destination:
+    postgres:
+      host: pg1.eventnative.com
+      replica_host: pg2.eventnative.com
+      port: 5432
+      database: eventnative_helper
+      username: "ksense"
+      password: "qS1ejlw4Su5Inq61"

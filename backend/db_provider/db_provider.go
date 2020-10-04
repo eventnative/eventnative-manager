@@ -163,10 +163,11 @@ func createPostgresDatabase(dbConfig *config.DbConfig, destinationDatasource *sq
 }
 
 func NewDatabaseProvider(dbProviderViper *viper.Viper) (DBProvider, error) {
-	if dbProviderViper.IsSet("firebase") {
+	credentialsStorageViper := dbProviderViper.Sub("credentials_storage")
+	if credentialsStorageViper.IsSet("firebase") {
 		ctx := context.Background()
-		fbConfig := &firebase.Config{ProjectID: dbProviderViper.GetString("firebase.project_id")}
-		app, err := firebase.NewApp(ctx, fbConfig, option.WithCredentialsFile(dbProviderViper.GetString("firebase.credentials_file")))
+		fbConfig := &firebase.Config{ProjectID: credentialsStorageViper.GetString("firebase.project_id")}
+		app, err := firebase.NewApp(ctx, fbConfig, option.WithCredentialsFile(credentialsStorageViper.GetString("firebase.credentials_file")))
 		if err != nil {
 			return nil, err
 		}
@@ -174,24 +175,36 @@ func NewDatabaseProvider(dbProviderViper *viper.Viper) (DBProvider, error) {
 		if err != nil {
 			return nil, err
 		}
-		host := dbProviderViper.GetString("default_destination.host")
-		replicaHost := dbProviderViper.GetString("default_destination.public_host")
+		defaultDestinationViper := dbProviderViper.Sub("default_destination")
+		destinationConfig, err := parseDefaultDestinationConfig(defaultDestinationViper)
+		if err != nil {
+			return nil, err
+		}
+		connectionString := destinationConfig.GetConnectionString()
+		dataSource, err := sql.Open("postgres", connectionString)
+		return &FirebaseDBProvider{ctx: ctx, credentialsClient: firestoreClient, destinationConfig: destinationConfig, destinationDatasource: dataSource}, nil
+	} else {
+		return nil, errors.New("unknown db_provider type, only firebase is supported")
+	}
+}
+
+func parseDefaultDestinationConfig(defaultDestinationViper *viper.Viper) (*config.DbConfig, error) {
+	if defaultDestinationViper.IsSet("postgres") {
+		host := defaultDestinationViper.GetString("postgres.host")
+		replicaHost := defaultDestinationViper.GetString("postgres.replica_host")
 		if replicaHost == "" {
 			replicaHost = host
 		}
-		port := dbProviderViper.GetUint("default_destination.port")
-		username := dbProviderViper.GetString("default_destination.username")
-		password := dbProviderViper.GetString("default_destination.password")
-		db := dbProviderViper.GetString("default_destination.database")
+		port := defaultDestinationViper.GetUint("postgres.port")
+		username := defaultDestinationViper.GetString("postgres.username")
+		password := defaultDestinationViper.GetString("postgres.password")
+		db := defaultDestinationViper.GetString("postgres.database")
 		if host == "" || username == "" || password == "" || db == "" {
 			return nil, errors.New("host, database, username and password are required to configure db_provider")
 		}
 		destinationConfig := config.DbConfig{Host: host, ReplicaHost: replicaHost, Port: fmt.Sprint(port), Username: username, Password: password, Db: db}
-		connectionString := destinationConfig.GetConnectionString()
-		dataSource, err := sql.Open("postgres", connectionString)
-		return &FirebaseDBProvider{ctx: ctx, credentialsClient: firestoreClient, destinationConfig: &destinationConfig, destinationDatasource: dataSource}, nil
+		return &destinationConfig, nil
 	} else {
-		return nil, errors.New("unknown db_provider type, only firebase is supported")
+		return nil, errors.New("only postgres default destination is supported")
 	}
-
 }
