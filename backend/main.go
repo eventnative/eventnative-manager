@@ -80,12 +80,10 @@ func SetupRouter(staticContentDirectory string) *gin.Engine {
 		log.Fatalf("Failed to configure auth service: %s", err)
 	}
 	databaseHandler := handlers.NewDatabaseHandler(&provider, &authenticator)
-	postDbHandler := databaseHandler.PostHandler
-	getDbHandler := databaseHandler.GetHandler
 	apiV1 := router.Group("/api/v1")
 	{
-		apiV1.GET("/database", getDbHandler)
-		apiV1.POST("/database", postDbHandler)
+		apiV1.GET("/database", databaseHandler.GetHandler)
+		apiV1.POST("/database", databaseHandler.PostHandler)
 		apiV1.GET("/", func(c *gin.Context) {
 			c.String(http.StatusOK, "This is %s. Hello, user!\n", appconfig.Instance.ServerName)
 		})

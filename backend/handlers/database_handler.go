@@ -22,37 +22,37 @@ func NewDatabaseHandler(provider *db_provider.DBProvider, authenticator *auth.Au
 }
 
 func (eh *DatabaseHandler) PostHandler(c *gin.Context) {
-	uid, err := eh.resolveUserId(c)
+	projectId, err := eh.resolveProjectId(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, WebErrorWrapper{Error: err, Message: "You are not authorized to create a database"})
 		return
 	}
-	response, err := eh.dbProvider.CreateDatabase(uid)
+	response, err := eh.dbProvider.CreateDatabase(projectId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, WebErrorWrapper{Error: err, Message: "Failed to create a database for user " + uid})
+		c.JSON(http.StatusBadRequest, WebErrorWrapper{Error: err, Message: "Failed to create a database for project " + projectId})
 	}
 	c.JSON(http.StatusOK, response)
 }
 
 func (eh *DatabaseHandler) GetHandler(c *gin.Context) {
-	uid, err := eh.resolveUserId(c)
+	projectId, err := eh.resolveProjectId(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, WebErrorWrapper{Error: err, Message: "You are not authorized, provide appropriate token"})
 		return
 	}
-	credentials, err := eh.dbProvider.GetDatabase(uid)
+	credentials, err := eh.dbProvider.GetDatabase(projectId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, WebErrorWrapper{Error: err, Message: "Failed to get demo database for user " + uid})
+		c.JSON(http.StatusBadRequest, WebErrorWrapper{Error: err, Message: "Failed to get demo database for project " + projectId})
 		return
 	}
 	if credentials == nil {
-		c.JSON(http.StatusNotFound, WebErrorWrapper{Message: "Demo database does not exist for user " + uid, Error: err})
+		c.JSON(http.StatusNotFound, WebErrorWrapper{Message: "Demo database does not exist for project " + projectId, Error: err})
 	}
 	c.JSON(http.StatusOK, credentials)
 }
 
-func (eh *DatabaseHandler) resolveUserId(c *gin.Context) (string, error) {
+func (eh *DatabaseHandler) resolveProjectId(c *gin.Context) (string, error) {
 	token := c.GetHeader("X-Client-Auth")
-	uid, err := eh.authenticator.Authenticate(c, token)
-	return uid, err
+	projectId, err := eh.authenticator.Authenticate(c, token)
+	return projectId, err
 }

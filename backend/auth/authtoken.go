@@ -1,10 +1,12 @@
 package auth
 
 import (
+	"cloud.google.com/go/firestore"
 	"context"
 	"errors"
 	"firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+	"fmt"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
 )
@@ -14,15 +16,22 @@ type Authenticator interface {
 }
 
 type FirebaseAuthenticator struct {
-	Client *auth.Client
+	AuthClient      *auth.Client
+	FirestoreClient *firestore.Client
 }
 
 func (authenticator FirebaseAuthenticator) Authenticate(ctx context.Context, token string) (string, error) {
-	verifiedToken, err := authenticator.Client.VerifyIDToken(ctx, token)
+	verifiedToken, err := authenticator.AuthClient.VerifyIDToken(ctx, token)
 	if err != nil {
 		return "", err
 	}
-	return verifiedToken.UID, nil
+	user, err := authenticator.FirestoreClient.Collection("users_info").Doc(verifiedToken.UID).Get(ctx)
+	if err != nil {
+		return "", err
+	}
+	projectId, err := user.DataAt("_project._id")
+	projectIdString := fmt.Sprint(projectId)
+	return projectIdString, nil
 }
 
 func NewAuthenticator(authenticationViper *viper.Viper) (Authenticator, error) {
@@ -30,15 +39,19 @@ func NewAuthenticator(authenticationViper *viper.Viper) (Authenticator, error) {
 		ctx := context.Background()
 		app, err := firebase.NewApp(context.Background(),
 			&firebase.Config{ProjectID: authenticationViper.GetString("firebase.project_id")},
-			option.WithAPIKey(authenticationViper.GetString("firebase.api_token")))
+			option.WithCredentialsFile(authenticationViper.GetString("firebase.credentials_file")))
 		if err != nil {
 			return nil, err
 		}
-		client, err := app.Auth(ctx)
+		authClient, err := app.Auth(ctx)
 		if err != nil {
 			return nil, err
 		}
-		return &FirebaseAuthenticator{Client: client}, nil
+		firestoreClient, err := app.Firestore(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		return &FirebaseAuthenticator{AuthClient: authClient, FirestoreClient: firestoreClient}, nil
 	} else {
 		return nil, errors.New("auth is not set properly. Only firebase is supported now")
 	}
