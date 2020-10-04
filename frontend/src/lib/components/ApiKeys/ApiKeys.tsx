@@ -3,7 +3,7 @@ import {Button, Col, Form, Input, List, Mentions, message, Modal, Row, Table, Ta
 import ApplicationServices from "../../services/ApplicationServices";
 import {DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, SaveOutlined} from "@ant-design/icons/lib";
 import './ApiKeys.less'
-import {CenteredSpin, defaultErrorHandler, LabelWithTooltip} from "../components";
+import {CenteredSpin, handleError, LabelWithTooltip} from "../components";
 import * as uuid from 'uuid';
 import {randomId} from "../../commons/utils";
 import TagsInput from "../TagsInput/TagsInput";
@@ -53,7 +53,7 @@ export default class ApiKeys extends React.Component<{}, State> {
                 this.setState({tokens: tokens})
             })
             .catch(error => {
-                defaultErrorHandler(error, 'Error loading api keys');
+                handleError(error, 'Error loading api keys');
             })
             .finally(() => {
                 this.setState({globalLoading: false})
@@ -188,7 +188,7 @@ export default class ApiKeys extends React.Component<{}, State> {
                     message.success('Keys have been saved!')
                 })
                 .catch(error => {
-                    defaultErrorHandler(error, 'Error saving keys');
+                    handleError(error, 'Error saving keys');
                 }).finally(() => {
                 this.setState({loading: false})
             })

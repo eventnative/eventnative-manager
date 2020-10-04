@@ -90,7 +90,7 @@ export class PostgresConfig extends DestinationConfig {
     }
 
 
-    protected fillInitialValues(_formData: any) {
+    fillInitialValues(_formData: any) {
         super.fillInitialValues(_formData);
         _formData['pgport'] = 5432;
         _formData['pgschema'] = 'public';

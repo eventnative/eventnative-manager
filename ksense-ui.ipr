@@ -26,7 +26,9 @@
         <script value="start" />
       </scripts>
       <node-interpreter value="project" />
-      <envs />
+      <envs>
+        <env name="BACKEND_API_BASE" value="https://app.eventnative.com" />
+      </envs>
       <method v="2" />
     </configuration>
   </component>

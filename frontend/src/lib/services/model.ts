@@ -43,10 +43,6 @@ export class User {
     private readonly _suggestedInfo: SuggestedUserInfo;
 
     constructor(uid: string, authToken: string, suggested: SuggestedUserInfo, data?: any) {
-        this._authToken = authToken;
-        this._uid = uid;
-        this._suggestedInfo = suggested;
-        this._email = suggested.email;
         if (data) {
             let projectSingleton = data._project;
             delete data['_project'];
@@ -54,10 +50,14 @@ export class User {
             if (projectSingleton) {
                 this._projects = [Marshal.newKnownInstance(Project, projectSingleton)];
             }
-            this._onboarded = this._projects.length > 0;
+            //this._onboarded = true;
         } else {
             this._name = suggested.name;
         }
+        this._authToken = authToken;
+        this._uid = uid;
+        this._suggestedInfo = suggested;
+        this._email = suggested.email;
     }
 
 
