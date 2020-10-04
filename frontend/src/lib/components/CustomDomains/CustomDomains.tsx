@@ -13,7 +13,7 @@ import {
     QuestionOutlined,
     RightCircleOutlined
 } from "@ant-design/icons/lib";
-import {CenteredSpin, defaultErrorHandler} from "../components";
+import {CenteredSpin, handleError} from "../components";
 import './CustomDomains.less'
 
 const CNAME = "hosting.eventnative.com"
@@ -56,7 +56,7 @@ export class CustomDomains extends React.Component<any, State> {
             this.setState({
                 domains: result ? result.domains : []
             })
-        }).catch(defaultErrorHandler).finally(() => this.setState({loading: false}));
+        }).catch(handleError).finally(() => this.setState({loading: false}));
     }
 
     render() {
@@ -115,7 +115,7 @@ export class CustomDomains extends React.Component<any, State> {
 
                                 this.services.storageService.save("custom_domains", {domains: newDomains}, this.services.activeProject.id).then(() => {
                                     message.success("Domain deleted!");
-                                }).catch(defaultErrorHandler).finally(() => this.setState({loading: false}));
+                                }).catch(handleError).finally(() => this.setState({loading: false}));
                             },
                             onCancel: () => {
                             }
@@ -146,7 +146,7 @@ export class CustomDomains extends React.Component<any, State> {
 
                 this.services.storageService.save("custom_domains", {domains: newDomains}, this.services.activeProject.id).then(() => {
                     message.success("New domain added!");
-                }).catch(defaultErrorHandler).finally(() => this.setState({loading: false}));
+                }).catch(handleError).finally(() => this.setState({loading: false}));
             }}/> : <></>
             }
         </>);

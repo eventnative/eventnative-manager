@@ -6,6 +6,9 @@ import {useState} from "react";
 import ApplicationServices from "../../services/ApplicationServices";
 import * as Utils from "../../commons/utils";
 import {reloadPage} from "../../commons/utils";
+import {handleError, makeErrorHandler} from "../components";
+import {Simulate} from "react-dom/test-utils";
+import error = Simulate.error;
 
 type State = {
     loading: boolean
@@ -13,7 +16,6 @@ type State = {
 
 type Props = {
     user: User
-    userSuggestions: SuggestedUserInfo
     visible: boolean
 }
 
@@ -25,25 +27,25 @@ export default function OnboardingForm(props: Props) {
     })
     const [form] = Form.useForm();
 
-    const onSubmit = () => {
+    const onSubmit = async () => {
         setState({loading: true});
-        form
-            .validateFields()
-            .then((values) => {
-                let user = services.userService.getUser();
-                user.onboarded = true;
-                user.projects = [new Project(
-                    Utils.randomId(),
-                    values['projectName']
-                )];
-                user.name = values['userDisplayName']
-
-                services.userService.update(user).then(reloadPage).catch((error) => {
-                    console.error("Failed to update user", error);
-                    setState({loading: false});
-                    message.error("Cannot update user info: " + error.message)
-                })
-            }).catch(() => {setState({loading: false})})
+        try {
+            let values = await form.validateFields();
+            let user = services.userService.getUser();
+            user.onboarded = true;
+            user.projects = [new Project(
+                Utils.randomId(),
+                values['projectName']
+            )];
+            user.name = values['userDisplayName']
+            await services.userService.update(user);
+            await services.initializeDefaultDestination();
+            reloadPage();
+        } catch (e) {
+            handleError(e, "Can't save project data");
+        } finally {
+            setState({loading: false})
+        }
     }
 
 
@@ -52,7 +54,7 @@ export default function OnboardingForm(props: Props) {
         visible={props.visible}
         closable={false}
         footer={[
-            <Button key="submit" onClick={() => {
+            <Button key="cancel" onClick={() => {
                 services.userService.removeAuth(reloadPage);
             }}>Logout</Button>,
             <Button key="submit" type="primary" loading={state.loading} onClick={() => {

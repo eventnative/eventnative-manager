@@ -17,7 +17,7 @@ import {
     ApiOutlined
 } from "@ant-design/icons/lib";
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
-import {GlobalError, Preloader} from "./lib/components/components";
+import {CenteredSpin, GlobalError, Preloader} from "./lib/components/components";
 import {reloadPage} from "./lib/commons/utils";
 import {User} from "./lib/services/model";
 import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
@@ -127,19 +127,22 @@ export default class App extends React.Component<AppProperties, AppState> {
                     <Layout.Content key="content" className="app-layout-content">
                         <Switch>
                             {PRIVATE_PAGES.map(route => {
-                                return (<Route key={route.getPrefixedPath()}
-                                               path={route.getPrefixedPath()}
-                                               exact={true}
-                                               render={() => {
-                                                   document.title = route.pageTitle;
-                                                   return this.wrapInternalPage(route);
-                                               }}
-                                />);
+                                if (!this.state.showOnboardingForm) {
+                                    return (<Route key={route.getPrefixedPath()}
+                                                   path={route.getPrefixedPath()}
+                                                   exact={true}
+                                                   render={() => {
+                                                       document.title = route.pageTitle;
+                                                       return this.wrapInternalPage(route);
+                                                   }}/>);
+                                } else {
+                                    return (<CenteredSpin />)
+                                }
                             })}
                         </Switch>
                     </Layout.Content>
                 </Layout>
-                <OnboardingForm user={this.state.user} userSuggestions={null} visible={this.state.showOnboardingForm}/>
+                <OnboardingForm user={this.state.user} visible={this.state.showOnboardingForm}/>
             </Layout>
         );
     }
@@ -150,16 +153,16 @@ export default class App extends React.Component<AppProperties, AppState> {
                 <Menu.Item key="status" icon={<AreaChartOutlined/>}>
                     <NavLink to="/dashboard" activeClassName="selected">Status</NavLink>
                 </Menu.Item>
-                <Menu.Item key="api_keys" icon={<UnlockOutlined />}>
+                <Menu.Item key="api_keys" icon={<UnlockOutlined/>}>
                     <NavLink to="/api_keys" activeClassName="selected">Event API Keys</NavLink>
                 </Menu.Item>
-                <Menu.Item key="sources" icon={<ApiOutlined />}>
+                <Menu.Item key="sources" icon={<ApiOutlined/>}>
                     <NavLink to="/sources" activeClassName="selected">Sources</NavLink>
                 </Menu.Item>
-                <Menu.Item key="destinations" icon={<NotificationOutlined />}>
+                <Menu.Item key="destinations" icon={<NotificationOutlined/>}>
                     <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
                 </Menu.Item>
-                <Menu.Item key="domains" icon={<CloudOutlined />}>
+                <Menu.Item key="domains" icon={<CloudOutlined/>}>
                     <NavLink to="/domains" activeClassName="selected">Custom Domains</NavLink>
                 </Menu.Item>
             </Menu>

@@ -4,7 +4,7 @@ import {ClickHouseConfig, DestinationConfig, destinationConfigTypes, destination
 import {Avatar, Button, Col, Divider, Dropdown, Form, Input, List, Menu, message, Modal, Radio, Row, Select, Switch} from "antd";
 import {DatabaseOutlined, DeleteOutlined, EditOutlined, ExclamationCircleOutlined, PlusOutlined} from "@ant-design/icons/lib";
 import './DestinationEditor.less'
-import {CenteredSpin, defaultErrorHandler, LabelWithTooltip} from "../components";
+import {CenteredSpin, handleError, LabelWithTooltip} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {IndexedList} from "../../commons/utils";
 import Marshal from "../../commons/marshalling";
@@ -69,9 +69,9 @@ export class DestinationsList extends React.Component<any, State> {
                 loading: false
             });
         }).catch((error) => {
-            defaultErrorHandler(error, "Failed to load data from server: ")
+            handleError(error, "Failed to load data from server")
             this.setState({loading: false});
-        })
+        }).finally(() => this.setState({loading: false}));
     }
 
     destinationComponent(config: DestinationConfig): ReactNode {
@@ -296,7 +296,7 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
                     testConnection(values).then(() => {
                         message.success("Successfully connected! " + JSON.stringify(values));
                     }).catch(error => {
-                        defaultErrorHandler(error, "Failed to validate connection");
+                        handleError(error, "Failed to validate connection");
                     }).finally(() => setConnectionTesting(false));
                 })
             }}>Test connection</Button>,
@@ -306,7 +306,7 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
                 form.validateFields().then(testConnection).then(values => {
                     onSave(values);
                 }).catch(error => {
-                    defaultErrorHandler(error, "Failed to save connection ");
+                    handleError(error, "Failed to save connection ");
                 }).finally(() => setSaving(false));
             }}>Save</Button>,
         ]}

@@ -5,6 +5,9 @@ import (
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/ksensehq/enhosted/appconfig"
+	"github.com/ksensehq/enhosted/auth"
+	"github.com/ksensehq/enhosted/db_provider"
+	"github.com/ksensehq/enhosted/handlers"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
@@ -34,7 +37,7 @@ func Cors(h http.Handler) http.Handler {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.Header().Add("Access-Control-Max-Age", "86400")
 		w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
-		w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Host")
+		w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Host, X-Client-Auth")
 		w.Header().Add("Access-Control-Allow-Credentials", "true")
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
@@ -64,9 +67,27 @@ func ReadConfiguration(configFilePath string) {
 func SetupRouter(staticContentDirectory string) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
-	router.GET("/api/", func(c *gin.Context) {
-		c.String(http.StatusOK, "This is %s. Hello, user!\n", appconfig.Instance.ServerName)
-	})
+	dbProviderConfig := viper.Sub("db_provider")
+	if dbProviderConfig == nil {
+		log.Fatal("db_provider is not configured")
+	}
+	provider, err := db_provider.NewDatabaseProvider(dbProviderConfig)
+	if err != nil {
+		log.Fatalf("Failed to create db_provider: %s", err)
+	}
+	authenticator, err := auth.NewAuthenticator(viper.Sub("auth"))
+	if err != nil {
+		log.Fatalf("Failed to configure auth service: %s", err)
+	}
+	databaseHandler := handlers.NewDatabaseHandler(&provider, &authenticator)
+	apiV1 := router.Group("/api/v1")
+	{
+		apiV1.GET("/database", databaseHandler.GetHandler)
+		apiV1.POST("/database", databaseHandler.PostHandler)
+		apiV1.GET("/", func(c *gin.Context) {
+			c.String(http.StatusOK, "This is %s. Hello, user!\n", appconfig.Instance.ServerName)
+		})
+	}
 	router.Use(static.Serve("/", static.LocalFile(staticContentDirectory, false)))
 	return router
 }

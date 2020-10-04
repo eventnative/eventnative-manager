@@ -1,8 +1,14 @@
 import * as firebase from 'firebase';
 import {Project, SuggestedUserInfo, User} from "./model";
-import {message} from "antd";
 import {randomId} from "../commons/utils";
 import Marshal from "../commons/marshalling";
+import axios, {AxiosRequestConfig, AxiosResponse, Method} from 'axios';
+import {PostgresConfig} from "./destinations";
+import * as uuid from 'uuid';
+import {message} from "antd";
+import {handleError} from "../components/components";
+import {Simulate} from "react-dom/test-utils";
+import error = Simulate.error;
 
 export class ApplicationConfiguration {
     private readonly _firebaseConfig: any;
@@ -20,10 +26,11 @@ export class ApplicationConfiguration {
             measurementId: "G-6ZMG0NSJP8"
         };
         if (process.env.BACKEND_API_BASE) {
-            this._backendApiBase = process.env.BACKEND_API_BASE;
+            this._backendApiBase = concatenateURLs(process.env.BACKEND_API_BASE, "/api/v1");
         } else {
-            this._backendApiBase = window.location.protocol + "//" + window.location.hostname + (window.location.port.length > 0 ? (":" + window.location.port) : "") + "/api/";
+            this._backendApiBase = window.location.protocol + "//" + window.location.hostname + (window.location.port.length > 0 ? (":" + window.location.port) : "") + "/api/v1";
         }
+        console.log("Using backend " + this._backendApiBase);
     }
 
 
@@ -34,15 +41,16 @@ export class ApplicationConfiguration {
     get backendApiBase(): string {
         return this._backendApiBase;
     }
+
 }
-
-
 
 export default class ApplicationServices {
     private readonly _userService: UserService;
     private readonly _storageService: FirebaseServerStorage;
     private _backendApiClient: BackendApiClient;
     private _applicationConfiguration: ApplicationConfiguration
+
+    public onboardingNotCompleteErrorMessage = "Onboarding process hasn't been fully completed. Please, contact the support";
 
     constructor() {
         this._applicationConfiguration = new ApplicationConfiguration();
@@ -79,6 +87,24 @@ export default class ApplicationServices {
 
     get backendApiClient(): BackendApiClient {
         return this._backendApiClient;
+    }
+
+    public async initializeDefaultDestination() {
+        let db = await this._backendApiClient.post("/database", {projectId: this.activeProject.id});
+        const destinationConfig = new PostgresConfig("default_destination");
+        destinationConfig.fillInitialValues(db);
+        destinationConfig.update(db);
+        await this._storageService.save("destinations", {destinations: [destinationConfig]}, this.activeProject.id);
+    }
+
+    generateToken(): any {
+        return {
+            token: {
+                auth: uuid.v4(),
+                s2s_auth: uuid.v4(),
+                origins: []
+            }
+        }
     }
 }
 
@@ -212,11 +238,12 @@ class FirebaseUserService implements UserService {
             firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.uid).get()
                 .then((doc) => {
                     user.getIdToken(false).then((token) => {
+                        console.log("Got token", token);
                         let suggestedInfo = this.suggestedInfoFromFirebaseUser(user);
                         if (doc.exists) {
                             resolve(this.user = new User(user.uid, token, suggestedInfo, doc.data()));
                         } else {
-                            resolve(this.user = new User(user.uid,token, suggestedInfo));
+                            resolve(this.user = new User(user.uid, token, suggestedInfo));
                         }
                     }).catch(reject);
                 })
@@ -284,7 +311,20 @@ class FirebaseUserService implements UserService {
  */
 export interface BackendApiClient {
     post(url, data: any): Promise<any>
+
     get(url): Promise<any>
+}
+
+class APIError extends Error {
+    private _httpStatus: number;
+    private _response: any;
+
+
+    constructor(response: AxiosResponse, request: AxiosRequestConfig) {
+        super(response.data['message'] === undefined ? `Error ${response.status} at ${request.url}` : response.data['message']);
+        this._httpStatus = response.status;
+        this._response = response.data;
+    }
 }
 
 export class JWTBackendClient implements BackendApiClient {
@@ -297,18 +337,55 @@ export class JWTBackendClient implements BackendApiClient {
         this.tokenAccessor = tokenAccessor;
     }
 
-    get(url: string): Promise<any> {
-        return Promise.resolve(undefined);
+    private exec(method: Method, url: string, payload?: any): Promise<any> {
+        let fullUrl = concatenateURLs(this.baseUrl, url);
+        const token = this.tokenAccessor();
+        let request: AxiosRequestConfig = {
+            method: method,
+            url: fullUrl,
+            headers: {
+                "X-Client-Auth": token
+            }
+        };
+        if (payload !== undefined) {
+            if (method.toLowerCase() === 'get') {
+                throw new Error(`GET ${fullUrl} can't have a body`);
+            }
+            request.data = payload;
+        }
+        console.log()
+        return new Promise<any>((resolve, reject) => {
+            axios(request).then((response: AxiosResponse<any>) => {
+                if (response.status == 200) {
+                    resolve(response.data);
+                } else if (response.status == 204) {
+                    resolve({});
+                } else {
+                    reject(new APIError(response, request));
+                }
+            }).catch((error) => {
+                let baseMessage = "Request at " + fullUrl + " failed";
+                if (error.message) {
+                    baseMessage += " with " + error.message;
+                }
+                reject(new Error(baseMessage));
+            });
+        });
     }
 
-    private fullUrl(url) {
-        return this.baseUrl + url;
+    get(url: string): Promise<any> {
+        return this.exec('get', url);
     }
+
 
     post(url: string, data: any): Promise<any> {
-        return Promise.resolve(undefined);
+        return this.exec('post', url, data ? data : {});
     }
+}
 
+function concatenateURLs(baseUrl: string, url: string) {
+    let base = baseUrl.endsWith("/") ? baseUrl.substr(0, baseUrl.length - 1) : baseUrl;
+    return base + (url.startsWith("/") ? url : ("/" + url));
 }
 
 /**
@@ -328,7 +405,6 @@ export interface ServerStorage {
 
 
 class FirebaseServerStorage implements ServerStorage {
-
 
 
     get(collectionName: string, key?: string): Promise<any> {

@@ -86,11 +86,11 @@ export class PostgresConfig extends DestinationConfig {
 
 
     describe() {
-        return `${this.formData['pguser']}@${this.formData['pghost']}:${this.formData['pgport']}/${this.formData['pgdatabase']}, ${this.formData['mode']}`
+        return `${this.formData['pguser']}:${this.formData['pgpassword']}@${this.formData['pghost']}:${this.formData['pgport']}/${this.formData['pgdatabase']}, ${this.formData['mode']}`
     }
 
 
-    protected fillInitialValues(_formData: any) {
+    fillInitialValues(_formData: any) {
         super.fillInitialValues(_formData);
         _formData['pgport'] = 5432;
         _formData['pgschema'] = 'public';

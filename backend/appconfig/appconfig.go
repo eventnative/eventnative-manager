@@ -13,6 +13,7 @@ var Instance *AppConfig
 
 func setDefaultParams() {
 	viper.SetDefault("server.port", "8001")
+	viper.SetDefault("db_provider.default_destination.postgres.port", 5432)
 }
 
 func Init() error {

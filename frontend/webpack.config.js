@@ -1,3 +1,5 @@
+const webpack = require('webpack');
+
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require('terser-webpack-plugin');
 
@@ -70,6 +72,11 @@ module.exports = {
             template: "./src/index.html",
             filename: "./index.html",
             favicon: "./src/favicon.png"
-        })
+        }),
+        new webpack.DefinePlugin({
+            'process.env': {
+                BACKEND_API_BASE: JSON.stringify(process.env.BACKEND_API_BASE)
+            },
+        }),
     ]
 };
