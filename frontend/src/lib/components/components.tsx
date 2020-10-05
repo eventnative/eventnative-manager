@@ -4,8 +4,8 @@
 
 import React, {ReactNode, useState} from "react";
 import './components.less'
-import {Input, message, Spin, Tag, Tooltip} from "antd";
-import {PlusOutlined, QuestionCircleOutlined} from "@ant-design/icons/lib";
+import {Card, Col, Input, message, Spin, Tag, Tooltip} from "antd";
+import {CaretDownFilled, CaretRightFilled, CaretUpFilled, PlusOutlined, QuestionCircleOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "../services/ApplicationServices";
 
 const loader = require("../../icons/loading.gif").default;
@@ -58,6 +58,48 @@ export function LabelWithTooltip({children, documentation}) {
     )
 }
 
+function formatPercent(num: number) {
+    let res = (num*100).toFixed(2);
+    while ((res.endsWith("0") || res.endsWith(".")) && res.length > 1) {
+        res = res.substr(0, res.length - 1);
+    }
+    return res;
+
+}
+
+export function StatCard({value, valuePrev, ...otherProps}) {
+    let extraClassName;
+    let icon;
+    let percent;
+    if (valuePrev < value) {
+        extraClassName = "stat-card-growth stat-card-comparison"
+        icon = <CaretUpFilled />
+        percent = valuePrev == 0 ? "∞" : formatPercent(value / valuePrev - 1)
+    } else if (valuePrev > value) {
+        extraClassName = "stat-card-decline stat-card-comparison"
+        icon = <CaretDownFilled />
+        percent = value == 0 ? "∞" : formatPercent(valuePrev / value - 1)
+    } else {
+        extraClassName = "stat-card-flat stat-card-comparison"
+        icon = <CaretRightFilled />
+        percent = "0"
+    }
+
+
+    let extra = <>
+        <div className={extraClassName}>
+            {icon}{percent}%
+        </div>
+    </>;
+    return <Card {...otherProps} extra={extra}>
+        <div className="stat-card-number">
+            {value}
+        </div>
+    </Card>
+
+}
+
+
 export function makeErrorHandler(errorDescription: string) {
     return (error) => handleError(error, errorDescription);
 }
@@ -84,14 +126,12 @@ export function handleError(error: any, errorDescription?: string) {
             console.error(`Error occurred`, error);
         }
     }
-    // let app = ApplicationServices.get();
-    // app.analyticsService.onError({
-    //     user: app.userService.hasUser() ? app.userService.getUser() : null,
-    //     error: error
-    // });
+    let app = ApplicationServices.get();
+    app.analyticsService.onError({
+        user: app.userService.hasUser() ? app.userService.getUser() : null,
+        error: error
+    });
 }
 
-interface ITagInputProps {
-    value: any[]
-    onChange: () => void
-}
+
+
