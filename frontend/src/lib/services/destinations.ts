@@ -73,7 +73,7 @@ export abstract class DestinationConfig {
     abstract describe();
 
     protected fillInitialValues(_formData: any) {
-        _formData['mode'] = "streaming";
+        _formData['mode'] = "stream";
         _formData['tableName'] = 'events';
     }
 }

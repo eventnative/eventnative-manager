@@ -240,7 +240,7 @@ abstract class DestinationDialog<T extends DestinationConfig> extends React.Comp
             <Form layout="horizontal" form={this.props.form} initialValues={this.state.currentValue.formData}>
                 <Form.Item label="Mode" name="mode" labelCol={{span: 4}} wrapperCol={{span: 18}}>
                     <Radio.Group optionType="button" buttonStyle="solid" onChange={() => this.refreshStateFromForm()}>
-                        <Radio.Button value="streaming">Streaming</Radio.Button>
+                        <Radio.Button value="stream">Streaming</Radio.Button>
                         <Radio.Button value="batch">Batch</Radio.Button>
                     </Radio.Group>
                 </Form.Item>
