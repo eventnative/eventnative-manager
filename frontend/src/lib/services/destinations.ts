@@ -43,6 +43,7 @@ export abstract class DestinationConfig {
     protected readonly _uid = randomId();
     protected readonly _id: string
     protected readonly _type: string
+    protected readonly _onlyKeys = [];
     protected _formData: any = {};
 
 
