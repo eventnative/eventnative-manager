@@ -17,14 +17,28 @@ type WebErrorWrapper struct {
 	Error   error  `json:"error"`
 }
 
+type DbCreationRequestBody struct {
+	ProjectId string `json:"projectId"`
+}
+
 func NewDatabaseHandler(provider *db_provider.DBProvider, authenticator *auth.Authenticator) *DatabaseHandler {
 	return &DatabaseHandler{*provider, *authenticator}
 }
 
 func (eh *DatabaseHandler) PostHandler(c *gin.Context) {
-	projectId, err := eh.resolveProjectId(c)
+	body := DbCreationRequestBody{}
+	if err := c.BindJSON(&body); err != nil {
+		c.Writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	projectId := body.ProjectId
+	userProjectId, err := eh.resolveProjectId(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, WebErrorWrapper{Error: err, Message: "You are not authorized to create a database"})
+		return
+	}
+	if userProjectId != projectId {
+		c.JSON(http.StatusUnauthorized, WebErrorWrapper{Message: "User does not have access to project " + projectId})
 		return
 	}
 	response, err := eh.dbProvider.CreateDatabase(projectId)
@@ -32,23 +46,6 @@ func (eh *DatabaseHandler) PostHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, WebErrorWrapper{Error: err, Message: "Failed to create a database for project " + projectId})
 	}
 	c.JSON(http.StatusOK, response)
-}
-
-func (eh *DatabaseHandler) GetHandler(c *gin.Context) {
-	projectId, err := eh.resolveProjectId(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, WebErrorWrapper{Error: err, Message: "You are not authorized, provide appropriate token"})
-		return
-	}
-	credentials, err := eh.dbProvider.GetDatabase(projectId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, WebErrorWrapper{Error: err, Message: "Failed to get demo database for project " + projectId})
-		return
-	}
-	if credentials == nil {
-		c.JSON(http.StatusNotFound, WebErrorWrapper{Message: "Demo database does not exist for project " + projectId, Error: err})
-	}
-	c.JSON(http.StatusOK, credentials)
 }
 
 func (eh *DatabaseHandler) resolveProjectId(c *gin.Context) (string, error) {

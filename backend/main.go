@@ -82,7 +82,6 @@ func SetupRouter(staticContentDirectory string) *gin.Engine {
 	databaseHandler := handlers.NewDatabaseHandler(&provider, &authenticator)
 	apiV1 := router.Group("/api/v1")
 	{
-		apiV1.GET("/database", databaseHandler.GetHandler)
 		apiV1.POST("/database", databaseHandler.PostHandler)
 		apiV1.GET("/", func(c *gin.Context) {
 			c.String(http.StatusOK, "This is %s. Hello, user!\n", appconfig.Instance.ServerName)
