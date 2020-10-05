@@ -41,7 +41,6 @@ export default class AnalyticsService {
     }
 
     public onPageLoad({pagePath}: { pagePath: string }) {
-        alert('Page load ' + pagePath)
         if (this.appConfig.appEnvironment === 'dev') {
             return
         }
