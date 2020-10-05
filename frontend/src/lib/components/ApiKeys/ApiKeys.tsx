@@ -13,6 +13,7 @@ type Token = {
     jsAuth: string
     serverAuth: string
     origins?: string[]
+    comment?: string
 }
 
 interface TokenDisplay extends Token {
@@ -73,10 +74,11 @@ export default class ApiKeys extends React.Component<{}, State> {
         let header = (<div className="api-keys-buttons-header">{this.generateButton()}{this.saveButton()}</div>)
         const columns = [
             {
-                width: "250px", className: "api-keys-column-id", dataIndex: 'uid', key: 'uid', render: (text, row, index) => {
-                    return <span className={"api-keys-status-" + this.state.tokens[index].status}>
+                width: "250px", className: "api-keys-column-id", dataIndex: 'uid', key: 'uid', render: (text, row: TokenDisplay, index) => {
+                    return <><span className={"api-keys-status-" + this.state.tokens[index].status}>
                         <span className="api-keys-key-id">{text}</span>
                     </span>
+                    {row.comment ? (<div className="api-keys-comment"><b>Note</b>: {row.comment}</div>) : ""}</>
                 }, title: (<LabelWithTooltip documentation={"Unique ID of the key"}>ID</LabelWithTooltip>),
             },
             {

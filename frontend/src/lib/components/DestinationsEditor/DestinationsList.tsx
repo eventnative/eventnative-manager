@@ -155,8 +155,7 @@ export class DestinationsList extends React.Component<any, State> {
             });
             message.info("Destination configuration has been saved!")
         }).catch((error) => {
-            Modal.error({title: "Save failed :(", content: error.message});
-            console.log("Save failed", error)
+            handleError(error, 'Save failed :(');
         })
     }
 

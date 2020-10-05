@@ -6,6 +6,7 @@ import React, {ReactNode, useState} from "react";
 import './components.less'
 import {Input, message, Spin, Tag, Tooltip} from "antd";
 import {PlusOutlined, QuestionCircleOutlined} from "@ant-design/icons/lib";
+import ApplicationServices from "../services/ApplicationServices";
 
 const loader = require("../../icons/loading.gif").default;
 const plumber = require("../../icons/plumber.png").default;
@@ -83,6 +84,11 @@ export function handleError(error: any, errorDescription?: string) {
             console.error(`Error occurred`, error);
         }
     }
+    // let app = ApplicationServices.get();
+    // app.analyticsService.onError({
+    //     user: app.userService.hasUser() ? app.userService.getUser() : null,
+    //     error: error
+    // });
 }
 
 interface ITagInputProps {

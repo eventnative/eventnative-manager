@@ -57,7 +57,7 @@ export default class App extends React.Component<AppProperties, AppState> {
 
     }
 
-    public componentDidMount() {
+    public async componentDidMount() {
         window.setTimeout(() => {
             if (this.state.lifecycle == AppLifecycle.LOADING) {
                 console.log("Login timout");
@@ -66,6 +66,7 @@ export default class App extends React.Component<AppProperties, AppState> {
         }, LOGIN_TIMEOUT);
         this.services.userService.waitForUser().then((loginStatus) => {
             setDebugInfo('user', loginStatus.user);
+            this.services.analyticsService.onUserKnown(loginStatus.user)
             this.setState({
                 lifecycle: loginStatus.user ? AppLifecycle.APP : AppLifecycle.REQUIRES_LOGIN,
                 user: loginStatus.user,
@@ -87,7 +88,10 @@ export default class App extends React.Component<AppProperties, AppState> {
                         return (<Route key={route.getPrefixedPath()}
                                        path={route.getPrefixedPath()}
                                        exact
-                                       render={() => {
+                                       render={(routeProps) => {
+                                           this.services.analyticsService.onPageLoad({
+                                               pagePath: routeProps.location
+                                           })
                                            document.title = route.pageTitle;
                                            return route.getComponent();
                                        }}
@@ -131,7 +135,10 @@ export default class App extends React.Component<AppProperties, AppState> {
                                     return (<Route key={route.getPrefixedPath()}
                                                    path={route.getPrefixedPath()}
                                                    exact={true}
-                                                   render={() => {
+                                                   render={(routeProps) => {
+                                                       this.services.analyticsService.onPageLoad({
+                                                           pagePath: routeProps.location
+                                                       });
                                                        document.title = route.pageTitle;
                                                        return this.wrapInternalPage(route);
                                                    }}/>);

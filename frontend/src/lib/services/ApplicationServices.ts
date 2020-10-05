@@ -5,14 +5,17 @@ import Marshal from "../commons/marshalling";
 import axios, {AxiosRequestConfig, AxiosResponse, Method} from 'axios';
 import {PostgresConfig} from "./destinations";
 import * as uuid from 'uuid';
-import {message} from "antd";
-import {handleError} from "../components/components";
 import {Simulate} from "react-dom/test-utils";
-import error = Simulate.error;
+import AnalyticsService from "./analytics";
+
 
 export class ApplicationConfiguration {
     private readonly _firebaseConfig: any;
     private readonly _backendApiBase: string;
+    /**
+     * One of the following: dev, prod
+     */
+    private readonly _appEnvironment;
 
     constructor() {
         this._firebaseConfig = {
@@ -30,12 +33,22 @@ export class ApplicationConfiguration {
         } else {
             this._backendApiBase = window.location.protocol + "//" + window.location.hostname + (window.location.port.length > 0 ? (":" + window.location.port) : "") + "/api/v1";
         }
-        console.log("Using backend " + this._backendApiBase);
+        if (process.env.APP_ENV) {
+            this._appEnvironment = process.env.APP_ENV.toLowerCase();
+        } else {
+            this._appEnvironment = 'dev';
+        }
+        console.log(`App initialized. Backend: ${this._backendApiBase}. Env: ${this._appEnvironment}`);
     }
 
 
     get firebaseConfig(): any {
         return this._firebaseConfig;
+    }
+
+
+    get appEnvironment() {
+        return this._appEnvironment;
     }
 
     get backendApiBase(): string {
@@ -47,10 +60,11 @@ export class ApplicationConfiguration {
 export default class ApplicationServices {
     private readonly _userService: UserService;
     private readonly _storageService: FirebaseServerStorage;
-    private _backendApiClient: BackendApiClient;
-    private _applicationConfiguration: ApplicationConfiguration
+    private readonly _backendApiClient: BackendApiClient;
+    private readonly _applicationConfiguration: ApplicationConfiguration
 
     public onboardingNotCompleteErrorMessage = "Onboarding process hasn't been fully completed. Please, contact the support";
+    private readonly _analyticsService: AnalyticsService;
 
     constructor() {
         this._applicationConfiguration = new ApplicationConfiguration();
@@ -61,6 +75,7 @@ export default class ApplicationServices {
         this._userService = new FirebaseUserService();
         this._storageService = new FirebaseServerStorage();
         this._backendApiClient = new JWTBackendClient(this._applicationConfiguration.backendApiBase, () => this._userService.getUser().authToken);
+        this._analyticsService = new AnalyticsService(this._applicationConfiguration);
     }
 
     get userService(): UserService {
@@ -75,13 +90,26 @@ export default class ApplicationServices {
         return this._storageService;
     }
 
+    get analyticsService(): AnalyticsService {
+        return this._analyticsService;
+    }
+
     static _instance = null;
 
     static get(): ApplicationServices {
-        if (ApplicationServices._instance == null) {
-            ApplicationServices._instance = new ApplicationServices();
+        if (window['_en_instance'] === undefined) {
+            try {
+                window['_en_instance'] = new ApplicationServices();
+            } catch (e) {
+                console.error("Failed to initialize application services", e);
+                document.body.innerHTML = `<pre>Fatal error '${e.message}': \n${e.stack}</pre>`
+                if (window.stop) {
+                    window.stop();
+                }
+                throw e;
+            }
         }
-        return ApplicationServices._instance;
+        return window['_en_instance'];
     }
 
 
@@ -135,7 +163,7 @@ export interface UserService {
     initiateGithubLogin(redirect?: string)
 
     /**
-     * Gets (waits for) logged in user (or null if user is not logged in)
+     * Get (wait for) logged in user (or null if user is not logged in).
      */
     waitForUser(): Promise<UserLoginStatus>;
 
@@ -143,6 +171,11 @@ export interface UserService {
      * Get current logged in user. Throws exception if user is not availavle
      */
     getUser(): User
+
+    /**
+     * Get current logged in user. Throws exception if user is not availavle
+     */
+    hasUser(): boolean
 
     sendPasswordReset(email?: string);
 
@@ -263,6 +296,8 @@ class FirebaseUserService implements UserService {
         firebase.auth().signOut().then(callback).catch(callback);
     }
 
+
+
     getUser(): User {
         if (!this.user) {
             throw new Error("User is null")
@@ -302,6 +337,10 @@ class FirebaseUserService implements UserService {
                 })
                 .catch(reject);
         })
+    }
+
+    hasUser(): boolean {
+        return !!this.user;
     }
 }
 

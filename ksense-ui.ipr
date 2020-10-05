@@ -28,6 +28,7 @@
       <node-interpreter value="project" />
       <envs>
         <env name="BACKEND_API_BASE" value="https://app.eventnative.com" />
+        <env name="env" value="PROD" />
       </envs>
       <method v="2" />
     </configuration>

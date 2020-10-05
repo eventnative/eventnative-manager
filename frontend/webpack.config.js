@@ -75,7 +75,8 @@ module.exports = {
         }),
         new webpack.DefinePlugin({
             'process.env': {
-                BACKEND_API_BASE: JSON.stringify(process.env.BACKEND_API_BASE)
+                BACKEND_API_BASE: JSON.stringify(process.env.BACKEND_API_BASE),
+                APP_ENV: JSON.stringify(process.env.ENV)
             },
         }),
     ]
