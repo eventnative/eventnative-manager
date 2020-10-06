@@ -211,8 +211,8 @@ export default class ApiKeys extends React.Component<{}, State> {
 
 
     private newToken(type: string, len?: number) {
-        let postfix = `${this.services.activeProject.id}:${randomId(len)}`;
-        return type.length > 0 ? `${type}:${postfix}` : postfix;
+        let postfix = `${this.services.activeProject.id}.${randomId(len)}`;
+        return type.length > 0 ? `${type}.${postfix}` : postfix;
     }
 }
 
