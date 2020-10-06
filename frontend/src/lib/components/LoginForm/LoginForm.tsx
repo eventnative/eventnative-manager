@@ -1,7 +1,6 @@
 import * as React from 'react'
 import {Button, Card, Col, Form, Input, message, Modal, Row} from "antd";
 import {LockOutlined, UserOutlined, MailOutlined} from "@ant-design/icons/lib";
-import {useHistory} from "react-router-dom";
 
 const logo = require('../../../icons/ksense_icon.svg').default;
 const googleLogo = require('../../../icons/google.svg').default;
@@ -47,7 +46,7 @@ export default class LoginForm extends React.Component<Props, State> {
                 <img src={logo} alt="[logo]" style={{'height': '50px'}}/> <span style={{'fontSize': '18px'}}>Welcome Back</span>
             </div>
         );
-        return ([
+        return (<>
             <PasswordResetForm
                 key="password-reset-form"
                 visible={this.state.showPasswordReset}
@@ -124,7 +123,7 @@ export default class LoginForm extends React.Component<Props, State> {
                     </Button>
                 </div>
 
-            </Card>]);
+            </Card></>);
     }
 
     private passwordLogin(values) {

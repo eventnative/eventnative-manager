@@ -24,6 +24,9 @@ export default class AnalyticsService {
     }
 
     public onUserKnown(user: User) {
+        if (!user) {
+            return;
+        }
         this.user = user;
         LogRocket.identify(user.uid, {
             email: user.email,
