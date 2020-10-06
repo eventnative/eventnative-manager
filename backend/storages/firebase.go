@@ -44,7 +44,7 @@ func (fb *Firebase) CreateDatabase(projectId string) (*entities.Database, error)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
 			//create new
-			database, err := fb.defaultDestination.CreateDatabase()
+			database, err := fb.defaultDestination.CreateDatabase(projectId)
 			if err != nil {
 				return nil, fmt.Errorf("Error creating postgres default destination for projectId: [%s]: %v", projectId, err)
 			}

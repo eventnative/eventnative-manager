@@ -10,7 +10,6 @@ import (
 	"github.com/ksensehq/eventnative/logging"
 	"github.com/spf13/viper"
 	"strings"
-	"time"
 )
 
 type DatasourceConfig struct {
@@ -65,8 +64,8 @@ func NewPostgres(ctx context.Context, postgresDestinationViper *viper.Viper) (*P
 	}, nil
 }
 
-func (p *Postgres) CreateDatabase() (*entities.Database, error) {
-	db := strings.ToLower(random.AlphabeticalString(4)) + time.Now().Format("200601021504")
+func (p *Postgres) CreateDatabase(projectId string) (*entities.Database, error) {
+	db := strings.ToLower(projectId + "_" + random.AlphabeticalString(3))
 	logging.Infof("db " + db)
 	_, err := p.dataSource.Exec("CREATE DATABASE " + db)
 	if err != nil {
@@ -83,7 +82,7 @@ func (p *Postgres) CreateDatabase() (*entities.Database, error) {
 		return nil, err
 	}
 
-	username := strings.ToLower(random.AlphabeticalString(4)) + time.Now().Format("200601021504")
+	username := db
 	logging.Infof("Generated username: " + username)
 	password := random.String(16)
 	logging.Info("Generated password: " + password)
