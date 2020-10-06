@@ -1,12 +1,16 @@
 package appconfig
 
 import (
+	"github.com/ksensehq/eventnative/logging"
 	"github.com/spf13/viper"
+	"io"
 )
 
 type AppConfig struct {
 	ServerName string
 	Authority  string
+
+	closeMe []io.Closer
 }
 
 var Instance *AppConfig
@@ -14,6 +18,10 @@ var Instance *AppConfig
 func setDefaultParams() {
 	viper.SetDefault("server.port", "8001")
 	viper.SetDefault("db_provider.default_destination.postgres.port", 5432)
+
+	viper.SetDefault("server.log.path", "/home/ksense/logs/enhosted")
+	viper.SetDefault("server.log.rotation_min", 1440) //24 hours
+	viper.SetDefault("server.log.max_backups", 30)
 }
 
 func Init() error {
@@ -27,6 +35,29 @@ func Init() error {
 	appConfig.ServerName = serverName
 	var port = viper.GetString("server.port")
 	appConfig.Authority = "0.0.0.0:" + port
+
+	err := logging.InitGlobalLogger(logging.Config{
+		LoggerName:  "main",
+		ServerName:  serverName,
+		FileDir:     viper.GetString("server.log.path"),
+		RotationMin: viper.GetInt64("server.log.rotation_min"),
+		MaxBackups:  viper.GetInt("server.log.max_backups")})
+	if err != nil {
+		return err
+	}
+
 	Instance = &appConfig
 	return nil
+}
+
+func (a *AppConfig) ScheduleClosing(c io.Closer) {
+	a.closeMe = append(a.closeMe, c)
+}
+
+func (a *AppConfig) Close() {
+	for _, cl := range a.closeMe {
+		if err := cl.Close(); err != nil {
+			logging.Error(err)
+		}
+	}
 }
