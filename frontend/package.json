@@ -23,7 +23,7 @@
     "react-router-dom": "^5.2.0"
   },
   "scripts": {
-    "start": "ENV=prod webpack-dev-server --open --mode development",
+    "start": "ENV=dev webpack-dev-server --open --mode development",
     "build": "ENV=prod webpack --mode production"
   },
   "eslintConfig": {

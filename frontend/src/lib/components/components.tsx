@@ -7,6 +7,7 @@ import './components.less'
 import {Card, Col, Input, message, Spin, Tag, Tooltip} from "antd";
 import {CaretDownFilled, CaretRightFilled, CaretUpFilled, PlusOutlined, QuestionCircleOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "../services/ApplicationServices";
+import {numberFormat} from "../commons/utils";
 
 const loader = require("../../icons/loading.gif").default;
 const plumber = require("../../icons/plumber.png").default;
@@ -59,41 +60,55 @@ export function LabelWithTooltip({children, documentation}) {
 }
 
 function formatPercent(num: number) {
-    let res = (num*100).toFixed(2);
-    while ((res.endsWith("0") || res.endsWith(".")) && res.length > 1) {
+    let res = (num * 100).toFixed(2);
+    if (res.indexOf(".") >= 0) {
+        while ((res.endsWith("0")) && res.length > 1) {
+            res = res.substr(0, res.length - 1);
+        }
+    }
+    if (res.endsWith(".")) {
         res = res.substr(0, res.length - 1);
     }
     return res;
 
 }
 
-export function StatCard({value, valuePrev, ...otherProps}) {
+export function StatCard({value, ...otherProps}) {
+    let formatter = otherProps['format'] ? otherProps['format'] : numberFormat({});
+
     let extraClassName;
     let icon;
     let percent;
-    if (valuePrev < value) {
-        extraClassName = "stat-card-growth stat-card-comparison"
-        icon = <CaretUpFilled />
-        percent = valuePrev == 0 ? "∞" : formatPercent(value / valuePrev - 1)
-    } else if (valuePrev > value) {
-        extraClassName = "stat-card-decline stat-card-comparison"
-        icon = <CaretDownFilled />
-        percent = value == 0 ? "∞" : formatPercent(valuePrev / value - 1)
-    } else {
-        extraClassName = "stat-card-flat stat-card-comparison"
-        icon = <CaretRightFilled />
-        percent = "0"
+    let valuePrev = otherProps['valuePrev'];
+    if (valuePrev !== undefined) {
+        if (valuePrev < value) {
+            extraClassName = "stat-card-growth stat-card-comparison"
+            icon = <CaretUpFilled />
+            percent = valuePrev == 0 ? "∞" : formatPercent(value / valuePrev - 1)
+        } else if (valuePrev > value) {
+            extraClassName = "stat-card-decline stat-card-comparison"
+            icon = <CaretDownFilled />
+            percent = value == 0 ? "∞" : formatPercent(valuePrev / value - 1)
+        } else {
+            extraClassName = "stat-card-flat stat-card-comparison"
+            icon = <CaretRightFilled />
+            percent = "0"
+        }
     }
-
-
     let extra = <>
-        <div className={extraClassName}>
-            {icon}{percent}%
-        </div>
+        <Tooltip trigger={["click", "hover"]} title={(<>Value for previous period: <b>{formatter(valuePrev)}</b></>)}>
+            <div className={extraClassName}>
+                {icon}{percent}%
+            </div>
+        </Tooltip>
     </>;
-    return <Card {...otherProps} extra={extra}>
+    let props = {...otherProps};
+    if (valuePrev !== undefined) {
+        props['extra'] = extra
+    }
+    return <Card {...props}>
         <div className="stat-card-number">
-            {value}
+            {formatter(value)}
         </div>
     </Card>
 
