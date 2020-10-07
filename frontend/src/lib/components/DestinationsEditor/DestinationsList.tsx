@@ -1,10 +1,39 @@
 import * as React from 'react'
 import {ReactNode, useState} from 'react'
-import {ClickHouseConfig, DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig, RedshiftConfig} from "../../services/destinations";
-import {Avatar, Button, Col, Divider, Dropdown, Form, Input, List, Menu, message, Modal, Radio, Row, Select, Switch} from "antd";
-import {DatabaseOutlined, DeleteOutlined, EditOutlined, ExclamationCircleOutlined, PlusOutlined} from "@ant-design/icons/lib";
+import {
+    ClickHouseConfig,
+    DestinationConfig,
+    destinationConfigTypes,
+    destinationsByTypeId,
+    PostgresConfig,
+    RedshiftConfig
+} from "../../services/destinations";
+import {
+    Avatar,
+    Button,
+    Col,
+    Divider,
+    Dropdown,
+    Form,
+    Input,
+    List,
+    Menu,
+    message,
+    Modal,
+    Radio,
+    Row,
+    Select,
+    Switch
+} from "antd";
+import {
+    DatabaseOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    ExclamationCircleOutlined,
+    PlusOutlined
+} from "@ant-design/icons/lib";
 import './DestinationEditor.less'
-import {CenteredSpin, handleError, LabelWithTooltip, LoadableComponent} from "../components";
+import {handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {IndexedList} from "../../commons/utils";
 import Marshal from "../../commons/marshalling";
@@ -119,10 +148,14 @@ export class DestinationsList extends LoadableComponent<any, State> {
             componentList.push((<DestinationsEditorModal
                 config={this.state.activeEditorConfig}
                 onCancel={() => this.setState({activeEditorConfig: null})}
-                testConnection={(values) => {
-                    return new Promise((resolve, reject) => {
-                        setTimeout(() => resolve(values), 200);
-                    })
+                testConnection={async (values) => {
+                    try {
+                        values.type = this.state.activeEditorConfig.type
+                         await this.services.backendApiClient.post('/test_connection', values)
+                    } catch (error) {
+                        console.log(error)
+                        // message.error("Failed to connect: " + error.response.data.message);
+                    }
                 }}
                 onSave={(formValues) => {
                     this.state.activeEditorConfig.update(formValues);

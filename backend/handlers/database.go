@@ -75,35 +75,38 @@ func (eh *DatabaseHandler) TestHandler(c *gin.Context) {
 		return
 	}
 	parsedConnectionConfig := connectionConfig.(map[string]interface{})
-	rawConfig := parsedConnectionConfig["_formData"].(map[string]interface{})
 	resultConnection := ConnectionConfig{}
-	switch parsedConnectionConfig["$type"] {
-	case "PostgresConfig":
+	switch parsedConnectionConfig["type"] {
+	case "postgres":
 		resultConnection.DestinationType = "postgres"
-		postgresConfig, err := config.TransformPostgres(rawConfig)
+		postgresConfig, err := config.TransformPostgres(parsedConnectionConfig)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to convert Postgres firebase config to eventnative format", Error: err})
 			return
 		}
 		resultConnection.ConnectionConfig = postgresConfig
+		break
 
-	case "ClickHouseConfig":
+	case "clickhouse":
 		resultConnection.DestinationType = "clickhouse"
-		chConfig, err := config.TransformClickhouse(rawConfig)
+		chConfig, err := config.TransformClickhouse(parsedConnectionConfig)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to convert ClickHouse firebase config to eventnative format", Error: err})
 			return
 		}
 		resultConnection.ConnectionConfig = chConfig
-
-	case "RedshiftConfig":
+		break
+	case "redshift":
 		resultConnection.DestinationType = "redshift"
-		rhConfig, err := config.TransformRedshift(rawConfig)
+		rhConfig, err := config.TransformRedshift(parsedConnectionConfig)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to convert firebase Redshift config to eventnative format", Error: err})
 			return
 		}
 		resultConnection.ConnectionConfig = rhConfig
+		break
+	default:
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Unknown type " + parsedConnectionConfig["_type"].(string)})
 	}
 
 	dbConfig, err := json.Marshal(resultConnection)
