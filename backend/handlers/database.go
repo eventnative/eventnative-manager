@@ -107,22 +107,23 @@ func (eh *DatabaseHandler) TestHandler(c *gin.Context) {
 		break
 	default:
 		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Unknown type " + parsedConnectionConfig["_type"].(string)})
+		return
 	}
 
 	dbConfig, err := json.Marshal(resultConnection)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to serialize Redshift config", Error: err})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to serialize database config", Error: err})
 		return
 	}
 	request, err := http.NewRequest("POST", eh.eventnativeBaseUrl+"/test_connection", bytes.NewBuffer(dbConfig))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to send request to eventnative", Error: err})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error(), Error: err})
 		return
 	}
 	request.Header.Add("X-Admin-Token", eh.eventnativAdminToken)
 	resp, err := eh.httpClient.Do(request)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Validation failed", Error: err})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to get response from eventnative: " + err.Error(), Error: err})
 		return
 	}
 	defer resp.Body.Close()
