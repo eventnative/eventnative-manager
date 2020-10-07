@@ -73,7 +73,15 @@ func main() {
 
 	staticFilesPath := viper.GetString("server.static_files_dir")
 	logging.Infof("Static files serving path: [%s]\n", staticFilesPath)
-	router := SetupRouter(staticFilesPath, firebaseStorage, authService)
+	eventnativeBaseUrl := viper.GetString("eventnative.base_url")
+	if eventnativeBaseUrl == "" {
+		logging.Fatal("Failed to get eventnative URL")
+	}
+	eventnativeAdminToken := viper.GetString("eventnative.admin_token")
+	if eventnativeAdminToken == "" {
+		logging.Fatal("eventnative.admin_token is not set")
+	}
+	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
 		Handler:           middleware.Cors(router),
@@ -101,7 +109,7 @@ func readConfiguration(configFilePath string) {
 	}
 }
 
-func SetupRouter(staticContentDirectory string, storage *storages.Firebase, authService *authorization.Service) *gin.Engine {
+func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, eventnativeAdminToken string, storage *storages.Firebase, authService *authorization.Service) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 
@@ -111,7 +119,9 @@ func SetupRouter(staticContentDirectory string, storage *storages.Firebase, auth
 
 	apiV1 := router.Group("/api/v1")
 	{
-		apiV1.POST("/database", middleware.ClientAuth(handlers.NewDatabaseHandler(storage).PostHandler, authService))
+		handler := handlers.NewDatabaseHandler(storage, eventnativeBaseUrl, eventnativeAdminToken)
+		apiV1.POST("/database", middleware.ClientAuth(handler.PostHandler, authService))
+		apiV1.POST("/test_connection", middleware.ClientAuth(handler.TestHandler, authService))
 	}
 	router.Use(static.Serve("/", static.LocalFile(staticContentDirectory, false)))
 	return router
