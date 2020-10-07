@@ -149,10 +149,8 @@ export class DestinationsList extends LoadableComponent<any, State> {
                 config={this.state.activeEditorConfig}
                 onCancel={() => this.setState({activeEditorConfig: null})}
                 testConnection={async (values) => {
-                    // try {
-                        values.type = this.state.activeEditorConfig.type
-                        await this.services.backendApiClient.post('/test_connection', values)
-
+                    values.type = this.state.activeEditorConfig.type
+                    await this.services.backendApiClient.post('/test_connection', values)
                 }}
                 onSave={(formValues) => {
                     this.state.activeEditorConfig.update(formValues);

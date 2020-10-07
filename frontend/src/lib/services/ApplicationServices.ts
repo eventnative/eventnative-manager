@@ -31,7 +31,7 @@ export class ApplicationConfiguration {
         if (process.env.BACKEND_API_BASE) {
             this._backendApiBase = concatenateURLs(process.env.BACKEND_API_BASE, "/api/v1");
         } else {
-            this._backendApiBase = "http://localhost:8001/api/v1";
+            this._backendApiBase = window.location.protocol + "//" + window.location.hostname + (window.location.port.length > 0 ? (":" + window.location.port) : "") + "/api/v1";
         }
         if (process.env.APP_ENV) {
             this._appEnvironment = process.env.APP_ENV.toLowerCase();
