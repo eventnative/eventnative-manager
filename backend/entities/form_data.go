@@ -28,7 +28,7 @@ type RedshiftFormData struct {
 	Mode      string `firestore:"mode" json:"mode"`
 	TableName string `firestore:"tableName" json:"tableName"`
 
-	Host     string `firestore:"redhsiftHost" json:"redhsiftHost"`
+	Host     string `firestore:"redshiftHost" json:"redshiftHost"`
 	Db       string `firestore:"redshiftDB" json:"redshiftDB"`
 	Password string `firestore:"redshiftPassword" json:"redshiftPassword"`
 	Schema   string `firestore:"redshiftSchema" json:"redshiftSchema"`

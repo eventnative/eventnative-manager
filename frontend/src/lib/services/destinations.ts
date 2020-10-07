@@ -156,7 +156,7 @@ export class RedshiftConfig extends DestinationConfig {
     }
 
     describe() {
-        return `${this.formData['redhsiftHost']}`
+        return `${this.formData['redshiftHost']}`
     }
 }
 

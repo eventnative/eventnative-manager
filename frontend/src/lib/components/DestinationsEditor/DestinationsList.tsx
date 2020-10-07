@@ -1,10 +1,39 @@
 import * as React from 'react'
 import {ReactNode, useState} from 'react'
-import {ClickHouseConfig, DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig, RedshiftConfig} from "../../services/destinations";
-import {Avatar, Button, Col, Divider, Dropdown, Form, Input, List, Menu, message, Modal, Radio, Row, Select, Switch} from "antd";
-import {DatabaseOutlined, DeleteOutlined, EditOutlined, ExclamationCircleOutlined, PlusOutlined} from "@ant-design/icons/lib";
+import {
+    ClickHouseConfig,
+    DestinationConfig,
+    destinationConfigTypes,
+    destinationsByTypeId,
+    PostgresConfig,
+    RedshiftConfig
+} from "../../services/destinations";
+import {
+    Avatar,
+    Button,
+    Col,
+    Divider,
+    Dropdown,
+    Form,
+    Input,
+    List,
+    Menu,
+    message,
+    Modal,
+    Radio,
+    Row,
+    Select,
+    Switch
+} from "antd";
+import {
+    DatabaseOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    ExclamationCircleOutlined,
+    PlusOutlined
+} from "@ant-design/icons/lib";
 import './DestinationEditor.less'
-import {CenteredSpin, handleError, LabelWithTooltip, LoadableComponent} from "../components";
+import {handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {IndexedList} from "../../commons/utils";
 import Marshal from "../../commons/marshalling";
@@ -119,10 +148,9 @@ export class DestinationsList extends LoadableComponent<any, State> {
             componentList.push((<DestinationsEditorModal
                 config={this.state.activeEditorConfig}
                 onCancel={() => this.setState({activeEditorConfig: null})}
-                testConnection={(values) => {
-                    return new Promise((resolve, reject) => {
-                        setTimeout(() => resolve(values), 200);
-                    })
+                testConnection={async (values) => {
+                    values.type = this.state.activeEditorConfig.type
+                    await this.services.backendApiClient.post('/test_connection', values)
                 }}
                 onSave={(formValues) => {
                     this.state.activeEditorConfig.update(formValues);
@@ -280,9 +308,9 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
                 form
                     .validateFields().then((values) => {
                     testConnection(values).then(() => {
-                        message.success("Successfully connected! " + JSON.stringify(values));
+                        message.success("Successfully connected!");
                     }).catch(error => {
-                        handleError(error, "Failed to validate connection");
+                        handleError(error, "Failed to connect to destination. " + error.message);
                     }).finally(() => setConnectionTesting(false));
                 })
             }}>Test connection</Button>,
@@ -391,7 +419,7 @@ class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
             <>
                 <Row>
                     <Col span={16}>
-                        <Form.Item label="Host" name="redhsiftHost" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Host is required'}]}><Input
+                        <Form.Item label="Host" name="redshiftHost" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Host is required'}]}><Input
                             type="text"/></Form.Item>
                     </Col>
                 </Row>

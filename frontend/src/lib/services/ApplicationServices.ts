@@ -401,11 +401,15 @@ export class JWTBackendClient implements BackendApiClient {
                     reject(new APIError(response, request));
                 }
             }).catch((error) => {
-                let baseMessage = "Request at " + fullUrl + " failed";
-                if (error.message) {
-                    baseMessage += " with " + error.message;
+                if (error.response) {
+                    reject(new APIError(error.response, request));
+                } else {
+                    let baseMessage = "Request at " + fullUrl + " failed";
+                    if (error.message) {
+                        baseMessage += " with " + error.message;
+                    }
+                    reject(new Error(baseMessage));
                 }
-                reject(new Error(baseMessage));
             });
         });
     }
