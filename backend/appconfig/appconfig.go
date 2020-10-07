@@ -46,6 +46,8 @@ func Init() error {
 		return err
 	}
 
+	logging.Info("*** Creating new AppConfig ***")
+
 	Instance = &appConfig
 	return nil
 }
