@@ -2,11 +2,12 @@
  * Library of small components that are usefull for different purposes
  */
 
-import React, {ReactNode, useState} from "react";
+import React, {ReactNode} from "react";
 import './components.less'
-import {Card, Col, Input, message, Spin, Tag, Tooltip} from "antd";
-import {CaretDownFilled, CaretRightFilled, CaretUpFilled, PlusOutlined, QuestionCircleOutlined} from "@ant-design/icons/lib";
+import {Card, message, Spin, Tooltip} from "antd";
+import {CaretDownFilled, CaretRightFilled, CaretUpFilled, QuestionCircleOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "../services/ApplicationServices";
+import {numberFormat} from "../commons/utils";
 
 const loader = require("../../icons/loading.gif").default;
 const plumber = require("../../icons/plumber.png").default;
@@ -59,41 +60,56 @@ export function LabelWithTooltip({children, documentation}) {
 }
 
 function formatPercent(num: number) {
-    let res = (num*100).toFixed(2);
-    while ((res.endsWith("0") || res.endsWith(".")) && res.length > 1) {
+    let res = (num * 100).toFixed(2);
+    if (res.indexOf(".") >= 0) {
+        while ((res.endsWith("0")) && res.length > 1) {
+            res = res.substr(0, res.length - 1);
+        }
+    }
+    if (res.endsWith(".")) {
         res = res.substr(0, res.length - 1);
     }
     return res;
 
 }
 
-export function StatCard({value, valuePrev, ...otherProps}) {
+export function StatCard({value, ...otherProps}) {
+    let formatter = otherProps['format'] ? otherProps['format'] : numberFormat({});
+
     let extraClassName;
     let icon;
     let percent;
-    if (valuePrev < value) {
-        extraClassName = "stat-card-growth stat-card-comparison"
-        icon = <CaretUpFilled />
-        percent = valuePrev == 0 ? "∞" : formatPercent(value / valuePrev - 1)
-    } else if (valuePrev > value) {
-        extraClassName = "stat-card-decline stat-card-comparison"
-        icon = <CaretDownFilled />
-        percent = value == 0 ? "∞" : formatPercent(valuePrev / value - 1)
-    } else {
-        extraClassName = "stat-card-flat stat-card-comparison"
-        icon = <CaretRightFilled />
-        percent = "0"
+    let valuePrev = otherProps['valuePrev'];
+    delete otherProps['valuePrev'] //stop propagating prop to DOM
+    if (valuePrev !== undefined) {
+        if (valuePrev < value) {
+            extraClassName = "stat-card-growth stat-card-comparison"
+            icon = <CaretUpFilled />
+            percent = valuePrev == 0 ? "∞" : formatPercent(value / valuePrev - 1)
+        } else if (valuePrev > value) {
+            extraClassName = "stat-card-decline stat-card-comparison"
+            icon = <CaretDownFilled />
+            percent = value == 0 ? "∞" : formatPercent(valuePrev / value - 1)
+        } else {
+            extraClassName = "stat-card-flat stat-card-comparison"
+            icon = <CaretRightFilled />
+            percent = "0"
+        }
     }
-
-
     let extra = <>
-        <div className={extraClassName}>
-            {icon}{percent}%
-        </div>
+        <Tooltip trigger={["click", "hover"]} title={(<>Value for previous period: <b>{formatter(valuePrev)}</b></>)}>
+            <div className={extraClassName}>
+                {icon}{percent}%
+            </div>
+        </Tooltip>
     </>;
-    return <Card {...otherProps} extra={extra}>
+    let props = {...otherProps};
+    if (valuePrev !== undefined) {
+        props['extra'] = extra
+    }
+    return <Card {...props}>
         <div className="stat-card-number">
-            {value}
+            {formatter(value)}
         </div>
     </Card>
 
@@ -131,6 +147,120 @@ export function handleError(error: any, errorDescription?: string) {
         user: app.userService.hasUser() ? app.userService.getUser() : null,
         error: error
     });
+}
+
+enum ComponentLifecycle {
+    LOADED,ERROR,WAITING
+}
+
+/**
+ * Component that loads initial state through a chain of external calls
+ * This abstract class displays spinner while the data is loaded. And once data is loaded,
+ * the content will fade in
+ */
+export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
+
+    protected constructor(props: P, context: any) {
+        super(props, context);
+        if (!this.state) {
+            this.state = this.emptyState();
+        }
+    }
+
+    private getLifecycle(): ComponentLifecycle {
+        return this.state['__lifecycle'] === undefined ? ComponentLifecycle.WAITING : this.state['__lifecycle'];
+    }
+
+    emptyState(): S {
+        return ({} as S)
+    }
+
+    async componentDidMount() {
+        try {
+            let newState = await this.load();
+            this.setState({...newState, __lifecycle: ComponentLifecycle.LOADED});
+        } catch (e) {
+            this.setState(this.errorState(e));
+            handleError(e, "Failed to load data from server");
+        }
+    }
+
+
+    private errorState(e) {
+        let newState = {};
+        newState['__lifecycle'] = ComponentLifecycle.ERROR;
+        newState['__errorObject'] = e;
+        return newState;
+    }
+
+    render() {
+        console.log("RENDER STATE => ", this.state)
+        let lifecycle = this.getLifecycle();
+        if (lifecycle === ComponentLifecycle.WAITING) {
+            return <CenteredSpin />
+        } else if (lifecycle === ComponentLifecycle.ERROR) {
+            return LoadableComponent.error(this.state['__errorObject'])
+        } else {
+            try {
+                return <div className={this.state['__doNotFadeIn'] === true ? "" : "common-component-fadein"}>{this.renderReady()}</div>
+            } catch (e) {
+                console.error("Error rendering state", e)
+                return LoadableComponent.error(e);
+            }
+        }
+
+    }
+
+    /**
+     * Renders component assuming initial state is loaded
+     */
+    protected abstract renderReady(): ReactNode;
+
+    /**
+     * Loads initial state (usually from server)
+     */
+    protected abstract load(): Promise<S>;
+
+    /**
+     * Async state reload. Display loading indicator, wait for new state, display it. Callback can return undefined, in that
+     * case state won't be refreshed. If it returns the value, it will be treated as a new state.
+     *
+     * Also, fadein effect is disabled for reload
+     */
+    protected async reload(callback?: () => Promise<any | void>) {
+        if (!callback) {
+            callback = async () => {
+                return this.load();
+            }
+        }
+        this.setState((state) => {
+            state['__lifecycle'] = ComponentLifecycle.WAITING;
+        })
+        try {
+            let result = await callback();
+            if (result === undefined) {
+                this.setState((state) => {
+                    state['__lifecycle'] = ComponentLifecycle.LOADED;
+                    state['__doNotFadeIn'] = true;
+                });
+            } else {
+                result['__lifecycle'] = ComponentLifecycle.LOADED;
+                result['__doNotFadeIn'] = true;
+                this.setState(result as S);
+            }
+        } catch (e) {
+            this.setState(this.errorState(e))
+        }
+
+    }
+
+
+    private static error(error: Error): ReactNode {
+        return <div className="common-error-wrapper">
+            <h1>Error</h1>
+            <div className="common-error-details">${error.message ? error.message : "Unknown error"}</div>
+        </div>
+    }
 }
 
 

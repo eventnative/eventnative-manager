@@ -1,19 +1,8 @@
 import * as React from "react";
-import {useState} from "react";
 import ApplicationServices from "../../services/ApplicationServices";
 import {Button, Form, Input, message, Modal, Table, Tag} from "antd";
-import {
-    CheckOutlined,
-    ClockCircleOutlined,
-    CloudOutlined,
-    DeleteOutlined,
-    ExclamationCircleOutlined,
-    PlusOutlined,
-    QuestionCircleOutlined,
-    QuestionOutlined,
-    RightCircleOutlined
-} from "@ant-design/icons/lib";
-import {CenteredSpin, handleError} from "../components";
+import {CheckOutlined, ClockCircleOutlined, CloudOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RightCircleOutlined} from "@ant-design/icons/lib";
+import {handleError, LoadableComponent} from "../components";
 import './CustomDomains.less'
 
 const CNAME = "hosting.eventnative.com"
@@ -25,44 +14,32 @@ type Domain = {
 }
 
 type State = {
-    loading: boolean
     enterNameVisible: boolean
     domains: Domain[]
 }
 
-export class CustomDomains extends React.Component<any, State> {
+export class CustomDomains extends LoadableComponent<any, State> {
     private services: ApplicationServices;
 
 
-    constructor(props: Readonly<any>) {
-        super(props);
+    constructor(props: Readonly<any>, context) {
+        super(props, context);
         this.services = ApplicationServices.get();
-        this.state = {
-            loading: true,
-            enterNameVisible: false,
-            domains: []
-        };
     }
 
 
-    componentDidMount() {
-        this.refreshDomains();
-    }
-
-
-
-    private refreshDomains() {
-        this.services.storageService.get("custom_domains", this.services.activeProject.id).then((result) => {
-            this.setState({
-                domains: result ? result.domains : []
-            })
-        }).catch(handleError).finally(() => this.setState({loading: false}));
-    }
-
-    render() {
-        if (this.state.loading) {
-            return <CenteredSpin />
+    protected async load() {
+        let result = await this.services.storageService.get("custom_domains", this.services.activeProject.id);
+        return {
+            domains: result ? result.domains : [],
+            enterNameVisible: false
         }
+    }
+
+
+
+
+    renderReady() {
         const columns = [
             {
                 title: 'Domain',
@@ -107,15 +84,14 @@ export class CustomDomains extends React.Component<any, State> {
                             okText: 'Delete',
                             cancelText: 'Cancel',
                             onOk: () => {
-                                let newDomains: Domain[] = this.state.domains.filter(element => element.name != domain.name);
-                                this.setState({
-                                    loading: true,
-                                    domains: newDomains
-                                });
-
-                                this.services.storageService.save("custom_domains", {domains: newDomains}, this.services.activeProject.id).then(() => {
+                                this.reload(async () => {
+                                    let newDomains: Domain[] = this.state.domains.filter(element => element.name != domain.name);
+                                    await this.services.storageService.save("custom_domains", {domains: newDomains}, this.services.activeProject.id);
                                     message.success("Domain deleted!");
-                                }).catch(handleError).finally(() => this.setState({loading: false}));
+                                    return {
+                                        domains: newDomains
+                                    }
+                                })
                             },
                             onCancel: () => {
                             }
@@ -137,20 +113,19 @@ export class CustomDomains extends React.Component<any, State> {
                 return {...domain, key: domain.name}
             })}/>
             {this.state.enterNameVisible ? <EnterNameModal onClose={() => this.setState({enterNameVisible: false})} onReady={(text) => {
-
-                let newDomains: Domain[] = [...this.state.domains, {name: text, status: "verified"}];
-                this.setState({
-                    loading: true,
-                    domains: newDomains
-                });
-
-                this.services.storageService.save("custom_domains", {domains: newDomains}, this.services.activeProject.id).then(() => {
+                this.reload(async () => {
+                    let newDomains: Domain[] = [...this.state.domains, {name: text, status: "verified"}];
+                    await this.services.storageService.save("custom_domains", {domains: newDomains}, this.services.activeProject.id);
                     message.success("New domain added!");
-                }).catch(handleError).finally(() => this.setState({loading: false}));
+                    return {
+                        domains: newDomains
+                    }
+                })
             }}/> : <></>
             }
         </>);
     }
+
 }
 
 function EnterNameModal({onClose, onReady}: {

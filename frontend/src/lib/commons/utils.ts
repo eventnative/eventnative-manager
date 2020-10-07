@@ -102,5 +102,26 @@ export class IndexedList<T> {
         }
         return this;
     }
+}
 
+type INumberFormatOpts = {
+
+}
+
+type Formatter = (val: any) => string;
+
+export function numberFormat(opts?: INumberFormatOpts | any): any  {
+    if (opts == undefined) {
+        return numberFormat({});
+    } else if (typeof opts === 'object') {
+        return (x) =>  {
+            if (x === undefined) {
+                return "N/A";
+            }
+            return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+        }
+    } else {
+        let formatter: Formatter = numberFormat({});
+        return formatter(opts)
+    }
 }

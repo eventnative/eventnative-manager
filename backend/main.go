@@ -11,7 +11,9 @@ import (
 	"github.com/ksensehq/enhosted/handlers"
 	"github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/enhosted/storages"
+	enadapters "github.com/ksensehq/eventnative/adapters"
 	"github.com/ksensehq/eventnative/logging"
+	enstorages "github.com/ksensehq/eventnative/storages"
 	"github.com/spf13/viper"
 	"os"
 	"os/signal"
@@ -38,6 +40,24 @@ func main() {
 		time.Sleep(1 * time.Second)
 		os.Exit(0)
 	}()
+
+	//statistics postgres
+	pgDestinationConfig := enstorages.DestinationConfig{}
+	if err := viper.UnmarshalKey("destinations.statistics.postgres", &pgDestinationConfig); err != nil {
+		logging.Fatal("Error unmarshalling statistics postgres config:", err)
+	}
+	if err := pgDestinationConfig.DataSource.Validate(); err != nil {
+		logging.Fatal("Error validation statistics postgres config:", err)
+	}
+
+	//default s3
+	s3Config := enadapters.S3Config{}
+	if err := viper.UnmarshalKey("destinations.hosted.s3", &s3Config); err != nil {
+		logging.Fatal("Error unmarshalling default s3 config:", err)
+	}
+	if err := s3Config.Validate(); err != nil {
+		logging.Fatal("Error validation default s3 config:", err)
+	}
 
 	//auth service
 	authFirebaseViper := viper.Sub("auth.firebase")
@@ -82,6 +102,7 @@ func main() {
 		logging.Fatal("eventnative.admin_token is not set")
 	}
 	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService)
+	router := SetupRouter(staticFilesPath, firebaseStorage, authService, s3Config, pgDestinationConfig)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
 		Handler:           middleware.Cors(router),
@@ -109,6 +130,8 @@ func readConfiguration(configFilePath string) {
 	}
 }
 
+func SetupRouter(staticContentDirectory string, storage *storages.Firebase, authService *authorization.Service,
+	defaultS3 enadapters.S3Config, statisticsPostgres enstorages.DestinationConfig) *gin.Engine {
 func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, eventnativeAdminToken string, storage *storages.Firebase, authService *authorization.Service) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
@@ -117,8 +140,14 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 		c.String(http.StatusOK, "pong")
 	})
 
+	serverToken := viper.GetString("server.auth")
+
 	apiV1 := router.Group("/api/v1")
 	{
+		apiV1.POST("/database", middleware.ClientAuth(handlers.NewDatabaseHandler(storage).PostHandler, authService))
+
+		apiV1.GET("/destinations", middleware.ServerAuth(handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres).GetHandler, serverToken))
+		apiV1.GET("/apikeys", middleware.ServerAuth(handlers.NewApiKeysHandler(storage).GetHandler, serverToken))
 		handler := handlers.NewDatabaseHandler(storage, eventnativeBaseUrl, eventnativeAdminToken)
 		apiV1.POST("/database", middleware.ClientAuth(handler.PostHandler, authService))
 		apiV1.POST("/test_connection", middleware.ClientAuth(handler.TestHandler, authService))

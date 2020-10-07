@@ -271,7 +271,6 @@ class FirebaseUserService implements UserService {
             firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.uid).get()
                 .then((doc) => {
                     user.getIdToken(false).then((token) => {
-                        console.log("Got token", token);
                         let suggestedInfo = this.suggestedInfoFromFirebaseUser(user);
                         if (doc.exists) {
                             resolve(this.user = new User(user.uid, token, suggestedInfo, doc.data()));

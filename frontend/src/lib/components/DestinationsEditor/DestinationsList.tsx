@@ -4,7 +4,7 @@ import {ClickHouseConfig, DestinationConfig, destinationConfigTypes, destination
 import {Avatar, Button, Col, Divider, Dropdown, Form, Input, List, Menu, message, Modal, Radio, Row, Select, Switch} from "antd";
 import {DatabaseOutlined, DeleteOutlined, EditOutlined, ExclamationCircleOutlined, PlusOutlined} from "@ant-design/icons/lib";
 import './DestinationEditor.less'
-import {CenteredSpin, handleError, LabelWithTooltip} from "../components";
+import {CenteredSpin, handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {IndexedList} from "../../commons/utils";
 import Marshal from "../../commons/marshalling";
@@ -37,22 +37,17 @@ const AWS_ZONES = [
 ];
 
 type State = {
-    loading: boolean
     destinations?: IndexedList<DestinationConfig>,
     activeEditorConfig?: DestinationConfig
 }
 
-export class DestinationsList extends React.Component<any, State> {
+export class DestinationsList extends LoadableComponent<any, State> {
     private services: ApplicationServices;
 
 
-    constructor(props: Readonly<any>) {
-        super(props);
+    constructor(props: Readonly<any>, context: any) {
+        super(props, context);
         this.services = ApplicationServices.get();
-        this.state = {
-            loading: true,
-            destinations: this.newDestinationsList([])
-        };
     }
 
     private newDestinationsList(items?: DestinationConfig[]) {
@@ -61,17 +56,12 @@ export class DestinationsList extends React.Component<any, State> {
         return list;
     }
 
-    componentDidMount() {
-        this.setState({loading: true});
-        this.services.storageService.get("destinations", this.services.activeProject.id).then((destinations) => {
-            this.setState({
-                destinations: this.newDestinationsList(destinations ? Marshal.newInstance(destinations.destinations, [DestinationConfig, PostgresConfig, ClickHouseConfig, RedshiftConfig]) : []),
-                loading: false
-            });
-        }).catch((error) => {
-            handleError(error, "Failed to load data from server")
-            this.setState({loading: false});
-        }).finally(() => this.setState({loading: false}));
+    protected async load() {
+        let destinations = await this.services.storageService.get("destinations", this.services.activeProject.id);
+        return {
+            destinations: this.newDestinationsList(destinations ? Marshal.newInstance(destinations.destinations, [DestinationConfig, PostgresConfig, ClickHouseConfig, RedshiftConfig]) : []),
+            loading: false
+        }
     }
 
     destinationComponent(config: DestinationConfig): ReactNode {
@@ -116,10 +106,7 @@ export class DestinationsList extends React.Component<any, State> {
     }
 
 
-    render() {
-        if (this.state.loading) {
-            return <CenteredSpin/>
-        }
+    renderReady() {
 
         let componentList = [
             <List className="destinations-list" itemLayout="horizontal" header={this.addButton()} split={true}>
