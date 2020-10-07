@@ -20,7 +20,8 @@
     "react-dom": "^16.13.1",
     "react-firebaseui": "^4.1.0",
     "react-router": "^5.2.0",
-    "react-router-dom": "^5.2.0"
+    "react-router-dom": "^5.2.0",
+    "react-syntax-highlighter": "^15.1.0"
   },
   "scripts": {
     "start": "ENV=dev webpack-dev-server --open --mode development",

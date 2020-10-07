@@ -50,12 +50,12 @@ export function CenteredSpin() {
 
 export function LabelWithTooltip({children, documentation}) {
     return (
-        <span>
+        <>
               {children}&nbsp;
             <Tooltip title={documentation}>
                <QuestionCircleOutlined/>
               </Tooltip>
-            </span>
+            </>
     )
 }
 

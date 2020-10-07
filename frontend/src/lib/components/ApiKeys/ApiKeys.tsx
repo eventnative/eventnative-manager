@@ -1,12 +1,14 @@
 import React, {ReactElement, ReactNode} from 'react';
-import {Button, Col, Form, Input, List, Mentions, message, Modal, Row, Table, Tag, Tooltip} from "antd";
+import {Button, Col, Form, Input, List, Mentions, message, Modal, Row, Table, Tabs, Tag, Tooltip} from "antd";
 import ApplicationServices from "../../services/ApplicationServices";
-import {DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RollbackOutlined, SaveOutlined} from "@ant-design/icons/lib";
+import {CodeFilled, DeleteFilled, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RollbackOutlined, SaveOutlined} from "@ant-design/icons/lib";
 import './ApiKeys.less'
-import {CenteredSpin, handleError, LabelWithTooltip, LoadableComponent} from "../components";
-import * as uuid from 'uuid';
+import {handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import {randomId} from "../../commons/utils";
 import TagsInput from "../TagsInput/TagsInput";
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import {EVENTNATIVE_HOST, getEmpeddedJS} from "../../commons/api-documentation";
 
 type Token = {
     uid: string
@@ -108,7 +110,6 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
                 className: "api-keys-column-origins", dataIndex: 'origins', key: 'origins', render: (text, row, index) => {
                     return <span className={"api-keys-status-" + this.state.tokens[index].status}>
                         <TagsInput newButtonText="Add Origin" value={this.state.tokens[index].origins} onChange={(value) => {
-                            console.log("VALUES: ", [...value])
                             this.state.tokens[index].status = "modified";
                             this.state.tokens[index].origins = [...value];
                             this.forceUpdate()
@@ -118,15 +119,30 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
                     you want to whitelist domain abc.com and all subdomains, add abc.com and *.abc.com. If list is empty, traffic will be accepted from all domains</>)}>Origins</LabelWithTooltip>)
             },
             {
-                width: "140px", className: "api-keys-column-actions", title: "Actions", dataIndex: 'actions', render: (text, row: TokenDisplay, index) => {
-                    return <Button icon={<DeleteOutlined/>} shape="round" onClick={() => {
-                        this.state.tokens[index]
-                        row.status = row.status == "deleted" ? "modified" : "deleted"
-                        this.state.tokens[index] = row;
-                        this.forceUpdate();
-                    }}>
-                        {row.status == "deleted" ? "Restore" : "Delete"}
-                    </Button>
+                width: "140px",  className: "api-keys-column-actions", title: "Actions", dataIndex: 'actions', render: (text, row: TokenDisplay, index) => {
+                    return <>
+                        <Tooltip trigger={["hover"]} title={"Show integration documentation"}>
+                            <a style={{display: row.status === "deleted" ? "none" : "none"}} onClick={() => {
+                                Modal.info({
+                                    content: <KeyDocumentation token={row} />,
+                                    title: null,
+                                    width: "90%", icon: null
+
+                                })
+                            }}>
+                                <CodeFilled/>
+                            </a>
+                        </Tooltip>
+                        <Tooltip trigger={["hover"]} title={row.status == "deleted" ? "Restore key" : "Delete key"}>
+                            <a onClick={() => {
+                                row.status = row.status == "deleted" ? "modified" : "deleted"
+                                this.state.tokens[index] = row;
+                                this.forceUpdate();
+                            }}>
+                                {row.status == "deleted" ? <RollbackOutlined/> : <DeleteFilled/>}
+                            </a>
+                        </Tooltip>
+                    </>
                 }
             }
         ]
@@ -154,12 +170,12 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
             this.setState({tokens: this.state.tokens})
 
         }
-        return (<Button type="primary" icon={<PlusOutlined/>}  onClick={onClick}>Generate New Token</Button>)
+        return (<Button type="primary" icon={<PlusOutlined/>} onClick={onClick}>Generate New Token</Button>)
     }
 
     cancelButton() {
         if (this.state.tokens.find(token => token.status != "original")) {
-            return (<Button type="ghost" loading={this.state.loading} icon={<RollbackOutlined />} onClick={() => this.reload()}>Rollback all changes</Button>)
+            return (<Button type="ghost" loading={this.state.loading} icon={<RollbackOutlined/>} onClick={() => this.reload()}>Rollback all changes</Button>)
         } else {
             return <></>
         }
@@ -212,4 +228,24 @@ function ActionLink({children, onClick}: { children: any, onClick: () => void })
     return (<div className="copy-to-clipboard-button" onClick={() => {
         onClick()
     }}><span>{children}</span></div>)
+}
+
+function KeyDocumentation({token}: { token: Token }) {
+    return <Tabs defaultActiveKey="1" tabBarExtraContent={(<>
+        Domain:
+    </>)}>
+        <Tabs.TabPane tab="Embed JavaScript" key="1">
+            <p>Easiest way to embed</p>
+            <SyntaxHighlighter language="javascript" style={docco}>
+                {getEmpeddedJS(EVENTNATIVE_HOST)}
+            </SyntaxHighlighter>
+        </Tabs.TabPane>
+        <Tabs.TabPane tab="Use NPM" key="2">
+            Content of Tab Pane 2
+        </Tabs.TabPane>
+        <Tabs.TabPane tab="Server to server" key="3">
+            Content of Tab Pane 3
+        </Tabs.TabPane>
+    </Tabs>
+
 }
