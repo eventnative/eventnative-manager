@@ -8,9 +8,13 @@ require (
 	github.com/gin-contrib/static v0.0.0-20200916080430-d45d9a37d28e
 	github.com/gin-gonic/gin v1.6.3
 	github.com/hashicorp/go-multierror v1.1.0
-	github.com/ksensehq/eventnative v1.6.0
+	github.com/ksensehq/eventnative v0.0.33
 	github.com/lib/pq v1.8.0
 	github.com/spf13/viper v1.7.1
 	google.golang.org/api v0.17.0
 	google.golang.org/grpc v1.27.0
 )
+
+replace google.golang.org/api v0.17.0 => google.golang.org/api v0.15.1
+
+replace google.golang.org/grpc v1.27.0 => google.golang.org/grpc v1.26.0
