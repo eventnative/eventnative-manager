@@ -98,6 +98,9 @@ func main() {
 		logging.Fatal("Failed to get eventnative URL")
 	}
 	eventnativeAdminToken := viper.GetString("eventnative.admin_token")
+	if eventnativeAdminToken == "" {
+		logging.Fatal("eventnative.admin_token is not set")
+	}
 	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
