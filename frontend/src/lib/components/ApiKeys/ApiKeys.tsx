@@ -1,9 +1,9 @@
 import React, {ReactElement, ReactNode} from 'react';
 import {Button, Col, Form, Input, List, Mentions, message, Modal, Row, Table, Tag, Tooltip} from "antd";
 import ApplicationServices from "../../services/ApplicationServices";
-import {DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, SaveOutlined} from "@ant-design/icons/lib";
+import {DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RollbackOutlined, SaveOutlined} from "@ant-design/icons/lib";
 import './ApiKeys.less'
-import {CenteredSpin, handleError, LabelWithTooltip} from "../components";
+import {CenteredSpin, handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import * as uuid from 'uuid';
 import {randomId} from "../../commons/utils";
 import TagsInput from "../TagsInput/TagsInput";
@@ -22,25 +22,23 @@ interface TokenDisplay extends Token {
 
 
 type State = {
-    globalLoading: boolean
     loading: boolean
     tokens: TokenDisplay[]
 }
 
-export default class ApiKeys extends React.Component<{}, State> {
+export default class ApiKeys extends LoadableComponent<{}, State> {
     private readonly services: ApplicationServices;
 
     constructor(props: any, context: any) {
         super(props, context);
         this.services = ApplicationServices.get();
         this.state = {
-            globalLoading: true,
             loading: false,
             tokens: [],
         };
     }
 
-    public componentDidMount() {
+    protected async load(): Promise<State> {
         window.addEventListener("beforeunload", e => {
             if (this.state.tokens.find(tok => tok.status != "original")) {
                 e.preventDefault();
@@ -48,17 +46,8 @@ export default class ApiKeys extends React.Component<{}, State> {
             }
         });
 
-        this.services.storageService.get("api_keys", this.services.activeProject.id)
-            .then((payload: any) => {
-                let tokens = this.restoreTokesFromPayload(payload);
-                this.setState({tokens: tokens})
-            })
-            .catch(error => {
-                handleError(error, 'Error loading api keys');
-            })
-            .finally(() => {
-                this.setState({globalLoading: false})
-            })
+        let payload = await this.services.storageService.get("api_keys", this.services.activeProject.id)
+        return {tokens: this.restoreTokesFromPayload(payload), loading: false}
     }
 
     private restoreTokesFromPayload(payload: any) {
@@ -67,18 +56,15 @@ export default class ApiKeys extends React.Component<{}, State> {
         }) : [];
     }
 
-    render() {
-        if (this.state.globalLoading) {
-            return <CenteredSpin/>
-        }
-        let header = (<div className="api-keys-buttons-header">{this.generateButton()}{this.saveButton()}</div>)
+    protected renderReady() {
+        let header = (<div className="api-keys-buttons-header">{this.generateButton()}{this.saveButton()}{this.cancelButton()}</div>)
         const columns = [
             {
                 width: "250px", className: "api-keys-column-id", dataIndex: 'uid', key: 'uid', render: (text, row: TokenDisplay, index) => {
                     return <><span className={"api-keys-status-" + this.state.tokens[index].status}>
                         <span className="api-keys-key-id">{text}</span>
                     </span>
-                    {row.comment ? (<div className="api-keys-comment"><b>Note</b>: {row.comment}</div>) : ""}</>
+                        {row.comment ? (<div className="api-keys-comment"><b>Note</b>: {row.comment}</div>) : ""}</>
                 }, title: (<LabelWithTooltip documentation={"Unique ID of the key"}>ID</LabelWithTooltip>),
             },
             {
@@ -89,8 +75,8 @@ export default class ApiKeys extends React.Component<{}, State> {
                 render: (text, row, index) => {
                     return <span className={"api-keys-status-" + this.state.tokens[index].status}>
                         <Input className={"api-keys-key-input"} type="text" value={text}/>
-                        <ActionLink onСlick={() => this.copyToClipboard(text)}>Copy To Clipboard</ActionLink>
-                        <ActionLink onСlick={() => {
+                        <ActionLink onClick={() => this.copyToClipboard(text)}>Copy To Clipboard</ActionLink>
+                        <ActionLink onClick={() => {
                             this.state.tokens[index].jsAuth = this.newToken("js");
                             this.state.tokens[index].status = "modified";
                             this.forceUpdate();
@@ -108,8 +94,8 @@ export default class ApiKeys extends React.Component<{}, State> {
                 render: (text, row, index) => {
                     return <span className={"api-keys-status-" + this.state.tokens[index].status}>
                         <Input className="api-keys-key-input" type="text" value={text}/>
-                        <ActionLink onСlick={() => this.copyToClipboard(text)}>Copy To Clipboard</ActionLink>
-                        <ActionLink onСlick={() => {
+                        <ActionLink onClick={() => this.copyToClipboard(text)}>Copy To Clipboard</ActionLink>
+                        <ActionLink onClick={() => {
                             this.state.tokens[index].serverAuth = this.newToken("s2s");
                             this.state.tokens[index].status = "modified";
                             this.forceUpdate();
@@ -168,11 +154,20 @@ export default class ApiKeys extends React.Component<{}, State> {
             this.setState({tokens: this.state.tokens})
 
         }
-        return (<Button type="primary" icon={<PlusOutlined/>} style={{marginRight: 20}} onClick={onClick}>Generate New Token</Button>)
+        return (<Button type="primary" icon={<PlusOutlined/>}  onClick={onClick}>Generate New Token</Button>)
+    }
+
+    cancelButton() {
+        if (this.state.tokens.find(token => token.status != "original")) {
+            return (<Button type="ghost" loading={this.state.loading} icon={<RollbackOutlined />} onClick={() => this.reload()}>Rollback all changes</Button>)
+        } else {
+            return <></>
+        }
+
     }
 
     saveButton() {
-        let onClick = () => {
+        let onClick = async () => {
             this.setState({loading: true})
             let tokensToSave = this.state.tokens.map((token) => {
                 let tokenToSave: Token = {...token};
@@ -184,17 +179,14 @@ export default class ApiKeys extends React.Component<{}, State> {
                 }
             }).filter(el => el != null);
             let payload = {keys: tokensToSave};
-            this.services.storageService.save("api_keys", payload, this.services.activeProject.id)
-                .then(() => {
-                    this.setState({tokens: this.restoreTokesFromPayload(payload)})
-                    message.success('Keys have been saved!')
-                })
-                .catch(error => {
-                    handleError(error, 'Error saving keys');
-                }).finally(() => {
-                this.setState({loading: false})
-            })
-
+            try {
+                await this.services.storageService.save("api_keys", payload, this.services.activeProject.id);
+                this.setState({tokens: this.restoreTokesFromPayload(payload), loading: false})
+                message.success('Keys have been saved!')
+            } catch (error) {
+                this.setState({loading: false});
+                handleError(error, 'Error saving keys');
+            }
         }
         return (<Button type="primary" loading={this.state.loading} icon={<SaveOutlined/>} onClick={onClick}>Save</Button>)
     }
@@ -216,8 +208,8 @@ export default class ApiKeys extends React.Component<{}, State> {
     }
 }
 
-function ActionLink({children, onСlick}: { children: any, onСlick: () => void }) {
+function ActionLink({children, onClick}: { children: any, onClick: () => void }) {
     return (<div className="copy-to-clipboard-button" onClick={() => {
-        onСlick()
+        onClick()
     }}><span>{children}</span></div>)
 }

@@ -1,5 +1,5 @@
 import React, {ReactElement, ReactNode} from 'react';
-import {CenteredSpin, handleError, StatCard} from "../components";
+import {CenteredSpin, handleError, LoadableComponent, StatCard} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {Card, Col, Row} from "antd";
 import './StatusPage.less'
@@ -7,7 +7,6 @@ import {Axis, Chart, Line, Point, Slider} from "bizcharts";
 import {numberFormat} from "../../commons/utils";
 
 type State = {
-    loading: boolean
     designationsCount?: number
     hourlyEvents?: DatePoint[]
     dailyEvents?: DatePoint[]
@@ -53,7 +52,6 @@ function roundUp(date: Date, granularity: "day" | "hour"): Date {
 
 class StubStatService implements StatService {
     get(from: Date, to: Date, granularity: "day" | "hour"): Promise<DatePoint[]> {
-        console.log("FT", from, to);
         return new Promise((resolve) => {
             setTimeout(() => {
                 let res: DatePoint[] = [];
@@ -66,7 +64,6 @@ class StubStatService implements StatService {
                     }
                     res.push({date: start, events: Math.round(events)})
                     start = addSeconds(start, granularity === "hour" ? (60 * 60) : (24 * 60 * 60))
-                    console.log(`[${from}, ${to}] --> [${start}, ${end}]`)
                 }
                 resolve(res)
             }, 1000);
@@ -76,7 +73,7 @@ class StubStatService implements StatService {
 }
 
 
-export default class StatusPage extends React.Component<{}, State> {
+export default class StatusPage extends LoadableComponent<{}, State> {
     private readonly services: ApplicationServices;
     private stats: StatService;
 
@@ -84,18 +81,11 @@ export default class StatusPage extends React.Component<{}, State> {
         super(props, context);
         this.services = ApplicationServices.get();
         this.stats = new StubStatService();
-        this.state = {
-            loading: true
-        }
+        this.state = {}
     }
 
 
-    render() {
-        if (this.state.loading) {
-            return <CenteredSpin/>;
-        }
-        let last24hours = this.state.hourlyEvents;
-        console.log(last24hours);
+    renderReady() {
         return <><h3>{this.services.userService.getUser().name}, welcome to EventNative!</h3>
             <div className="status-page-cards-row">
                 <Row gutter={16}>
@@ -156,37 +146,31 @@ export default class StatusPage extends React.Component<{}, State> {
             autoFit
             height={250}
             data={dataProcessed}>
-            <Axis name="events" label={{ formatter: (val) => numberFormat(val) }} />
+            <Axis name="events" label={{formatter: (val) => numberFormat(val)}}/>
             <Line position="date*events"/>
         </Chart>
 
 
     }
 
-    async componentDidMount() {
-        try {
-            let now = new Date();
-            let [
-                hourlyEvents,
-                dailyEvents,
-                designationsCount
-            ] = await Promise.all([
-                this.stats.get(addSeconds(now, -24 * 60 * 60), now, "hour"),
-                this.stats.get(addSeconds(now, -30 * 24 * 60 * 60), now, "day"),
-                this.getNumberOfDestinations()
-            ]);
-            this.setState({
-                loading: false,
-                designationsCount, hourlyEvents, dailyEvents,
-                eventsLast24: 1234124,
-                events48to24: 234124,
-                eventsLastFullHour: 4124,
-                eventsPrevHour: 5124
-            })
-        } catch (e) {
-            handleError('Failed to load data from server', e);
-        }
-
+    async load() {
+        let now = new Date();
+        let [
+            hourlyEvents,
+            dailyEvents,
+            designationsCount
+        ] = await Promise.all([
+            this.stats.get(addSeconds(now, -24 * 60 * 60), now, "hour"),
+            this.stats.get(addSeconds(now, -30 * 24 * 60 * 60), now, "day"),
+            this.getNumberOfDestinations()
+        ]);
+        return {
+            designationsCount, hourlyEvents, dailyEvents,
+            eventsLast24: 1234124,
+            events48to24: 234124,
+            eventsLastFullHour: 4124,
+            eventsPrevHour: 5124
+        };
     }
 
     async getNumberOfDestinations() {

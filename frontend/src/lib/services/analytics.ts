@@ -24,7 +24,7 @@ export default class AnalyticsService {
     }
 
     public onUserKnown(user: User) {
-        if (!user) {
+        if (!user || this.appConfig.appEnvironment === 'dev') {
             return;
         }
         this.user = user;
