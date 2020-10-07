@@ -149,13 +149,10 @@ export class DestinationsList extends LoadableComponent<any, State> {
                 config={this.state.activeEditorConfig}
                 onCancel={() => this.setState({activeEditorConfig: null})}
                 testConnection={async (values) => {
-                    try {
+                    // try {
                         values.type = this.state.activeEditorConfig.type
-                         await this.services.backendApiClient.post('/test_connection', values)
-                    } catch (error) {
-                        console.log(error)
-                        // message.error("Failed to connect: " + error.response.data.message);
-                    }
+                        await this.services.backendApiClient.post('/test_connection', values)
+
                 }}
                 onSave={(formValues) => {
                     this.state.activeEditorConfig.update(formValues);
@@ -313,9 +310,9 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
                 form
                     .validateFields().then((values) => {
                     testConnection(values).then(() => {
-                        message.success("Successfully connected! " + JSON.stringify(values));
+                        message.success("Successfully connected!");
                     }).catch(error => {
-                        handleError(error, "Failed to validate connection");
+                        handleError(error, "Failed to connect to destination. " + error.message);
                     }).finally(() => setConnectionTesting(false));
                 })
             }}>Test connection</Button>,
@@ -424,7 +421,7 @@ class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
             <>
                 <Row>
                     <Col span={16}>
-                        <Form.Item label="Host" name="redhsiftHost" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Host is required'}]}><Input
+                        <Form.Item label="Host" name="redshiftHost" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Host is required'}]}><Input
                             type="text"/></Form.Item>
                     </Col>
                 </Row>
