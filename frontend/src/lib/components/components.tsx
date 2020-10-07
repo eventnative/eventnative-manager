@@ -106,8 +106,10 @@ export function StatCard({value, ...otherProps}) {
     let props = {...otherProps};
     if (valuePrev !== undefined) {
         props['extra'] = extra
+    } else {
+        props['extra'] = " ";
     }
-    return <Card {...props}>
+    return <Card className="stat-card" {...props}>
         <div className="stat-card-number">
             {formatter(value)}
         </div>
@@ -194,7 +196,6 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
     }
 
     render() {
-        console.log("RENDER STATE => ", this.state)
         let lifecycle = this.getLifecycle();
         if (lifecycle === ComponentLifecycle.WAITING) {
             return <CenteredSpin />
