@@ -1,4 +1,5 @@
 const webpack = require('webpack');
+const CopyPlugin = require('copy-webpack-plugin');
 
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require('terser-webpack-plugin');
@@ -79,5 +80,10 @@ module.exports = {
                 APP_ENV: JSON.stringify(process.env.ENV)
             },
         }),
+        new CopyPlugin({
+            patterns: [
+                { from: 'src/boot', to: "boot" }
+            ]
+        })
     ]
 };

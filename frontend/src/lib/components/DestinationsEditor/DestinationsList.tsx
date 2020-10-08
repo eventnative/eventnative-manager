@@ -29,7 +29,7 @@ import {
     DatabaseOutlined,
     DeleteOutlined,
     EditOutlined,
-    ExclamationCircleOutlined,
+    ExclamationCircleOutlined, EyeInvisibleOutlined, EyeTwoTone,
     PlusOutlined
 } from "@ant-design/icons/lib";
 import './DestinationEditor.less'
@@ -114,10 +114,19 @@ export class DestinationsList extends LoadableComponent<any, State> {
         ]} className="destination-list-item">
             <List.Item.Meta
                 avatar={<Avatar shape="square" src={DestinationsList.getIconSrc(config.type)}/>}
-                title={config.id}
+                title={this.getTitle(config)}
                 description={config.describe()}
             />
         </List.Item>)
+    }
+
+    private getTitle(config: DestinationConfig): ReactNode {
+        if (config.comment) {
+            return <LabelWithTooltip documentation={config.comment}>{config.id}</LabelWithTooltip>
+        } else {
+            return config.id;
+        }
+
     }
 
     private static getIconSrc(destinationType: string): any {
@@ -304,25 +313,44 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
         visible={true}
         onCancel={onCancel}
         footer={[
-            <Button className="destination-connection-test" loading={connectionTesting} onClick={() => {
+            <Button className="destination-connection-test" loading={connectionTesting} onClick={async () => {
                 setConnectionTesting(true);
-                form
-                    .validateFields().then((values) => {
-                    testConnection(values).then(() => {
-                        message.success("Successfully connected!");
-                    }).catch(error => {
-                        handleError(error, "Failed to connect to destination. " + error.message);
-                    }).finally(() => setConnectionTesting(false));
-                })
+                let values;
+                try {
+                    values = await form.validateFields();
+                } catch (e) {
+                    setConnectionTesting(false);
+                    //no need for special handling, error will be displayed within the field
+                    return;
+                }
+                try {
+                    await testConnection(values);
+                    message.success("Successfully connected!");
+                } catch (error) {
+                    handleError(error, "Failed to connect to destination. " + error.message);
+                } finally {
+                    setConnectionTesting(false);
+                }
             }}>Test connection</Button>,
             <Button onClick={onCancel}>Close</Button>,
-            <Button type="primary" loading={saving} onClick={() => {
+            <Button type="primary" loading={saving} onClick={async () => {
                 setSaving(true);
-                form.validateFields().then(testConnection).then(values => {
+                let values;
+                try {
+                    values = await form.validateFields()
+                } catch (error) {
+                    setSaving(true);
+                    //no need for special handling, error will be displayed within the field
+                    return;
+                }
+                try {
+                    await testConnection(values);
                     onSave(values);
-                }).catch(error => {
-                    handleError(error, "Failed to save connection ");
-                }).finally(() => setSaving(false));
+                } catch (error) {
+                    handleError(error, "Failed to connect to destination. " + error.message);
+                } finally {
+                    setSaving(false);
+                }
             }}>Save</Button>,
         ]}
     >{React.createElement(dialogsByType[configType.type], {
@@ -394,7 +422,10 @@ class PostgresDestinationDialog extends DestinationDialog<PostgresConfig> {
                     <Input type="text"/>
                 </Form.Item>
                 <Form.Item label="Password" name="pgpassword" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Password is required'}]}>
-                    <Input type="password"/>
+                    <Input.Password
+                        placeholder="input password"
+                        iconRender={visible => (visible ? <EyeTwoTone/> : <EyeInvisibleOutlined/>)}
+                    />
                 </Form.Item>
             </>);
     }
@@ -438,7 +469,7 @@ class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
                 </Form.Item>
                 <Divider plain>
                     <LabelWithTooltip documentation={(<>If destination is working in batch mode (read about modes differences here), intermediate
-                    batches is stored on S3. You need tp provide S3 credentials. You can use S3 hosted by us as well, just switch off 'Use hosted S3 bucket' setting</>)}>
+                        batches is stored on S3. You need tp provide S3 credentials. You can use S3 hosted by us as well, just switch off 'Use hosted S3 bucket' setting</>)}>
                         S3 configuration
                     </LabelWithTooltip>
                 </Divider>
@@ -451,8 +482,9 @@ class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
                         </Form.Item>
                     </Col>
                     <Col span={8}>
-                        <Form.Item label={<LabelWithTooltip documentation={s3Doc}>Use hosted S3 bucket</LabelWithTooltip>} name="redshiftUseHostedS3" labelCol={{span: 16}} wrapperCol={{span: 8}} rules={[{required: this.s3ConfigEnabled(), message: 'Required'}]}>
-                            <Switch disabled={!this.s3ConfigEnabled()} onChange={() => this.refreshStateFromForm()} />
+                        <Form.Item label={<LabelWithTooltip documentation={s3Doc}>Use hosted S3 bucket</LabelWithTooltip>} name="redshiftUseHostedS3" labelCol={{span: 16}} wrapperCol={{span: 8}}
+                                   rules={[{required: this.s3ConfigEnabled(), message: 'Required'}]}>
+                            <Switch disabled={!this.s3ConfigEnabled()} onChange={() => this.refreshStateFromForm()}/>
                         </Form.Item>
                     </Col>
                 </Row>
@@ -460,10 +492,12 @@ class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
                     <Input type="text" disabled={!this.s3CredentialsEnabled()}/>
                 </Form.Item>
 
-                <Form.Item label="S3 Access Key" name="redshiftS3AccessKey" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: this.s3CredentialsEnabled(), message: 'S3 Access Key is required'}]}>
+                <Form.Item label="S3 Access Key" name="redshiftS3AccessKey" labelCol={{span: 4}} wrapperCol={{span: 12}}
+                           rules={[{required: this.s3CredentialsEnabled(), message: 'S3 Access Key is required'}]}>
                     <Input type="text" disabled={!this.s3CredentialsEnabled()}/>
                 </Form.Item>
-                <Form.Item label="S3 Secret Key" name="redshiftS3SecretKey" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: this.s3CredentialsEnabled(), message: 'S3 Secret Key is required'}]}>
+                <Form.Item label="S3 Secret Key" name="redshiftS3SecretKey" labelCol={{span: 4}} wrapperCol={{span: 12}}
+                           rules={[{required: this.s3CredentialsEnabled(), message: 'S3 Secret Key is required'}]}>
                     <Input type="password" disabled={!this.s3CredentialsEnabled()}/>
                 </Form.Item>
 

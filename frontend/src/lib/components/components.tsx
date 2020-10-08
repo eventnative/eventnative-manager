@@ -9,7 +9,7 @@ import {CaretDownFilled, CaretRightFilled, CaretUpFilled, QuestionCircleOutlined
 import ApplicationServices from "../services/ApplicationServices";
 import {numberFormat} from "../commons/utils";
 
-const loader = require("../../icons/loading.gif").default;
+const loader = require("../../boot/loading.gif").default;
 const plumber = require("../../icons/plumber.png").default;
 
 type IPreloaderProps = {
@@ -21,7 +21,7 @@ type IPreloaderProps = {
  * parent's component display = block
  */
 export function Preloader(props: IPreloaderProps) {
-    let text = props.text ? props.text : "Loading application, please be patient!"
+    let text = props.text ? props.text : "Loading user data..."
     return (<div style={{}} className="preloader-wrapper">
         <img src={loader} alt="[loading]" className="preloader-image"/>
         <div className="preloader-text">
@@ -264,5 +264,28 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
     }
 }
 
+class AlignProps {
+    public vertical?: "center" | "right" | "left" = "right"
+    public horizontal?: "center" | "right" | "left" = "right"
+
+}
+
+/**
+ * Component to align content within. See props type for configuration
+ */
+export function Align(props: {vertical: "" }) {
+
+}
+
+
+class Props {
+    align?: "center" | "right" | "left" = "left"
+}
+
+export function Component(props: Props) {
+    //ТУТ МНОГО КОДА
+    let align = props.align
+    //ТУТ МНОГО КОДА
+}
 
 

@@ -4,7 +4,7 @@ import ApplicationServices from "../../services/ApplicationServices";
 import {CodeFilled, DeleteFilled, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RollbackOutlined, SaveOutlined} from "@ant-design/icons/lib";
 import './ApiKeys.less'
 import {handleError, LabelWithTooltip, LoadableComponent} from "../components";
-import {randomId} from "../../commons/utils";
+import {copyToClipboard, randomId} from "../../commons/utils";
 import TagsInput from "../TagsInput/TagsInput";
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
@@ -122,11 +122,11 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
                 width: "140px",  className: "api-keys-column-actions", title: "Actions", dataIndex: 'actions', render: (text, row: TokenDisplay, index) => {
                     return <>
                         <Tooltip trigger={["hover"]} title={"Show integration documentation"}>
-                            <a style={{display: row.status === "deleted" ? "none" : "none"}} onClick={() => {
+                            <a style={{display: row.status === "deleted" ? "none" : "inline-block"}} onClick={() => {
                                 Modal.info({
                                     content: <KeyDocumentation token={row} />,
                                     title: null,
-                                    width: "90%", icon: null
+                                    className: "api-keys-documentation-modal"
 
                                 })
                             }}>
@@ -208,12 +208,7 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
     }
 
     copyToClipboard(value) {
-        const el = document.createElement('textarea');
-        el.value = value;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
+        copyToClipboard(value);
         message.success("Key copied to clipboard")
     };
 
@@ -235,10 +230,10 @@ function KeyDocumentation({token}: { token: Token }) {
         Domain:
     </>)}>
         <Tabs.TabPane tab="Embed JavaScript" key="1">
-            <p>Easiest way to embed</p>
-            <SyntaxHighlighter language="javascript" style={docco}>
-                {getEmpeddedJS(EVENTNATIVE_HOST)}
-            </SyntaxHighlighter>
+            <p className="api-keys-documentation-tab-description">Easiest way to start tracking events within your web app is to add following snippet to <CodeInline>&lt;head&gt;
+            </CodeInline></p>
+
+            <CodeSnippet language="javascript">{getEmpeddedJS(token.jsAuth, EVENTNATIVE_HOST)}</CodeSnippet>
         </Tabs.TabPane>
         <Tabs.TabPane tab="Use NPM" key="2">
             Content of Tab Pane 2
@@ -247,5 +242,21 @@ function KeyDocumentation({token}: { token: Token }) {
             Content of Tab Pane 3
         </Tabs.TabPane>
     </Tabs>
+}
 
+function CodeInline({children}) {
+    return <span className="code-snippet-inline">{children}</span>
+}
+
+function CodeSnippet(props: {children: ReactNode, language: string, extra?: ReactNode}) {
+    return <div className="code-snippet-wrapper">
+        <SyntaxHighlighter language={props.language} style={docco}>{props.children}</SyntaxHighlighter>
+        <Row><Col span={16}>
+            {props.extra}
+        </Col><Col span={8}>
+
+            <ActionLink onClick={() => this.copyToClipboard(props.children)}>Copy To Clipboard</ActionLink>
+        </Col></Row>
+
+    </div>
 }

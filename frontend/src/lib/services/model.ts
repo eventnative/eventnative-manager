@@ -30,6 +30,8 @@ export type SuggestedUserInfo = {
     email: string
     //user name (Firstname Lastname)
     name?: string
+    //Company name
+    companyName?: string
 }
 
 
@@ -50,14 +52,30 @@ export class User {
             if (projectSingleton) {
                 this._projects = [Marshal.newKnownInstance(Project, projectSingleton)];
             }
-            //this._onboarded = true;
-        } else {
-            this._name = suggested.name;
         }
+        this._suggestedInfo = {...suggested};
+
+        //This piece of code is very WEIRD and should be rewritten.
+        //The idea to make sure that this and suggestedInfo both has full data
+        if (!this._name && this._suggestedInfo.name) {
+            this._name = this._suggestedInfo.name
+        }
+        if (!this._email && this._suggestedInfo.email) {
+            this._email = suggested.email;
+        }
+        if (!this._suggestedInfo.email && this._email) {
+            this._suggestedInfo.email = this._email
+        }
+        if (!this._suggestedInfo.name && this._name) {
+            this._suggestedInfo.name = this._name
+        }
+        if (!this._suggestedInfo.companyName && this.projects && this.projects.length > 0 && this.projects[0].name) {
+            this._suggestedInfo.companyName = this.projects[0].name;
+        }
+        //End of WEIRD code
+
         this._authToken = authToken;
         this._uid = uid;
-        this._suggestedInfo = suggested;
-        this._email = suggested.email;
     }
 
 
