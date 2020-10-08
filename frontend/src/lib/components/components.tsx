@@ -2,12 +2,12 @@
  * Library of small components that are usefull for different purposes
  */
 
-import React, {ReactNode} from "react";
+import React, {CSSProperties, ReactNode} from "react";
 import './components.less'
 import {Card, message, Spin, Tooltip} from "antd";
 import {CaretDownFilled, CaretRightFilled, CaretUpFilled, QuestionCircleOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "../services/ApplicationServices";
-import {numberFormat} from "../commons/utils";
+import {numberFormat, withDefaults} from "../commons/utils";
 
 const loader = require("../../boot/loading.gif").default;
 const plumber = require("../../icons/plumber.png").default;
@@ -264,28 +264,32 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
     }
 }
 
-class AlignProps {
-    public vertical?: "center" | "right" | "left" = "right"
-    public horizontal?: "center" | "right" | "left" = "right"
-
+type HorizontalAlign = "center" | "right" | "left";
+type VerticalAlign = "top" | "bottom" | "center"
+type IAlignProps = {
+    children: ReactNode
+    //vertical?: HorizontalAlign;
+    horizontal?: HorizontalAlign;
 }
+
+
+
+const HORIZONTAL_ALIGN_MAP: Record<HorizontalAlign, string> = {
+    "center": "center",
+    "right": "right",
+    "left": "left"
+};
 
 /**
  * Component to align content within. See props type for configuration
  */
-export function Align(props: {vertical: "" }) {
+export function Align(props: IAlignProps) {
+    props = withDefaults(props, {
+        horizontal: "left"
+    });
 
-}
-
-
-class Props {
-    align?: "center" | "right" | "left" = "left"
-}
-
-export function Component(props: Props) {
-    //ТУТ МНОГО КОДА
-    let align = props.align
-    //ТУТ МНОГО КОДА
+    // @ts-ignore
+    return <div style={{textAlign: HORIZONTAL_ALIGN_MAP[props.horizontal]}}>{props.children}</div>
 }
 
 

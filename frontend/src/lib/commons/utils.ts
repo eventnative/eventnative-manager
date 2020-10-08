@@ -128,6 +128,11 @@ export function numberFormat(opts?: INumberFormatOpts | any): any  {
     }
 }
 
+export function withDefaults<T>(obj: T, defaults: Partial<T>): T {
+    return {...defaults, ...obj};
+}
+
+
 export function copyToClipboard(value) {
     const el = document.createElement('textarea');
     el.value = value;

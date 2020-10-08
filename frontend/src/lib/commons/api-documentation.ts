@@ -34,14 +34,43 @@ function findIndent(str: string) {
     return ident.join("");
 }
 
-export function getEmpeddedJS(key ,host) {
+export function getEmpeddedJS(segment: boolean, ga: boolean, key: string, host: string) {
     return formatCode(`
     !function(t){try{var e,n=t.tracking_host,r=(t.script_path||"/")+"s/track.js",i=window.eventN||(window.eventN={});i.eventsQ=e=i.eventsQ||(i.eventsQ=[]);var a=function(t){i[t]=function(){for(var n=arguments.length,r=new Array(n),i=0;i<n;i++)r[i]=arguments[i];return e.push([t].concat(r))}};a("track"),a("id"),a("init"),i.init(t);var c=document.createElement("script");c.type="text/javascript",c.async=!0,c.src=(n.startsWith("https://")||n.startsWith("http://")?n:location.protocol+"//"+n)+r;var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(c,s)}catch(t){console.log("EventNative init failed",t)}}({
         "key": "${key}",
         "segment_hook": false,
-        "tracking_host": "${EVENTNATIVE_HOST}",
-        "ga_hook": false
+        "tracking_host": "${host}",
+        "ga_hook": ${ga},
+        "segment_hook": ${segment}
     });
 `);
 }
+
+export function getNPMDocumentation(key: string, host: string) {
+    return formatCode(`
+    const { eventN } = require('@ksense/eventnative');
+    //init
+    eventN.init({
+        key: "${key}",
+        tracking_host: "${host}"
+    });
+    //identify user
+    eventN.id({
+        "email": getEmail(),
+        "internal_id": getId()
+    });
+    //track page views
+    eventN.track('app_page');
+    
+    `)
+}
+
+export function getCurlDocumentation(key: string, host: string) {
+    return `
+    curl -X POST -H "Content-Type: application/json" --data-binary '{test_field: "a"}' \\
+    '${host}/api/v1/s2s/event?token=${key}'
+    `;
+
+}
+
 
