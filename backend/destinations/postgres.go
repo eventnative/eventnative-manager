@@ -16,13 +16,13 @@ type DatasourceConfig struct {
 	Host        string
 	ReplicaHost string
 	Db          string
-	Port        string
+	Port        int
 	Username    string
 	Password    string
 }
 
 func (dc *DatasourceConfig) ConnectionString() string {
-	connectionString := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s ",
+	connectionString := fmt.Sprintf("host=%s port=%d dbname=%s user=%s password=%s ",
 		dc.Host, dc.Port, dc.Db, dc.Username, dc.Password)
 	return connectionString
 }
@@ -39,14 +39,14 @@ func NewPostgres(ctx context.Context, postgresDestinationViper *viper.Viper) (*P
 	if replicaHost == "" {
 		replicaHost = host
 	}
-	port := postgresDestinationViper.GetUint("port")
+	port := postgresDestinationViper.GetInt("port")
 	username := postgresDestinationViper.GetString("username")
 	password := postgresDestinationViper.GetString("password")
 	db := postgresDestinationViper.GetString("database")
 	if host == "" || username == "" || password == "" || db == "" {
 		return nil, errors.New("host, database, username and password are required to configure postgres destination")
 	}
-	dsConfig := &DatasourceConfig{Host: host, ReplicaHost: replicaHost, Port: fmt.Sprint(port), Username: username, Password: password, Db: db}
+	dsConfig := &DatasourceConfig{Host: host, ReplicaHost: replicaHost, Port: port, Username: username, Password: password, Db: db}
 
 	dataSource, err := sql.Open("postgres", dsConfig.ConnectionString())
 	if err != nil {
