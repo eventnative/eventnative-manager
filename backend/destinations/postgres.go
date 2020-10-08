@@ -65,7 +65,7 @@ func NewPostgres(ctx context.Context, postgresDestinationViper *viper.Viper) (*P
 }
 
 func (p *Postgres) CreateDatabase(projectId string) (*entities.Database, error) {
-	db := strings.ToLower(projectId + "_" + random.AlphabeticalString(3))
+	db := "db_" + strings.ToLower(projectId)
 	logging.Infof("db " + db)
 	_, err := p.dataSource.Exec("CREATE DATABASE " + db)
 	if err != nil {
@@ -82,7 +82,7 @@ func (p *Postgres) CreateDatabase(projectId string) (*entities.Database, error) 
 		return nil, err
 	}
 
-	username := db
+	username := "u_" + strings.ToLower(projectId)
 	logging.Infof("Generated username: " + username)
 	password := random.String(16)
 	logging.Info("Generated password: " + password)

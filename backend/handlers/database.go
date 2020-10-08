@@ -55,7 +55,7 @@ func (eh *DatabaseHandler) PostHandler(c *gin.Context) {
 
 	database, err := eh.storage.CreateDatabase(projectId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.WebErrorWrapper{Error: err, Message: "Failed to create a database for project " + projectId})
+		c.JSON(http.StatusBadRequest, middleware.WebErrorWrapper{Error: err, Message: "Failed to create a database for project " + projectId + ": " + err.Error()})
 		return
 	}
 
