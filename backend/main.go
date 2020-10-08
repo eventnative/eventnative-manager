@@ -129,7 +129,9 @@ func readConfiguration(configFilePath string) {
 	}
 }
 
-func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, eventnativeAdminToken string, storage *storages.Firebase, authService *authorization.Service, defaultS3 enadapters.S3Config, statisticsPostgres enstorages.DestinationConfig) *gin.Engine {
+func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, eventnativeAdminToken string,
+	storage *storages.Firebase, authService *authorization.Service,
+	defaultS3 enadapters.S3Config, statisticsPostgres enstorages.DestinationConfig) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 
@@ -139,6 +141,10 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 
 	serverToken := viper.GetString("server.auth")
 
+	statisticsHandler, err := handlers.NewStatisticsHandler(statisticsPostgres.DataSource)
+	if err != nil {
+		logging.Fatal("Failed to initialize statistics handler", err)
+	}
 	apiV1 := router.Group("/api/v1")
 	{
 		apiV1.POST("/database", middleware.ClientAuth(handlers.NewDatabaseHandler(storage, eventnativeBaseUrl, eventnativeAdminToken).PostHandler, authService))
@@ -146,6 +152,7 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 		apiV1.GET("/apikeys", middleware.ServerAuth(handlers.NewApiKeysHandler(storage).GetHandler, serverToken))
 		handler := handlers.NewDatabaseHandler(storage, eventnativeBaseUrl, eventnativeAdminToken)
 		apiV1.POST("/test_connection", middleware.ClientAuth(handler.TestHandler, authService))
+		apiV1.GET("/usage_stat", middleware.ClientAuth(statisticsHandler.Handler, authService))
 	}
 	router.Use(static.Serve("/", static.LocalFile(staticContentDirectory, false)))
 	return router
