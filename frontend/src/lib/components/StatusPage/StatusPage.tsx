@@ -56,31 +56,22 @@ class StatServiceImpl implements StatService {
     constructor(service: ApplicationServices) {
         this.service = service
     }
-    get(from: Date, to: Date, granularity: "day" | "hour" | "total"): Promise<DatePoint[]> {
-        return this.service.backendApiClient.get(`/statistics?project_id=${this.service.activeProject.id}&from=${from.toISOString()}&to=${to.toISOString()}&granularity=${granularity}`)
-    }
-}
 
-class StubStatService implements StatService {
-    get(from: Date, to: Date, granularity: "day" | "hour"): Promise<DatePoint[]> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                let res: DatePoint[] = [];
-                let start = roundDown(from, granularity);
-                let end = roundUp(to, granularity);
-                while (start < end) {
-                    let events = 3_000_000 + (Math.random() - 0.5) * 1_000_000;
-                    if (granularity == "hour") {
-                        events = events / 24;
-                    }
-                    res.push({date: start, events: Math.round(events)})
-                    start = addSeconds(start, granularity === "hour" ? (60 * 60) : (24 * 60 * 60))
-                }
-                resolve(res)
-            }, 1000);
+    async get(from: Date, to: Date, granularity: "day" | "hour" | "total"): Promise<DatePoint[]> {
+        let data = (await this.service.backendApiClient.get(`/statistics?project_id=${this.service.activeProject.id}&from=${from.toISOString()}&to=${to.toISOString()}&granularity=${granularity}`))['data'];
+        let dates = data.map((el) => {
+            return {date: new Date(Date.parse(el.key)), events: el.events}
+        });
+        dates.sort((e1, e2) => {
+            if (e1.date > e2.date) {
+                return 1;
+            } else if (e1.date < e2.date) {
+                return -1;
+            }
+            return 0;
         })
+        return dates;
     }
-
 }
 
 
@@ -91,8 +82,7 @@ export default class StatusPage extends LoadableComponent<{}, State> {
     constructor(props: {}, context: any) {
         super(props, context);
         this.services = ApplicationServices.get();
-        this.stats = new StubStatService();
-        // this.stats = new StatServiceImpl(this.services);
+        this.stats = new StatServiceImpl(this.services);
         this.state = {}
     }
 
@@ -108,7 +98,7 @@ export default class StatusPage extends LoadableComponent<{}, State> {
                         <StatCard value={this.state.eventsLast24} valuePrev={this.state.events48to24} title="Events today" bordered={false}/>
                     </Col>
                     <Col span={8}>
-                        <StatCard value={this.state.eventsLastFullHour} valuePrev={this.state.eventsPrevHour} title="Events last hour" bordered={false}/>
+                        <StatCard value={this.state.eventsLastFullHour} valuePrev={this.state.eventsPrevHour} title="Events this hour" bordered={false}/>
                     </Col>
                 </Row>
             </div>
@@ -130,6 +120,7 @@ export default class StatusPage extends LoadableComponent<{}, State> {
     }
 
     format(date: Date, granularity: "day" | "hour") {
+
         let base = this.formatDate(date);
 
         if (granularity === "day") {
@@ -176,12 +167,19 @@ export default class StatusPage extends LoadableComponent<{}, State> {
             this.stats.get(addSeconds(now, -30 * 24 * 60 * 60), now, "day"),
             this.getNumberOfDestinations()
         ]);
+        let eventsLast24 = 0, events48to24 = 0;
+        for (let i = hourlyEvents.length-1; i >= 0 && i >= hourlyEvents.length - 48; i--) {
+            if (i >= hourlyEvents.length - 24) {
+                eventsLast24 += hourlyEvents[i].events;
+            } else {
+                events48to24 += hourlyEvents[i].events;
+            }
+        }
+        let eventsLastFullHour = hourlyEvents.length > 0 ? hourlyEvents[hourlyEvents.length - 1].events : 0;
+        let eventsPrevHour = hourlyEvents.length > 1 ? hourlyEvents[hourlyEvents.length - 2].events : 0;
         return {
             designationsCount, hourlyEvents, dailyEvents,
-            eventsLast24: 1234124,
-            events48to24: 234124,
-            eventsLastFullHour: 4124,
-            eventsPrevHour: 5124
+            eventsLast24, events48to24, eventsLastFullHour, eventsPrevHour
         };
     }
 
