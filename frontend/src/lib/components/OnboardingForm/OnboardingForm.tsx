@@ -35,6 +35,7 @@ export default function OnboardingForm(props: Props) {
             values = await form.validateFields();
         } catch (e) {
             //no need for special handling, all errors will be displayed within the form
+            setState({loading: false});
             return;
         }
         try {
