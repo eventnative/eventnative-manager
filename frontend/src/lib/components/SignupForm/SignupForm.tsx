@@ -13,7 +13,8 @@ const googleLogo = require('../../../icons/google.svg').default;
 const githubLogo = require('../../../icons/github.svg').default;
 
 type State = {
-    loading?: boolean
+    loading?: boolean,
+    tosAgree: boolean
 }
 
 export default class SignupForm extends React.Component<any, State> {
@@ -22,7 +23,7 @@ export default class SignupForm extends React.Component<any, State> {
     constructor(props: any, context: any) {
         super(props, context);
         this.services = ApplicationServices.get();
-        this.state = {loading: false}
+        this.state = {loading: false, tosAgree: true}
     }
 
     googleSignup() {
@@ -50,14 +51,14 @@ export default class SignupForm extends React.Component<any, State> {
     }
 
     async passwordSignup(values) {
-        if (!values['signup-checkboxes-tos']) {
+        if (!this.state.tosAgree) {
             message.error("To sign up you need to agree to the terms of service");
             return
         }
         this.setState({loading: true});
         try {
             await this.services.userService.createUser(values['email'], values['password']);
-            navigateAndReload("#/")
+            reloadPage();
         } catch (error) {
             handleError(error);
             this.setState({loading: false});
@@ -111,13 +112,11 @@ export default class SignupForm extends React.Component<any, State> {
                             placeholder="Password"
                         />
                     </Form.Item>
-                    <div className="signup-checkboxes">
-                        <Form.Item name="signup-checkboxes-tos">
-                            <Checkbox defaultChecked={true}>
-                                I agree to <a href="https://ksense.io/tos">Terms of Services</a> and <a href="https://ksense.io/privacy">Privacy Policy</a>
-                            </Checkbox>
-                        </Form.Item>
-                    </div>
+                    <Form.Item name="agreeToTos" className="signup-checkboxes">
+                        <Checkbox defaultChecked={true} onChange={(value) => this.setState({tosAgree: value.target.checked})}>
+                            I agree to <a href="https://ksense.io/tos">Terms of Services</a> and <a href="https://ksense.io/privacy">Privacy Policy</a>
+                        </Checkbox>
+                    </Form.Item>
 
 
                     <div className="signup-action-buttons">
