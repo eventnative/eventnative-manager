@@ -67,7 +67,7 @@ export function getNPMDocumentation(key: string, host: string) {
 
 export function getCurlDocumentation(key: string, host: string) {
     return `
-    curl -X POST -H "Content-Type: application/json" --data-binary '{test_field: "a"}' \\
+    curl -X POST -H "Content-Type: application/json" --data-binary '{"test_field": "a"}' \\
     '${host}/api/v1/s2s/event?token=${key}'
     `;
 
