@@ -11,10 +11,11 @@ import (
 )
 
 type StatisticsHandler struct {
-	statDatasource *sql.DB
+	oldKeysByProject map[string][]string
+	statDatasource   *sql.DB
 }
 
-func NewStatisticsHandler(config *adapters.DataSourceConfig) (*StatisticsHandler, error) {
+func NewStatisticsHandler(config *adapters.DataSourceConfig, oldKeysMapping *map[string][]string) (*StatisticsHandler, error) {
 	port := 5432
 	if config.Port != 0 {
 		port = config.Port
@@ -31,7 +32,7 @@ func NewStatisticsHandler(config *adapters.DataSourceConfig) (*StatisticsHandler
 	if err = dataSource.Ping(); err != nil {
 		return nil, err
 	}
-	return &StatisticsHandler{statDatasource: dataSource}, nil
+	return &StatisticsHandler{statDatasource: dataSource, oldKeysByProject: *oldKeysMapping}, nil
 }
 
 type EventsPerTime struct {
@@ -81,14 +82,24 @@ const (
 )
 
 func (h *StatisticsHandler) countEventsByProject(projectId string, from string, to string, granularity string) ([]EventsPerTime, error) {
-	hackPart := ""
-	query := fmt.Sprintf(queryTemplate, granularity, from, to, hackPart, projectId)
+	oldKeysHackPart := ""
+	if keys, ok := h.oldKeysByProject[projectId]; ok {
+		oldKeysHackPart = "api_key in ("
+		for i := range keys {
+			oldKeysHackPart = oldKeysHackPart + "'" + keys[i] + "'"
+			if i != len(keys)-1 {
+				oldKeysHackPart = oldKeysHackPart + ","
+			}
+		}
+		oldKeysHackPart = oldKeysHackPart + ") or"
+	}
+	query := fmt.Sprintf(queryTemplate, granularity, from, to, oldKeysHackPart, projectId)
 	rows, err := h.statDatasource.Query(query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var eventsPerTime []EventsPerTime
+	eventsPerTime := make([]EventsPerTime, 0)
 	for rows.Next() {
 		data := EventsPerTime{}
 		var date string

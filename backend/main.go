@@ -140,8 +140,8 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 	})
 
 	serverToken := viper.GetString("server.auth")
-
-	statisticsHandler, err := handlers.NewStatisticsHandler(statisticsPostgres.DataSource)
+	oldKeysPerProject := viper.GetStringMapStringSlice("old_keys")
+	statisticsHandler, err := handlers.NewStatisticsHandler(statisticsPostgres.DataSource, &oldKeysPerProject)
 	if err != nil {
 		logging.Fatal("Failed to initialize statistics handler", err)
 	}
