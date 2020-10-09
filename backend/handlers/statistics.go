@@ -7,6 +7,7 @@ import (
 	"github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/eventnative/adapters"
 	"net/http"
+	"time"
 )
 
 type StatisticsHandler struct {
@@ -34,8 +35,8 @@ func NewStatisticsHandler(config *adapters.DataSourceConfig) (*StatisticsHandler
 }
 
 type EventsPerTime struct {
-	key    string
-	events uint
+	Key    string `json:"key"`
+	Events uint   `json:"events"`
 }
 
 type ResponseBody struct {
@@ -64,7 +65,7 @@ func (h *StatisticsHandler) Handler(c *gin.Context) {
 		c.JSON(http.StatusBadGateway, middleware.ErrorResponse{Message: "[granularity] is a required query parameter and should have value 'day' or 'hour'"})
 		return
 	}
-	data, err := h.countEventsByProject(projectId)
+	data, err := h.countEventsByProject(projectId, from, to, granularity)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to provide statistics: " + err.Error(), Error: err})
 	}
@@ -72,8 +73,44 @@ func (h *StatisticsHandler) Handler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func (h *StatisticsHandler) countEventsByProject(projectId string) ([]EventsPerTime, error) {
-	return nil, nil
+const (
+	queryTemplate = `select date_trunc('%s', _timestamp) as key, count(*) as value from statistics.statistics
+					 where _timestamp between '%s' AND '%s' AND (%s api_key like '%%%s%%')
+					 group by key
+					 order by key ASC;`
+)
+
+func (h *StatisticsHandler) countEventsByProject(projectId string, from string, to string, granularity string) ([]EventsPerTime, error) {
+	hackPart := ""
+	query := fmt.Sprintf(queryTemplate, granularity, from, to, hackPart, projectId)
+	rows, err := h.statDatasource.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var eventsPerTime []EventsPerTime
+	for rows.Next() {
+		data := EventsPerTime{}
+		var date string
+		err := rows.Scan(&date, &data.Events)
+		if err != nil {
+			return nil, err
+		}
+		data.Key, err = convertDateToResponseFormat(date)
+		if err != nil {
+			return nil, err
+		}
+		eventsPerTime = append(eventsPerTime, data)
+	}
+	return eventsPerTime, nil
+}
+
+func convertDateToResponseFormat(dateString string) (string, error) {
+	parsed, err := time.Parse("2006-01-02T15:04:05Z", dateString)
+	if err != nil {
+		return "", err
+	}
+	return parsed.Format("2006-01-02T15:04:05+0000"), nil
 }
 
 func extractQueryParameter(c *gin.Context, parameterName string) string {
