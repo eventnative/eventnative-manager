@@ -50,6 +50,17 @@ function roundUp(date: Date, granularity: "day" | "hour"): Date {
     return res;
 }
 
+class StatServiceImpl implements StatService {
+    private readonly service: ApplicationServices
+
+    constructor(service: ApplicationServices) {
+        this.service = service
+    }
+    get(from: Date, to: Date, granularity: "day" | "hour" | "total"): Promise<DatePoint[]> {
+        return this.service.backendApiClient.get(`/usage_stat?project_id=${this.service.activeProject.id}&from=${from.toISOString()}&to=${to.toISOString()}&granularity=${granularity}`)
+    }
+}
+
 class StubStatService implements StatService {
     get(from: Date, to: Date, granularity: "day" | "hour"): Promise<DatePoint[]> {
         return new Promise((resolve) => {
@@ -81,6 +92,7 @@ export default class StatusPage extends LoadableComponent<{}, State> {
         super(props, context);
         this.services = ApplicationServices.get();
         this.stats = new StubStatService();
+        // this.stats = new StatServiceImpl(this.services);
         this.state = {}
     }
 
