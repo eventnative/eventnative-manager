@@ -141,18 +141,23 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 
 	serverToken := viper.GetString("server.auth")
 	oldKeysPerProject := viper.GetStringMapStringSlice("old_keys")
-	statisticsHandler, err := handlers.NewStatisticsHandler(statisticsPostgres.DataSource, &oldKeysPerProject)
+	statisticsHandler, err := handlers.NewStatisticsHandler(statisticsPostgres.DataSource, oldKeysPerProject)
 	if err != nil {
 		logging.Fatal("Failed to initialize statistics handler", err)
 	}
+	appconfig.Instance.ScheduleClosing(statisticsHandler)
+
 	apiV1 := router.Group("/api/v1")
 	{
-		apiV1.POST("/database", middleware.ClientAuth(handlers.NewDatabaseHandler(storage, eventnativeBaseUrl, eventnativeAdminToken).PostHandler, authService))
-		apiV1.GET("/destinations", middleware.ServerAuth(handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres).GetHandler, serverToken))
+		apiV1.POST("/database", middleware.ClientAuth(handlers.NewDatabaseHandler(storage).PostHandler, authService))
 		apiV1.GET("/apikeys", middleware.ServerAuth(handlers.NewApiKeysHandler(storage).GetHandler, serverToken))
-		handler := handlers.NewDatabaseHandler(storage, eventnativeBaseUrl, eventnativeAdminToken)
-		apiV1.POST("/test_connection", middleware.ClientAuth(handler.TestHandler, authService))
-		apiV1.GET("/usage_stat", middleware.ClientAuth(statisticsHandler.Handler, authService))
+		apiV1.GET("/statistics", middleware.ClientAuth(statisticsHandler.GetHandler, authService))
+
+		destinationsHandler := handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
+
+		destinationsRoute := apiV1.Group("/destinations")
+		destinationsRoute.GET("/", middleware.ServerAuth(destinationsHandler.GetHandler, serverToken))
+		destinationsRoute.POST("/test", middleware.ClientAuth(destinationsHandler.TestHandler, authService))
 	}
 	router.Use(static.Serve("/", static.LocalFile(staticContentDirectory, false)))
 	return router

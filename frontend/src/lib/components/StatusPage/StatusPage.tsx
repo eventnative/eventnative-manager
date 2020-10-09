@@ -57,7 +57,7 @@ class StatServiceImpl implements StatService {
         this.service = service
     }
     get(from: Date, to: Date, granularity: "day" | "hour" | "total"): Promise<DatePoint[]> {
-        return this.service.backendApiClient.get(`/usage_stat?project_id=${this.service.activeProject.id}&from=${from.toISOString()}&to=${to.toISOString()}&granularity=${granularity}`)
+        return this.service.backendApiClient.get(`/statistics?project_id=${this.service.activeProject.id}&from=${from.toISOString()}&to=${to.toISOString()}&granularity=${granularity}`)
     }
 }
 

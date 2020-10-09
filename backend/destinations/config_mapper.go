@@ -9,7 +9,20 @@ import (
 	"strings"
 )
 
-func MapPostgres(pgDestinations *entities.Destination) (*enstorages.DestinationConfig, error) {
+func MapConfig(destinationId string, destination *entities.Destination, defaultS3 enadapters.S3Config) (*enstorages.DestinationConfig, error) {
+	switch destination.Type {
+	case enstorages.PostgresType:
+		return mapPostgres(destination)
+	case enstorages.ClickHouseType:
+		return mapClickhouse(destination)
+	case enstorages.RedshiftType:
+		return mapRedshift(destinationId, destination, defaultS3)
+	default:
+		return nil, fmt.Errorf("Unknown destination type: %s", destination.Type)
+	}
+}
+
+func mapPostgres(pgDestinations *entities.Destination) (*enstorages.DestinationConfig, error) {
 	b, err := json.Marshal(pgDestinations.Data)
 	if err != nil {
 		return nil, fmt.Errorf("Error marshaling postgres config destination: %v", err)
@@ -38,7 +51,7 @@ func MapPostgres(pgDestinations *entities.Destination) (*enstorages.DestinationC
 	}, nil
 }
 
-func MapClickhouse(chDestinations *entities.Destination) (*enstorages.DestinationConfig, error) {
+func mapClickhouse(chDestinations *entities.Destination) (*enstorages.DestinationConfig, error) {
 	b, err := json.Marshal(chDestinations.Data)
 	if err != nil {
 		return nil, fmt.Errorf("Error marshaling clickhouse config destination: %v", err)
@@ -64,7 +77,7 @@ func MapClickhouse(chDestinations *entities.Destination) (*enstorages.Destinatio
 	}, nil
 }
 
-func MapRedshift(destinationId string, rsDestinations *entities.Destination, defaultS3 enadapters.S3Config) (*enstorages.DestinationConfig, error) {
+func mapRedshift(destinationId string, rsDestinations *entities.Destination, defaultS3 enadapters.S3Config) (*enstorages.DestinationConfig, error) {
 	b, err := json.Marshal(rsDestinations.Data)
 	if err != nil {
 		return nil, fmt.Errorf("Error marshaling redshift config destination: %v", err)

@@ -6,16 +6,34 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/eventnative/adapters"
+	"github.com/ksensehq/eventnative/logging"
 	"net/http"
 	"time"
 )
+
+const (
+	queryTemplate = `select date_trunc('%s', _timestamp) as key, count(*) as value from statistics.statistics
+					 where _timestamp between '%s' AND '%s' AND (%s api_key like '%%%s%%')
+					 group by key
+					 order by key ASC;`
+)
+
+type EventsPerTime struct {
+	Key    string `json:"key"`
+	Events uint   `json:"events"`
+}
+
+type ResponseBody struct {
+	Status string          `json:"status"`
+	Data   []EventsPerTime `json:"data"`
+}
 
 type StatisticsHandler struct {
 	oldKeysByProject map[string][]string
 	statDatasource   *sql.DB
 }
 
-func NewStatisticsHandler(config *adapters.DataSourceConfig, oldKeysMapping *map[string][]string) (*StatisticsHandler, error) {
+func NewStatisticsHandler(config *adapters.DataSourceConfig, oldKeysMapping map[string][]string) (*StatisticsHandler, error) {
 	port := 5432
 	if config.Port != 0 {
 		port = config.Port
@@ -32,38 +50,41 @@ func NewStatisticsHandler(config *adapters.DataSourceConfig, oldKeysMapping *map
 	if err = dataSource.Ping(); err != nil {
 		return nil, err
 	}
-	return &StatisticsHandler{statDatasource: dataSource, oldKeysByProject: *oldKeysMapping}, nil
+	return &StatisticsHandler{statDatasource: dataSource, oldKeysByProject: oldKeysMapping}, nil
 }
 
-type EventsPerTime struct {
-	Key    string `json:"key"`
-	Events uint   `json:"events"`
-}
-
-type ResponseBody struct {
-	Status string          `json:"status"`
-	Data   []EventsPerTime `json:"data"`
-}
-
-func (h *StatisticsHandler) Handler(c *gin.Context) {
-	projectId := extractQueryParameter(c, "project_id")
+func (h *StatisticsHandler) GetHandler(c *gin.Context) {
+	projectId := c.Query("project_id")
 	if projectId == "" {
-		c.JSON(http.StatusBadGateway, middleware.ErrorResponse{Message: "[project_id] is a required query parameter"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "[project_id] is a required query parameter"})
 		return
 	}
-	from := extractQueryParameter(c, "from")
+
+	userProjectId := extractProjectId(c)
+	if userProjectId == "" {
+		logging.Error(systemErrProjectId)
+		c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Error: systemErrProjectId, Message: "Authorization error"})
+		return
+	}
+
+	if userProjectId != projectId {
+		c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Message: "User does not have access to project " + projectId})
+		return
+	}
+
+	from := c.Query("from")
 	if from == "" {
-		c.JSON(http.StatusBadGateway, middleware.ErrorResponse{Message: "[from] is a required query parameter"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "[from] is a required query parameter"})
 		return
 	}
-	to := extractQueryParameter(c, "to")
+	to := c.Query("to")
 	if to == "" {
-		c.JSON(http.StatusBadGateway, middleware.ErrorResponse{Message: "[to] is a required query parameter"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "[to] is a required query parameter"})
 		return
 	}
-	granularity := extractQueryParameter(c, "granularity")
+	granularity := c.Query("granularity")
 	if granularity != "day" && granularity != "hour" {
-		c.JSON(http.StatusBadGateway, middleware.ErrorResponse{Message: "[granularity] is a required query parameter and should have value 'day' or 'hour'"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "[granularity] is a required query parameter and should have value 'day' or 'hour'"})
 		return
 	}
 	data, err := h.countEventsByProject(projectId, from, to, granularity)
@@ -73,13 +94,6 @@ func (h *StatisticsHandler) Handler(c *gin.Context) {
 	response := ResponseBody{Data: data, Status: "ok"}
 	c.JSON(http.StatusOK, response)
 }
-
-const (
-	queryTemplate = `select date_trunc('%s', _timestamp) as key, count(*) as value from statistics.statistics
-					 where _timestamp between '%s' AND '%s' AND (%s api_key like '%%%s%%')
-					 group by key
-					 order by key ASC;`
-)
 
 func (h *StatisticsHandler) countEventsByProject(projectId string, from string, to string, granularity string) ([]EventsPerTime, error) {
 	oldKeysHackPart := ""
@@ -116,18 +130,18 @@ func (h *StatisticsHandler) countEventsByProject(projectId string, from string, 
 	return eventsPerTime, nil
 }
 
+func (h *StatisticsHandler) Close() error {
+	if err := h.statDatasource.Close(); err != nil {
+		return fmt.Errorf("Error closing statistics db: %v", err)
+	}
+
+	return nil
+}
+
 func convertDateToResponseFormat(dateString string) (string, error) {
 	parsed, err := time.Parse("2006-01-02T15:04:05Z", dateString)
 	if err != nil {
 		return "", err
 	}
 	return parsed.Format("2006-01-02T15:04:05+0000"), nil
-}
-
-func extractQueryParameter(c *gin.Context, parameterName string) string {
-	value, ok := c.GetQuery(parameterName)
-	if ok {
-		return value
-	}
-	return ""
 }

@@ -14,13 +14,13 @@ func ClientAuth(main gin.HandlerFunc, service *authorization.Service) gin.Handle
 		token := c.GetHeader("X-Client-Auth")
 		projectId, err := service.Authenticate(c, token)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, WebErrorWrapper{Error: err, Message: "You are not authorized"})
+			c.JSON(http.StatusUnauthorized, ErrorResponse{Error: err, Message: "You are not authorized"})
 			return
 		}
 
 		if projectId == "" {
 			logging.Errorf("System error: project id is empty in token: %s", token)
-			c.JSON(http.StatusUnauthorized, WebErrorWrapper{Message: "Authorization error"})
+			c.JSON(http.StatusUnauthorized, ErrorResponse{Message: "Authorization error"})
 			return
 		}
 
