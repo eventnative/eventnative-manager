@@ -114,7 +114,7 @@ export class CustomDomains extends LoadableComponent<any, State> {
             })}/>
             {this.state.enterNameVisible ? <EnterNameModal onClose={() => this.setState({enterNameVisible: false})} onReady={(text) => {
                 this.reload(async () => {
-                    let newDomains: Domain[] = [...this.state.domains, {name: text, status: "verified"}];
+                    let newDomains: Domain[] = [...this.state.domains, {name: text, status: "pending"}];
                     await this.services.storageService.save("custom_domains", {domains: newDomains}, this.services.activeProject.id);
                     message.success("New domain added!");
                     return {
@@ -169,5 +169,4 @@ function EnterNameModal({onClose, onReady}: {
             </Form.Item>
         </Form>
     </Modal>
-
 }

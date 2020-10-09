@@ -42,9 +42,13 @@ export const destinationsByTypeId = destinationConfigTypes.reduce((map: Record<s
 export abstract class DestinationConfig {
     protected readonly _uid = randomId();
     protected readonly _id: string
+    private _comment: string = null;
     protected readonly _type: string
     protected readonly _onlyKeys = [];
     protected _formData: any = {};
+
+
+
 
 
     constructor(type: string, id: string) {
@@ -65,6 +69,13 @@ export abstract class DestinationConfig {
         return this._type;
     }
 
+    get comment(): string {
+        return this._comment;
+    }
+
+    set comment(value: string) {
+        this._comment = value;
+    }
 
     get formData(): any {
         return this._formData;

@@ -71,7 +71,7 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 			}
 
 			if err != nil {
-				logging.Errorf("Error mapping destination config for destination type: %s id: %s err: %v", destination.Type, destination.Id, err)
+				logging.Errorf("Error mapping destination config for destination type: %s id: %s projectId: %s err: %v", destination.Type, destination.Id, projectId, err)
 				continue
 			}
 

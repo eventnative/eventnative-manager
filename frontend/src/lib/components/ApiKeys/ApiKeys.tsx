@@ -1,14 +1,14 @@
-import React, {ReactElement, ReactNode} from 'react';
-import {Button, Col, Form, Input, List, Mentions, message, Modal, Row, Table, Tabs, Tag, Tooltip} from "antd";
+import React, {ReactElement, ReactNode, useState} from 'react';
+import {Button, Col, Form, Input, List, Mentions, message, Modal, Row, Space, Switch, Table, Tabs, Tag, Tooltip} from "antd";
 import ApplicationServices from "../../services/ApplicationServices";
 import {CodeFilled, DeleteFilled, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RollbackOutlined, SaveOutlined} from "@ant-design/icons/lib";
 import './ApiKeys.less'
-import {handleError, LabelWithTooltip, LoadableComponent} from "../components";
-import {randomId} from "../../commons/utils";
+import {Align, handleError, LabelWithTooltip, LoadableComponent} from "../components";
+import {copyToClipboard, randomId} from "../../commons/utils";
 import TagsInput from "../TagsInput/TagsInput";
 import SyntaxHighlighter from 'react-syntax-highlighter';
-import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
-import {EVENTNATIVE_HOST, getEmpeddedJS} from "../../commons/api-documentation";
+import {docco} from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import {EVENTNATIVE_HOST, getCurlDocumentation, getEmpeddedJS, getNPMDocumentation} from "../../commons/api-documentation";
 
 type Token = {
     uid: string
@@ -77,12 +77,14 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
                 render: (text, row, index) => {
                     return <span className={"api-keys-status-" + this.state.tokens[index].status}>
                         <Input className={"api-keys-key-input"} type="text" value={text}/>
-                        <ActionLink onClick={() => this.copyToClipboard(text)}>Copy To Clipboard</ActionLink>
-                        <ActionLink onClick={() => {
-                            this.state.tokens[index].jsAuth = this.newToken("js");
-                            this.state.tokens[index].status = "modified";
-                            this.forceUpdate();
-                        }}>Generate New Key</ActionLink>
+                        <Space>
+                            <ActionLink onClick={() => this.copyToClipboard(text)}>Copy To Clipboard</ActionLink>
+                            <ActionLink onClick={() => {
+                                this.state.tokens[index].jsAuth = this.newToken("js");
+                                this.state.tokens[index].status = "modified";
+                                this.forceUpdate();
+                            }}>Generate New Key</ActionLink>
+                        </Space>
                     </span>
                 },
                 title: (<LabelWithTooltip documentation={(<>Client API Key. Should be used with <a href="https://docs.eventnative.dev/javascript-reference">JS client</a>.</>)}>Client
@@ -96,12 +98,14 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
                 render: (text, row, index) => {
                     return <span className={"api-keys-status-" + this.state.tokens[index].status}>
                         <Input className="api-keys-key-input" type="text" value={text}/>
-                        <ActionLink onClick={() => this.copyToClipboard(text)}>Copy To Clipboard</ActionLink>
-                        <ActionLink onClick={() => {
-                            this.state.tokens[index].serverAuth = this.newToken("s2s");
-                            this.state.tokens[index].status = "modified";
-                            this.forceUpdate();
-                        }}>Generate New Key</ActionLink>
+                        <Space>
+                            <ActionLink onClick={() => this.copyToClipboard(text)}>Copy To Clipboard</ActionLink>
+                            <ActionLink onClick={() => {
+                                this.state.tokens[index].serverAuth = this.newToken("s2s");
+                                this.state.tokens[index].status = "modified";
+                                this.forceUpdate();
+                            }}>Generate New Key</ActionLink>
+                        </Space>
                     </span>
                 },
                 title: (<LabelWithTooltip documentation={(<>Server API Key. Should be used with <a href="https://docs.eventnative.dev/api">backend API calls</a>.</>)}>Server Secret</LabelWithTooltip>)
@@ -119,14 +123,15 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
                     you want to whitelist domain abc.com and all subdomains, add abc.com and *.abc.com. If list is empty, traffic will be accepted from all domains</>)}>Origins</LabelWithTooltip>)
             },
             {
-                width: "140px",  className: "api-keys-column-actions", title: "Actions", dataIndex: 'actions', render: (text, row: TokenDisplay, index) => {
+                width: "140px", className: "api-keys-column-actions", title: "Actions", dataIndex: 'actions', render: (text, row: TokenDisplay, index) => {
                     return <>
                         <Tooltip trigger={["hover"]} title={"Show integration documentation"}>
-                            <a style={{display: row.status === "deleted" ? "none" : "none"}} onClick={() => {
+                            <a style={{display: row.status === "deleted" ? "none" : "inline-block"}} onClick={() => {
                                 Modal.info({
-                                    content: <KeyDocumentation token={row} />,
+                                    content: <KeyDocumentation token={row}/>,
                                     title: null,
-                                    width: "90%", icon: null
+                                    icon: null,
+                                    className: "api-keys-documentation-modal"
 
                                 })
                             }}>
@@ -208,12 +213,7 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
     }
 
     copyToClipboard(value) {
-        const el = document.createElement('textarea');
-        el.value = value;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
+        copyToClipboard(value);
         message.success("Key copied to clipboard")
     };
 
@@ -231,21 +231,75 @@ function ActionLink({children, onClick}: { children: any, onClick: () => void })
 }
 
 function KeyDocumentation({token}: { token: Token }) {
-    return <Tabs defaultActiveKey="1" tabBarExtraContent={(<>
-        Domain:
+    const [gaEnabled, setGAEnabled] = useState(false);
+    const [segment, setSegmentEnabled] = useState(false);
+
+
+    let exampleSwitches = <div className="api-keys-doc-embed-switches">
+        <Space><LabelWithTooltip documentation={
+            <>Check if you want to intercept events from Google Analytics
+                (<a href="https://docs.eventnative.dev/javascript-reference">Read more</a>)
+            </>}>Intercept GA events</LabelWithTooltip>
+        <Switch size="small" checked={gaEnabled} onChange={() => setGAEnabled(!gaEnabled)}/>
+        <LabelWithTooltip documentation={
+            <>Check if you want to intercept events from Segment
+                (<a href="https://docs.eventnative.dev/javascript-reference">Read more</a>)
+            </>}>Intercept Segment events</LabelWithTooltip>
+            <Switch size="small" checked={segment} onChange={() => setSegmentEnabled(!segment)}/></Space>
+        </div>
+
+
+
+
+    return <Tabs className="api-keys-documentation-tabs" defaultActiveKey="1" tabBarExtraContent={(<>
+
     </>)}>
         <Tabs.TabPane tab="Embed JavaScript" key="1">
-            <p>Easiest way to embed</p>
-            <SyntaxHighlighter language="javascript" style={docco}>
-                {getEmpeddedJS(EVENTNATIVE_HOST)}
-            </SyntaxHighlighter>
+            <p className="api-keys-documentation-tab-description">Easiest way to start tracking events within your web app is to
+                add following snippet to <CodeInline>&lt;head&gt;</CodeInline>
+                section of your html file. <a href="https://docs.eventnative.dev/javascript-reference">Read more</a> about JavaScript integration
+                on our documentation website
+            </p>
+            <CodeSnippet language="javascript"
+            extra={exampleSwitches}>
+                {getEmpeddedJS(segment, gaEnabled, token.jsAuth, EVENTNATIVE_HOST)}
+            </CodeSnippet>
         </Tabs.TabPane>
-        <Tabs.TabPane tab="Use NPM" key="2">
-            Content of Tab Pane 2
+        <Tabs.TabPane tab="Use NPM/YARN" key="2">
+            <p className="api-keys-documentation-tab-description">
+                Use <CodeInline>npm install --save @ksense/eventnative</CodeInline> or <CodeInline>yarn add @ksense/eventnative</CodeInline>.
+                Read more <a href="https://docs.eventnative.dev/javascript-reference/direct-tracking">about configuration properties</a> and <a href="https://docs.eventnative.dev/javascript-reference/direct-tracking">tracking api</a>
+            </p>
+            <CodeSnippet language="javascript">
+                {getNPMDocumentation(token.jsAuth, EVENTNATIVE_HOST)}
+            </CodeSnippet>
         </Tabs.TabPane>
         <Tabs.TabPane tab="Server to server" key="3">
-            Content of Tab Pane 3
+            Events can be send directly to API end-point. In that case, server secret should be used. Please, see curl example:
+            <CodeSnippet language="bash">
+                {getCurlDocumentation(token.serverAuth, EVENTNATIVE_HOST)}
+            </CodeSnippet>
         </Tabs.TabPane>
     </Tabs>
+}
 
+function CodeInline({children}) {
+    return <span className="code-snippet-inline">{children}</span>
+}
+
+function CodeSnippet(props: { children: ReactNode, language: string, extra?: ReactNode }) {
+    return <div className="code-snippet-wrapper">
+        <SyntaxHighlighter language={props.language} style={docco}>{props.children}</SyntaxHighlighter>
+        <Row><Col span={16}>
+            {props.extra}
+        </Col><Col span={8}>
+            <Align horizontal="right">
+                <ActionLink onClick={() => {
+                    copyToClipboard(props.children);
+                    message.info("Code copied to clipboard")
+                }}>Copy To Clipboard</ActionLink>
+            </Align>
+        </Col></Row>
+
+    </div>
 }

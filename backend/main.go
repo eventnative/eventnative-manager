@@ -92,7 +92,7 @@ func main() {
 	appconfig.Instance.ScheduleClosing(firebaseStorage)
 
 	staticFilesPath := viper.GetString("server.static_files_dir")
-	logging.Infof("Static files serving path: [%s]\n", staticFilesPath)
+	logging.Infof("Static files serving path: [%s]", staticFilesPath)
 	eventnativeBaseUrl := viper.GetString("eventnative.base_url")
 	if eventnativeBaseUrl == "" {
 		logging.Fatal("Failed to get eventnative URL")
@@ -116,7 +116,7 @@ func readConfiguration(configFilePath string) {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	if configFilePath != "" {
-		logging.Infof("Reading config from %s\n", configFilePath)
+		logging.Infof("Reading config from %s", configFilePath)
 	}
 	viper.SetConfigFile(configFilePath)
 	if err := viper.ReadInConfig(); err != nil {

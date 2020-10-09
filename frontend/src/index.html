@@ -2,9 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>EvenNative</title>
+    <title>Loading</title>
+    <link rel="stylesheet" href="boot/preloader.css">
+    <style type="text/css">
+        /**
+          * Those are copy of styles that is included in react
+          * app and makes preloader look exactly the same as in the app
+          */
+        img {
+            vertical-align: middle;
+            border-style: none;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            color: rgba(0, 0, 0, 0.65);
+            font-size: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+            font-variant: tabular-nums;
+            line-height: 1.5715;
+            background-color: #fff;
+            font-feature-settings: 'tnum';
+        }
+    </style>
 </head>
 <body>
-<div id="reactApplicationRoot"></div>
+<div id="reactApplicationRoot">
+    <div class="preloader-wrapper"><img src="boot/loading.gif" alt="[loading]" class="preloader-image"><div class="preloader-text">Loading application, please be patient...</div></div>
+</div>
 </body>
 </html>

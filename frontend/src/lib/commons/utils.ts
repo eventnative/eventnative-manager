@@ -1,3 +1,5 @@
+import {message} from "antd";
+
 function circularReferencesReplacer() {
     let cache = [];
     return (key, value) => {
@@ -124,4 +126,18 @@ export function numberFormat(opts?: INumberFormatOpts | any): any  {
         let formatter: Formatter = numberFormat({});
         return formatter(opts)
     }
+}
+
+export function withDefaults<T>(obj: T, defaults: Partial<T>): T {
+    return {...defaults, ...obj};
+}
+
+
+export function copyToClipboard(value) {
+    const el = document.createElement('textarea');
+    el.value = value;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
 }

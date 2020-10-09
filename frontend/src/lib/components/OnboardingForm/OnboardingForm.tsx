@@ -1,7 +1,7 @@
 import * as React from 'react'
 import {Project, SuggestedUserInfo, User} from "../../services/model";
 import {Button, Col, Form, Input, message, Modal} from "antd";
-import {LockOutlined, UserOutlined} from "@ant-design/icons/lib";
+import {BankOutlined, LockOutlined, UserOutlined} from "@ant-design/icons/lib";
 import {useState} from "react";
 import ApplicationServices from "../../services/ApplicationServices";
 import * as Utils from "../../commons/utils";
@@ -47,21 +47,18 @@ export default function OnboardingForm(props: Props) {
             setState({loading: false})
         }
     }
-
-
     return (<Modal
         title="You're almost done! To finish registration, please tell us more about yourself and your company"
         visible={props.visible}
         closable={false}
-        footer={[
+        footer={<>
             <Button key="cancel" onClick={() => {
                 services.userService.removeAuth(reloadPage);
-            }}>Logout</Button>,
+            }}>Logout</Button>
             <Button key="submit" type="primary" loading={state.loading} onClick={() => {
                 onSubmit()
-            }}>Submit</Button>,
-
-        ]}
+            }}>Submit</Button>
+        </>}
     >
         <Form
             layout="vertical"
@@ -70,7 +67,7 @@ export default function OnboardingForm(props: Props) {
             className="onboarding-form"
             initialValues={{
                 userDisplayName: props.user.suggestedInfo.name,
-                projectName: ""
+                projectName: props.user.suggestedInfo.companyName
             }}
         >
             <Form.Item
@@ -93,7 +90,7 @@ export default function OnboardingForm(props: Props) {
                     },
                 ]}
             >
-                <Input prefix={<UserOutlined className="site-form-item-icon"/>} placeholder="Company Name"/>
+                <Input prefix={<BankOutlined className="site-form-item-icon"/>} placeholder="Company Name"/>
             </Form.Item>
         </Form>
     </Modal>);

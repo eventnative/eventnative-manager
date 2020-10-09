@@ -5,7 +5,6 @@ import Marshal from "../commons/marshalling";
 import axios, {AxiosRequestConfig, AxiosResponse, Method} from 'axios';
 import {PostgresConfig} from "./destinations";
 import * as uuid from 'uuid';
-import {Simulate} from "react-dom/test-utils";
 import AnalyticsService from "./analytics";
 
 
@@ -119,9 +118,21 @@ export default class ApplicationServices {
 
     public async initializeDefaultDestination() {
         let db = await this._backendApiClient.post("/database", {projectId: this.activeProject.id});
-        const destinationConfig = new PostgresConfig("default_destination");
-        destinationConfig.fillInitialValues(db);
-        destinationConfig.update(db);
+        const destinationConfig = new PostgresConfig("test_destination");
+        destinationConfig.comment = "We set up a test postgres database for you. It's hosted by us and has a 10,000 rows limitation. It's ok" +
+            " to try with service with it. However, don't use it in production setup. To reveal credentials, click on the 'Edit' button"
+        let data = {}
+        destinationConfig.fillInitialValues(data);
+
+        destinationConfig.update({
+            ...data,
+            pguser: db['User'],
+            pgpassword: db['Password'],
+            pghost: db['Host'],
+            pgport: db['Port'],
+            pgdatabase: db['Database'],
+            mode: "stream"
+        });
         await this._storageService.save("destinations", {destinations: [destinationConfig]}, this.activeProject.id);
     }
 
@@ -263,34 +274,20 @@ class FirebaseUserService implements UserService {
 
     private static readonly USERS_COLLECTION = "users_info";
 
-    private restoreUser(user: firebase.User): Promise<User> {
-        return new Promise<User>((resolve, reject) => {
-            if (user.email == null) {
-                reject(new Error("User email is null"))
-            }
-            firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.uid).get()
-                .then((doc) => {
-                    user.getIdToken(false).then((token) => {
-                        let suggestedInfo = this.suggestedInfoFromFirebaseUser(user);
-                        if (doc.exists) {
-                            resolve(this.user = new User(user.uid, token, suggestedInfo, doc.data()));
-                        } else {
-                            resolve(this.user = new User(user.uid, token, suggestedInfo));
-                        }
-                    }).catch(reject);
-                })
-                .catch(reject)
-        })
-    }
+    private async restoreUser(user: firebase.User): Promise<User> {
 
-
-    private suggestedInfoFromFirebaseUser(user: firebase.User): SuggestedUserInfo {
-        return {
+        let userInfo = await firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.uid).get();
+        let userToken = await user.getIdToken(false);
+        let suggestedInfo = {
             email: user.email,
-            name: user.displayName
+            name: user.displayName,
         };
+        if (userInfo.exists) {
+            return this.user = new User(user.uid, userToken, suggestedInfo, userInfo.data());
+        } else {
+            return this.user = new User(user.uid, userToken, suggestedInfo)
+        }
     }
-
     removeAuth(callback: () => void) {
         firebase.auth().signOut().then(callback).catch(callback);
     }
@@ -323,19 +320,14 @@ class FirebaseUserService implements UserService {
         return firebase.auth().sendPasswordResetEmail(email ? email : this.getUser().email);
     }
 
-    createUser(email: string, password: string, name: string, company: string): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            firebase.auth().createUserWithEmailAndPassword(email, password)
-                .then((user) => {
-                    user.user.getIdToken(false).then((token) => {
-                        this.update(new User(user.user.uid, token, this.suggestedInfoFromFirebaseUser(user.user), {
-                            "_name": name,
-                            "_project": new Project(randomId(), company)
-                        })).then(resolve).catch(reject)
-                    }).catch(reject)
-                })
-                .catch(reject);
-        })
+    async createUser(email: string, password: string, name: string, company: string): Promise<void> {
+        let firebaseUser = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        let token = await firebaseUser.user.getIdToken(false);
+        let user = new User(firebaseUser.user.uid, token, {name: name, email: email}, {
+            "_name": name,
+            "_project": new Project(randomId(), company)
+        });
+        await this.update(user);
     }
 
     hasUser(): boolean {
