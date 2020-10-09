@@ -99,7 +99,7 @@ func (p *Postgres) CreateDatabase(projectId string) (*entities.Database, error) 
 		return nil, commitErr
 	}
 
-	generatedCredentials := entities.Database{Host: p.config.ReplicaHost, Port: p.config.Port, Database: db, User: username, Password: password}
+	generatedCredentials := entities.Database{Host: p.config.Host, Port: p.config.Port, Database: db, User: username, Password: password}
 	return &generatedCredentials, nil
 }
 
