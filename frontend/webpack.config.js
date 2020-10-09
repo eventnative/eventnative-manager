@@ -1,6 +1,6 @@
 const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
-
+const FaviconsWebpackPlugin = require('favicons-webpack-plugin')
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require('terser-webpack-plugin');
 
@@ -71,8 +71,11 @@ module.exports = {
     }, plugins: [
         new HtmlWebPackPlugin({
             template: "./src/index.html",
-            filename: "./index.html",
-            favicon: "./src/favicon.png"
+            filename: "./index.html"
+        }),
+        new FaviconsWebpackPlugin({
+            logo: './src/icons/logo.svg',
+            publicPath: '.'
         }),
         new webpack.DefinePlugin({
             'process.env': {

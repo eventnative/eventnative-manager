@@ -43,6 +43,7 @@ export class User {
     private _projects: Project[] = []
     private _onboarded = false;
     private readonly _suggestedInfo: SuggestedUserInfo;
+    private _emailOptout: boolean = false;
 
     constructor(uid: string, authToken: string, suggested: SuggestedUserInfo, data?: any) {
         if (data) {
@@ -119,6 +120,15 @@ export class User {
 
     set projects(value: Project[]) {
         this._projects = value;
+    }
+
+
+    get emailOptout(): boolean {
+        return this._emailOptout;
+    }
+
+    set emailOptout(value: boolean) {
+        this._emailOptout = value;
     }
 }
 

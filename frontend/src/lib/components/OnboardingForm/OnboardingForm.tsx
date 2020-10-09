@@ -1,14 +1,13 @@
 import * as React from 'react'
 import {Project, SuggestedUserInfo, User} from "../../services/model";
-import {Button, Col, Form, Input, message, Modal} from "antd";
+import {Button, Checkbox, Col, Form, Input, message, Modal, Switch} from "antd";
 import {BankOutlined, LockOutlined, UserOutlined} from "@ant-design/icons/lib";
 import {useState} from "react";
 import ApplicationServices from "../../services/ApplicationServices";
 import * as Utils from "../../commons/utils";
 import {reloadPage} from "../../commons/utils";
 import {handleError, makeErrorHandler} from "../components";
-import {Simulate} from "react-dom/test-utils";
-import error = Simulate.error;
+import './OnboardingForm.less'
 
 type State = {
     loading: boolean
@@ -25,12 +24,20 @@ export default function OnboardingForm(props: Props) {
     const [state, setState] = useState({
         loading: false
     })
+    const [emailOptout, setEmailOptout] = useState(false);
     const [form] = Form.useForm();
 
     const onSubmit = async () => {
         setState({loading: true});
+
+        let values;
         try {
-            let values = await form.validateFields();
+            values = await form.validateFields();
+        } catch (e) {
+            //no need for special handling, all errors will be displayed within the form
+            return;
+        }
+        try {
             let user = services.userService.getUser();
             user.onboarded = true;
             user.projects = [new Project(
@@ -38,6 +45,8 @@ export default function OnboardingForm(props: Props) {
                 values['projectName']
             )];
             user.name = values['userDisplayName']
+            user.emailOptout = emailOptout;
+
             await services.userService.update(user);
             await services.initializeDefaultDestination();
             reloadPage();
@@ -82,6 +91,7 @@ export default function OnboardingForm(props: Props) {
                 <Input prefix={<UserOutlined className="site-form-item-icon"/>} placeholder="Your Name"/>
             </Form.Item>
             <Form.Item
+                className="onboarding-form-company name"
                 name="projectName"
                 rules={[
                     {
@@ -91,6 +101,9 @@ export default function OnboardingForm(props: Props) {
                 ]}
             >
                 <Input prefix={<BankOutlined className="site-form-item-icon"/>} placeholder="Company Name"/>
+            </Form.Item>
+            <Form.Item name="emailsOptIn" className="signup-checkboxes-email">
+                <Switch defaultChecked={true} size="small" onChange={(value) => setEmailOptout(!value)}  /> Send me occasional product updates. You may unsubscribe at any time.
             </Form.Item>
         </Form>
     </Modal>);

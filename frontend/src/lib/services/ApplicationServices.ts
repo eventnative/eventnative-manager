@@ -194,7 +194,7 @@ export interface UserService {
 
     removeAuth(callback: () => void)
 
-    createUser(email: string, password: string, name: string, company: string): Promise<void>;
+    createUser(email: string, password: string): Promise<void>;
 }
 
 /**
@@ -320,12 +320,12 @@ class FirebaseUserService implements UserService {
         return firebase.auth().sendPasswordResetEmail(email ? email : this.getUser().email);
     }
 
-    async createUser(email: string, password: string, name: string, company: string): Promise<void> {
-        let firebaseUser = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    async createUser(email: string, password: string): Promise<void> {
+        let firebaseUser = await firebase.auth().createUserWithEmailAndPassword(email.trim(), password.trim());
         let token = await firebaseUser.user.getIdToken(false);
-        let user = new User(firebaseUser.user.uid, token, {name: name, email: email}, {
+        let user = new User(firebaseUser.user.uid, token, {name: null, email: email}, {
             "_name": name,
-            "_project": new Project(randomId(), company)
+            "_project": new Project(randomId(), null)
         });
         await this.update(user);
     }

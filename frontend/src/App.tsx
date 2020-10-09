@@ -24,7 +24,7 @@ import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
 import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
 import {ReactNode} from "react";
 
-const logo = require('./icons/ksense_icon.svg').default;
+const logo = require('./icons/logo.svg').default;
 
 enum AppLifecycle {
     LOADING, //Application is loading
@@ -121,6 +121,23 @@ export default class App extends React.Component<AppProperties, AppState> {
     }
 
     appLayout() {
+        let routes = PRIVATE_PAGES.map(route => {
+            if (!this.state.showOnboardingForm) {
+                return (<Route key={route.getPrefixedPath()}
+                               path={route.getPrefixedPath()}
+                               exact={true}
+                               render={(routeProps) => {
+                                   this.services.analyticsService.onPageLoad({
+                                       pagePath: routeProps.location
+                                   });
+                                   document.title = route.pageTitle;
+                                   return this.wrapInternalPage(route);
+                               }}/>);
+            } else {
+                return (<CenteredSpin />)
+            }
+        });
+        routes.push(<Redirect to="/dashboard"/>);
         return (
             <Layout className="app-layout-root">
                 {this.headerComponent()}
@@ -130,22 +147,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                     </Layout.Sider>
                     <Layout.Content key="content" className="app-layout-content">
                         <Switch>
-                            {PRIVATE_PAGES.map(route => {
-                                if (!this.state.showOnboardingForm) {
-                                    return (<Route key={route.getPrefixedPath()}
-                                                   path={route.getPrefixedPath()}
-                                                   exact={true}
-                                                   render={(routeProps) => {
-                                                       this.services.analyticsService.onPageLoad({
-                                                           pagePath: routeProps.location
-                                                       });
-                                                       document.title = route.pageTitle;
-                                                       return this.wrapInternalPage(route);
-                                                   }}/>);
-                                } else {
-                                    return (<CenteredSpin />)
-                                }
-                            })}
+                            {routes}
                         </Switch>
                     </Layout.Content>
                 </Layout>
@@ -179,9 +181,11 @@ export default class App extends React.Component<AppProperties, AppState> {
     private headerComponent() {
         return <Layout.Header className="app-layout-header">
             <Row>
-                <Col className="gutter-row" span={4}>
-                    <img className="logo" src={logo} alt="[logo]"/>
-                    <span className="logo-text">kSense</span>
+                <Col span={4}>
+                    <div className="app-logo-wrapper">
+                        <img className="app-logo" src={logo} alt="[logo]"/>
+                        <span className="app-logo-text">EventNative</span>
+                    </div>
                 </Col>
                 <Col className="gutter-row" span={20}>
                     <div className="user-menu">
