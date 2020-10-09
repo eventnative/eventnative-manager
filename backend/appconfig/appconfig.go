@@ -18,10 +18,6 @@ var Instance *AppConfig
 func setDefaultParams() {
 	viper.SetDefault("server.port", "8001")
 	viper.SetDefault("db_provider.default_destination.postgres.port", 5432)
-
-	viper.SetDefault("server.log.path", "/home/ksense/logs/enhosted")
-	viper.SetDefault("server.log.rotation_min", 1440) //24 hours
-	viper.SetDefault("server.log.max_backups", 30)
 }
 
 func Init() error {
