@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func MapConfig(destinationId string, destination *entities.Destination, defaultS3 enadapters.S3Config) (*enstorages.DestinationConfig, error) {
+func MapConfig(destinationId string, destination *entities.Destination, defaultS3 *enadapters.S3Config) (*enstorages.DestinationConfig, error) {
 	switch destination.Type {
 	case enstorages.PostgresType:
 		return mapPostgres(destination)
@@ -77,7 +77,7 @@ func mapClickhouse(chDestinations *entities.Destination) (*enstorages.Destinatio
 	}, nil
 }
 
-func mapRedshift(destinationId string, rsDestinations *entities.Destination, defaultS3 enadapters.S3Config) (*enstorages.DestinationConfig, error) {
+func mapRedshift(destinationId string, rsDestinations *entities.Destination, defaultS3 *enadapters.S3Config) (*enstorages.DestinationConfig, error) {
 	b, err := json.Marshal(rsDestinations.Data)
 	if err != nil {
 		return nil, fmt.Errorf("Error marshaling redshift config destination: %v", err)

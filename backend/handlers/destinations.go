@@ -23,15 +23,15 @@ const defaultStatisticsBigQueryDestinationId = "statistics.postgres"
 
 type DestinationsHandler struct {
 	storage            *storages.Firebase
-	defaultS3          enadapters.S3Config
-	statisticsPostgres enstorages.DestinationConfig
+	defaultS3          *enadapters.S3Config
+	statisticsPostgres *enstorages.DestinationConfig
 
 	httpClient            *http.Client
 	eventnativeBaseUrl    string
 	eventnativeAdminToken string
 }
 
-func NewDestinationsHandler(storage *storages.Firebase, defaultS3 enadapters.S3Config, statisticsPostgres enstorages.DestinationConfig,
+func NewDestinationsHandler(storage *storages.Firebase, defaultS3 *enadapters.S3Config, statisticsPostgres *enstorages.DestinationConfig,
 	eventnativeUrl, eventnativeAdminToken string) *DestinationsHandler {
 	return &DestinationsHandler{
 		storage:               storage,
@@ -51,6 +51,8 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 		return
 	}
 
+	//for statistics storage
+	var allApiKeyIds []string
 	idConfig := map[string]enstorages.DestinationConfig{}
 	for projectId, destinationsEntity := range destinationsMap {
 		if len(destinationsEntity.Destinations) == 0 {
@@ -71,6 +73,7 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 		var projectTokenIds []string
 		for _, k := range keys {
 			projectTokenIds = append(projectTokenIds, k.Id)
+			allApiKeyIds = append(allApiKeyIds, k.Id)
 		}
 
 		for _, destination := range destinationsEntity.Destinations {
@@ -92,7 +95,9 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 	}
 
 	//default statistic storage
-	idConfig[defaultStatisticsBigQueryDestinationId] = dh.statisticsPostgres
+	defaultPostgres := *dh.statisticsPostgres
+	defaultPostgres.OnlyTokens = allApiKeyIds
+	idConfig[defaultStatisticsBigQueryDestinationId] = defaultPostgres
 
 	c.JSON(http.StatusOK, &endestinations.Payload{Destinations: idConfig})
 }
