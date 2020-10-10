@@ -15,6 +15,7 @@ import (
 	enstorages "github.com/ksensehq/eventnative/storages"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 )
@@ -95,6 +96,7 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 	}
 
 	//default statistic storage
+	sort.Strings(allApiKeyIds)
 	defaultPostgres := *dh.statisticsPostgres
 	defaultPostgres.OnlyTokens = allApiKeyIds
 	idConfig[defaultStatisticsBigQueryDestinationId] = defaultPostgres
