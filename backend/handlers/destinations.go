@@ -15,7 +15,6 @@ import (
 	enstorages "github.com/ksensehq/eventnative/storages"
 	"io/ioutil"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 )
@@ -52,8 +51,6 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 		return
 	}
 
-	//for statistics storage
-	var allApiKeyIds []string
 	idConfig := map[string]enstorages.DestinationConfig{}
 	for projectId, destinationsEntity := range destinationsMap {
 		if len(destinationsEntity.Destinations) == 0 {
@@ -74,7 +71,6 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 		var projectTokenIds []string
 		for _, k := range keys {
 			projectTokenIds = append(projectTokenIds, k.Id)
-			allApiKeyIds = append(allApiKeyIds, k.Id)
 		}
 
 		for _, destination := range destinationsEntity.Destinations {
@@ -96,10 +92,7 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 	}
 
 	//default statistic storage
-	sort.Strings(allApiKeyIds)
-	defaultPostgres := *dh.statisticsPostgres
-	defaultPostgres.OnlyTokens = allApiKeyIds
-	idConfig[defaultStatisticsBigQueryDestinationId] = defaultPostgres
+	idConfig[defaultStatisticsBigQueryDestinationId] = *dh.statisticsPostgres
 
 	c.JSON(http.StatusOK, &endestinations.Payload{Destinations: idConfig})
 }
