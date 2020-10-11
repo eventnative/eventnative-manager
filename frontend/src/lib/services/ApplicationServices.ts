@@ -195,6 +195,8 @@ export interface UserService {
     removeAuth(callback: () => void)
 
     createUser(email: string, password: string): Promise<void>;
+
+    changePassword(value: any): void;
 }
 
 /**
@@ -215,6 +217,7 @@ export function setDebugInfo(field: string, obj: any) {
 class FirebaseUserService implements UserService {
     private user?: User
     private unregisterAuthObserver: firebase.Unsubscribe;
+    private firebaseUser: firebase.User;
 
     initiateGithubLogin(redirect?: string) {
         return new Promise<void>(((resolve, reject) => {
@@ -252,6 +255,7 @@ class FirebaseUserService implements UserService {
         let fbUserPromise = new Promise<firebase.User>((resolve, reject) => {
             let unregister = firebase.auth().onAuthStateChanged((user: firebase.User) => {
                 if (user) {
+                    this.firebaseUser = user;
                     resolve(user)
                 } else {
                     resolve(null)
@@ -333,6 +337,12 @@ class FirebaseUserService implements UserService {
     hasUser(): boolean {
         return !!this.user;
     }
+
+    changePassword(newPassword: any): Promise<void> {
+        return this.firebaseUser.updatePassword(newPassword)
+    }
+
+
 }
 
 

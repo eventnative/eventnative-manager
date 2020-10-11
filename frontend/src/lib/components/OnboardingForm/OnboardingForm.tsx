@@ -15,8 +15,9 @@ type State = {
 
 type Props = {
     user: User
-    visible: boolean
+    onCompleted: () => void
 }
+
 
 
 export default function OnboardingForm(props: Props) {
@@ -50,7 +51,7 @@ export default function OnboardingForm(props: Props) {
 
             await services.userService.update(user);
             await services.initializeDefaultDestination();
-            reloadPage();
+            props.onCompleted();
         } catch (e) {
             handleError(e, "Can't save project data");
         } finally {
@@ -59,7 +60,7 @@ export default function OnboardingForm(props: Props) {
     }
     return (<Modal
         title="You're almost done! To finish registration, please tell us more about yourself and your company"
-        visible={props.visible}
+        visible={true}
         closable={false}
         footer={<>
             <Button key="cancel" onClick={() => {

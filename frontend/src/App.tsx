@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import {NavLink, Route, Switch, DefaultRoute, Redirect} from 'react-router-dom';
-import {Button, Col, Dropdown, Layout, Menu, message, Modal, Row, Select} from "antd";
+import {Button, Col, Dropdown, Form, Input, Layout, Menu, message, Modal, Row, Select} from "antd";
 import {AreaChartOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, PartitionOutlined, SlidersOutlined} from "@ant-design/icons";
 import './App.less';
 import {
@@ -17,12 +17,12 @@ import {
     ApiOutlined
 } from "@ant-design/icons/lib";
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
-import {CenteredSpin, GlobalError, Preloader} from "./lib/components/components";
+import {CenteredSpin, GlobalError, handleError, Preloader} from "./lib/components/components";
 import {reloadPage} from "./lib/commons/utils";
 import {User} from "./lib/services/model";
 import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
 import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
-import {ReactNode} from "react";
+import {ReactNode, useState} from "react";
 
 const logo = require('./icons/logo.svg').default;
 
@@ -97,7 +97,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                                        }}
                         />)
                     })}
-                    <Redirect to="/"/>
+                    <Redirect key="rootRedirect" to="/"/>
                 </Switch>);
             case AppLifecycle.APP:
                 return this.appLayout();
@@ -134,10 +134,21 @@ export default class App extends React.Component<AppProperties, AppState> {
                                    return this.wrapInternalPage(route);
                                }}/>);
             } else {
-                return (<CenteredSpin />)
+                return (<CenteredSpin/>)
             }
         });
         routes.push(<Redirect to="/dashboard"/>);
+        let extraForms = null;
+        if (this.state.showOnboardingForm) {
+            extraForms = <OnboardingForm user={this.state.user} onCompleted={async () => {
+                await this.services.userService.waitForUser();
+                this.setState({showOnboardingForm: false})
+            }}/>
+        } else if (this.services.userService.getUser().forcePasswordChange) {
+            return <SetNewPassword onCompleted={async () => {
+                reloadPage();
+            }}/>
+        }
         return (
             <Layout className="app-layout-root">
                 {this.headerComponent()}
@@ -151,7 +162,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                         </Switch>
                     </Layout.Content>
                 </Layout>
-                <OnboardingForm user={this.state.user} visible={this.state.showOnboardingForm}/>
+                {extraForms}
             </Layout>
         );
     }
@@ -182,10 +193,10 @@ export default class App extends React.Component<AppProperties, AppState> {
         return <Layout.Header className="app-layout-header">
             <Row>
                 <Col span={4}>
-                    <div className="app-logo-wrapper">
+                    <a className="app-logo-wrapper" href="https://eventnative.com">
                         <img className="app-logo" src={logo} alt="[logo]"/>
                         <span className="app-logo-text">EventNative</span>
-                    </div>
+                    </a>
                 </Col>
                 <Col className="gutter-row" span={20}>
                     <div className="user-menu">
@@ -232,4 +243,90 @@ export default class App extends React.Component<AppProperties, AppState> {
             </Menu>
         </div>;
     }
+}
+
+
+function SetNewPassword({onCompleted}: { onCompleted: () => Promise<void> }) {
+    let [loading, setLoading] = useState(false);
+    let services = ApplicationServices.get();
+    let [form] = Form.useForm();
+    return <Modal
+        title="Please, set a new password" visible={true} closable={false}
+        footer={<>
+            <Button onClick={() => {
+                services.userService.removeAuth(reloadPage);
+            }}>Logout</Button>
+            <Button type="primary" loading={loading} onClick={async () => {
+                setLoading(true);
+                let values;
+                try {
+                    values = await form.validateFields();
+                } catch (e) {
+                    //error will be displayed on the form, not need for special handling
+                    setLoading(false);
+                    return;
+                }
+
+                try {
+                    let newPassword = values['password'];
+                    await services.userService.changePassword(newPassword);
+                    await services.userService.login(services.userService.getUser().email, newPassword)
+                    let user = (await services.userService.waitForUser()).user;
+                    user.forcePasswordChange = false;
+                    await services.userService.update(user);
+                    await onCompleted();
+
+                } catch (e) {
+                    if ("auth/requires-recent-login" === e.code) {
+                        services.userService.removeAuth(() => {
+                            reloadPage();
+                        });
+                    } else {
+                        handleError(e);
+                    }
+                } finally {
+                    setLoading(false);
+                }
+
+            }}>Set new password</Button>
+        </>}>
+        <Form form={form} layout="vertical" requiredMark={false}>
+            <Form.Item
+                name="password"
+                label="Password"
+                rules={[
+                    {
+                        required: true,
+                        message: 'Please input your password!',
+                    },
+                ]}
+                hasFeedback>
+                <Input.Password/>
+            </Form.Item>
+
+            <Form.Item
+                name="confirm"
+                label="Confirm Password"
+                dependencies={['password']}
+                hasFeedback
+                rules={[
+                    {
+                        required: true,
+                        message: 'Please confirm your password!',
+                    },
+                    ({getFieldValue}) => ({
+                        validator(rule, value) {
+                            if (!value || getFieldValue('password') === value) {
+                                return Promise.resolve();
+                            }
+                            return Promise.reject('The two passwords that you entered do not match!');
+                        },
+                    }),
+                ]}>
+                <Input.Password/>
+            </Form.Item>
+        </Form>
+    </Modal>
+
+
 }

@@ -9,7 +9,6 @@ import {CaretDownFilled, CaretRightFilled, CaretUpFilled, QuestionCircleOutlined
 import ApplicationServices from "../services/ApplicationServices";
 import {numberFormat, withDefaults} from "../commons/utils";
 
-const loader = require("../../boot/loading.gif").default;
 const plumber = require("../../icons/plumber.png").default;
 
 type IPreloaderProps = {
@@ -22,8 +21,10 @@ type IPreloaderProps = {
  */
 export function Preloader(props: IPreloaderProps) {
     let text = props.text ? props.text : "Loading user data..."
+    //do not change img src here. We need to make sure that the image url is the same as
+    //in pre-react boot loader
     return (<div style={{}} className="preloader-wrapper">
-        <img src={loader} alt="[loading]" className="preloader-image"/>
+        <img src="boot/loading.gif" alt="[loading]" className="preloader-image"/>
         <div className="preloader-text">
             {text}
         </div>

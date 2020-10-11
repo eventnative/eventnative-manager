@@ -43,6 +43,7 @@ export function getEmpeddedJS(segment: boolean, ga: boolean, key: string, host: 
         "ga_hook": ${ga},
         "segment_hook": ${segment}
     });
+    eventN.track('pageview');
 `);
 }
 

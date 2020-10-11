@@ -68,8 +68,8 @@ export default class SignupForm extends React.Component<any, State> {
 
     render() {
         let title = (
-            <div style={{"textAlign": "center"}}>
-                <img src={logo} alt="[logo]" style={{'height': '50px'}}/> <span style={{'fontSize': '18px'}}>Welcome to EventNative</span>
+            <div className="login-form-header-container">
+                <img src={logo} alt="[logo]" className="login-form-logo"/> <span className="logon-form-title">Join EventNative!</span>
             </div>
         );
         return (

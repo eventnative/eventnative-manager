@@ -10,10 +10,7 @@ import ApplicationServices from "../../services/ApplicationServices";
 import * as firebase from "firebase";
 import {navigateAndReload, reloadPage} from "../../commons/utils";
 import {useState} from "react";
-import {Project} from "../../services/model";
-import * as Utils from "../../commons/utils";
 import {Simulate} from "react-dom/test-utils";
-import error = Simulate.error;
 
 type State = {
     loading: boolean
@@ -42,8 +39,8 @@ export default class LoginForm extends React.Component<Props, State> {
         //     message.error(this.props.errorMessage);
         // }
         let title = (
-            <div style={{"textAlign": "center"}}>
-                <img src={logo} alt="[logo]" style={{'height': '50px'}}/> <span style={{'fontSize': '18px'}}>Welcome Back</span>
+            <div className="login-form-header-container">
+                <img src={logo} alt="[logo]" className="login-form-logo"/> <span className="logon-form-title">Welcome Back!</span>
             </div>
         );
         return (<>

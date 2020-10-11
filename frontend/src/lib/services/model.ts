@@ -44,6 +44,7 @@ export class User {
     private _onboarded = false;
     private readonly _suggestedInfo: SuggestedUserInfo;
     private _emailOptout: boolean = false;
+    private _forcePasswordChange: boolean = false;
 
     constructor(uid: string, authToken: string, suggested: SuggestedUserInfo, data?: any) {
         if (data) {
@@ -129,6 +130,15 @@ export class User {
 
     set emailOptout(value: boolean) {
         this._emailOptout = value;
+    }
+
+
+    get forcePasswordChange(): boolean {
+        return this._forcePasswordChange;
+    }
+
+    set forcePasswordChange(value: boolean) {
+        this._forcePasswordChange = value;
     }
 }
 
