@@ -205,12 +205,12 @@ export interface UserService {
  * @param field
  * @param obj
  */
-export function setDebugInfo(field: string, obj: any) {
+export function setDebugInfo(field: string, obj: any, purify = true) {
     if (window) {
         if (!window['__enUIDebug']) {
             window['__enUIDebug'] = {}
         }
-        window['__enUIDebug'][field] = Object.assign({}, obj);
+        window['__enUIDebug'][field] = purify ? Object.assign({}, obj) : obj;
     }
 }
 
@@ -256,6 +256,15 @@ class FirebaseUserService implements UserService {
             let unregister = firebase.auth().onAuthStateChanged((user: firebase.User) => {
                 if (user) {
                     this.firebaseUser = user;
+                    setDebugInfo('firebaseUser', user);
+                    setDebugInfo('updateEmail', async (email) => {
+                        try {
+                            let updateResult = await user.updateEmail(email);
+                            console.log(`Attempt to update email to ${email}. Result`, updateResult)
+                        } catch (e) {
+                            console.log(`Attempt to update email to ${email} failed`, e)
+                        }
+                    }, false)
                     resolve(user)
                 } else {
                     resolve(null)
@@ -461,7 +470,9 @@ class FirebaseServerStorage implements ServerStorage {
         if (!key) {
             key = firebase.auth().currentUser.uid;
         }
-        console.log("Saving to storage: " + key + " = ", data)
-        return firebase.firestore().collection(collectionName).doc(key).set(Marshal.toPureJson(data))
+        let pureJson = Marshal.toPureJson(data);
+        pureJson['_lastUpdated'] = new Date().toISOString();
+        console.log("Saving to storage: " + key + " = ", pureJson)
+        return firebase.firestore().collection(collectionName).doc(key).set(pureJson)
     }
 }

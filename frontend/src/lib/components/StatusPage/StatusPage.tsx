@@ -167,14 +167,10 @@ export default class StatusPage extends LoadableComponent<{}, State> {
             this.stats.get(addSeconds(now, -30 * 24 * 60 * 60), now, "day"),
             this.getNumberOfDestinations()
         ]);
-        let eventsLast24 = 0, events48to24 = 0;
-        for (let i = hourlyEvents.length-1; i >= 0 && i >= hourlyEvents.length - 48; i--) {
-            if (i >= hourlyEvents.length - 24) {
-                eventsLast24 += hourlyEvents[i].events;
-            } else {
-                events48to24 += hourlyEvents[i].events;
-            }
-        }
+
+        let eventsLast24 = dailyEvents.length > 0 ? dailyEvents[dailyEvents.length - 1].events : 0;
+        let events48to24 = dailyEvents.length > 1 ? dailyEvents[dailyEvents.length - 2].events : 0;
+
         let eventsLastFullHour = hourlyEvents.length > 0 ? hourlyEvents[hourlyEvents.length - 1].events : 0;
         let eventsPrevHour = hourlyEvents.length > 1 ? hourlyEvents[hourlyEvents.length - 2].events : 0;
         return {
