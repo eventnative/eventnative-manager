@@ -5,6 +5,7 @@ const HtmlWebPackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = {
+    devtool: 'source-map',
     resolve: {
         extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
     },

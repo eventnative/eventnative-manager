@@ -120,7 +120,8 @@ export function numberFormat(opts?: INumberFormatOpts | any): any  {
             if (x === undefined) {
                 return "N/A";
             }
-            return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+            return x.toLocaleString();
+            //return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
         }
     } else {
         let formatter: Formatter = numberFormat({});
