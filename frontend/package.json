@@ -25,7 +25,8 @@
   },
   "scripts": {
     "start": "ENV=dev webpack-dev-server --open --mode development",
-    "build": "ENV=prod webpack --mode production"
+    "build": "ENV=prod webpack --mode production",
+    "analyze": "source-map-explorer ./dist/*.js"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -56,6 +57,7 @@
     "jest": "^26.4.2",
     "less": "^3.12.2",
     "less-loader": "^7.0.0",
+    "source-map-explorer": "^2.5.0",
     "style-loader": "^1.2.1",
     "terser-webpack-plugin": "^4.2.2",
     "ts-jest": "^26.4.1",

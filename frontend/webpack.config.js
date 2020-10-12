@@ -9,6 +9,10 @@ module.exports = {
         extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
     },
     optimization: {
+        splitChunks: {
+            chunks: 'all',
+            maxSize: 200000
+        },
         minimize: true,
         minimizer: [new TerserPlugin({
             terserOptions: {
