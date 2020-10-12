@@ -7,11 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ksensehq/enhosted/destinations"
 	"github.com/ksensehq/enhosted/entities"
-	"github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/enhosted/storages"
 	enadapters "github.com/ksensehq/eventnative/adapters"
 	endestinations "github.com/ksensehq/eventnative/destinations"
 	"github.com/ksensehq/eventnative/logging"
+	enmiddleware "github.com/ksensehq/eventnative/middleware"
 	enstorages "github.com/ksensehq/eventnative/storages"
 	"io/ioutil"
 	"net/http"
@@ -47,7 +47,7 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 	destinationsMap, err := dh.storage.GetDestinations()
 	if err != nil {
 		logging.Error(err)
-		c.JSON(http.StatusInternalServerError, middleware.ErrorResponse{Error: err, Message: "Destinations err"})
+		c.JSON(http.StatusInternalServerError, enmiddleware.ErrorResponse{Error: err, Message: "Destinations err"})
 		return
 	}
 
@@ -101,37 +101,37 @@ func (dh *DestinationsHandler) TestHandler(c *gin.Context) {
 	destinationEntity := &entities.Destination{}
 	err := c.BindJSON(destinationEntity)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to parse request body", Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to parse request body", Error: err})
 		return
 	}
 
 	enDestinationConfig, err := destinations.MapConfig("test_connection", destinationEntity, dh.defaultS3)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: fmt.Sprintf("Failed to map [%s] firebase config to eventnative format", destinationEntity.Type), Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: fmt.Sprintf("Failed to map [%s] firebase config to eventnative format", destinationEntity.Type), Error: err})
 		return
 	}
 
 	b, err := json.Marshal(enDestinationConfig)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to serialize destination config", Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to serialize destination config", Error: err})
 		return
 	}
 
 	request, err := http.NewRequest("POST", dh.eventnativeBaseUrl+"/destinations/test", bytes.NewBuffer(b))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error(), Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: err.Error(), Error: err})
 		return
 	}
 	request.Header.Add("X-Admin-Token", dh.eventnativeAdminToken)
 	resp, err := dh.httpClient.Do(request)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to get response from eventnative: " + err.Error(), Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to get response from eventnative: " + err.Error(), Error: err})
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		c.JSON(http.StatusOK, middleware.OkResponse{Status: "Connection established"})
+		c.JSON(http.StatusOK, enmiddleware.OkResponse{Status: "Connection established"})
 		return
 	}
 
@@ -141,6 +141,6 @@ func (dh *DestinationsHandler) TestHandler(c *gin.Context) {
 
 	_, err = c.Writer.Write(body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to write response", Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to write response", Error: err})
 	}
 }

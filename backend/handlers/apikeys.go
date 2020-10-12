@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/enhosted/storages"
 	enauth "github.com/ksensehq/eventnative/authorization"
 	"github.com/ksensehq/eventnative/logging"
+	enmiddleware "github.com/ksensehq/eventnative/middleware"
 	"net/http"
 )
 
@@ -21,7 +21,7 @@ func (akh *ApiKeysHandler) GetHandler(c *gin.Context) {
 	keys, err := akh.storage.GetApiKeys()
 	if err != nil {
 		logging.Error(err)
-		c.JSON(http.StatusInternalServerError, middleware.ErrorResponse{Error: err, Message: "Api keys err"})
+		c.JSON(http.StatusInternalServerError, enmiddleware.ErrorResponse{Error: err, Message: "Api keys err"})
 		return
 	}
 

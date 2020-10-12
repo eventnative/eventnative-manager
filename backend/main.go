@@ -10,6 +10,7 @@ import (
 	"github.com/ksensehq/enhosted/destinations"
 	"github.com/ksensehq/enhosted/handlers"
 	"github.com/ksensehq/enhosted/middleware"
+	"github.com/ksensehq/enhosted/ssl"
 	"github.com/ksensehq/enhosted/storages"
 	enadapters "github.com/ksensehq/eventnative/adapters"
 	"github.com/ksensehq/eventnative/logging"
@@ -101,7 +102,8 @@ func main() {
 	if eventnativeAdminToken == "" {
 		logging.Fatal("eventnative.admin_token is not set")
 	}
-	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig)
+	processor := ssl.NewCustomDomainProcessor(firebaseStorage)
+	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, processor)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
 		Handler:           middleware.Cors(router),
@@ -131,7 +133,7 @@ func readConfiguration(configFilePath string) {
 
 func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, eventnativeAdminToken string,
 	storage *storages.Firebase, authService *authorization.Service,
-	defaultS3 enadapters.S3Config, statisticsPostgres enstorages.DestinationConfig) *gin.Engine {
+	defaultS3 enadapters.S3Config, statisticsPostgres enstorages.DestinationConfig, customDomainProcessor *ssl.CustomDomainProcessor) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 
@@ -146,12 +148,15 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 		logging.Fatal("Failed to initialize statistics handler", err)
 	}
 	appconfig.Instance.ScheduleClosing(statisticsHandler)
+	sslHandler := handlers.NewCustomDomainHandler(customDomainProcessor)
 
 	apiV1 := router.Group("/api/v1")
 	{
 		apiV1.POST("/database", middleware.ClientAuth(handlers.NewDatabaseHandler(storage).PostHandler, authService))
 		apiV1.GET("/apikeys", middleware.ServerAuth(handlers.NewApiKeysHandler(storage).GetHandler, serverToken))
 		apiV1.GET("/statistics", middleware.ClientAuth(statisticsHandler.GetHandler, authService))
+
+		apiV1.GET("/ssl", sslHandler.Handler)
 
 		destinationsHandler := handlers.NewDestinationsHandler(storage, &defaultS3, &statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
 

@@ -19,6 +19,7 @@ import (
 const defaultDatabaseCredentialsCollection = "default_database_credentials"
 const destinationsCollection = "destinations"
 const apiKeysCollection = "api_keys"
+const customDomainsCollection = "custom_domains"
 
 type Firebase struct {
 	ctx                context.Context
@@ -141,6 +142,35 @@ func (fb *Firebase) GetApiKeysByProjectId(projectId string) ([]*entities.ApiKey,
 	}
 
 	return apiKeys.Keys, nil
+}
+
+func (fb *Firebase) GetCustomDomains() ([]*entities.CustomDomain, error) {
+	docIterator := fb.client.Collection(customDomainsCollection).DocumentRefs(fb.ctx)
+	var result []*entities.CustomDomain
+	for {
+		document, err := docIterator.Next()
+		if err != nil {
+			if err == iterator.Done {
+				break
+			}
+
+			return nil, fmt.Errorf("error reading custom domains: %v", err)
+		}
+
+		data, err := document.Get(fb.ctx)
+		if err != nil {
+			return nil, fmt.Errorf("error getting custom domains of project [%s]: %v", document.ID, err)
+		}
+
+		customDomains := &entities.CustomDomains{}
+		err = data.DataTo(customDomains)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing api keys: %v", err)
+		}
+
+		result = append(result, customDomains.Domains...)
+	}
+	return result, nil
 }
 
 func (fb *Firebase) Close() (multiErr error) {

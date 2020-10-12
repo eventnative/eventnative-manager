@@ -6,6 +6,7 @@ import (
 	"github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/enhosted/storages"
 	"github.com/ksensehq/eventnative/logging"
+	enmiddleware "github.com/ksensehq/eventnative/middleware"
 	"net/http"
 )
 
@@ -35,18 +36,18 @@ func (eh *DatabaseHandler) PostHandler(c *gin.Context) {
 	userProjectId := extractProjectId(c)
 	if userProjectId == "" {
 		logging.Error(systemErrProjectId)
-		c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Error: systemErrProjectId, Message: "Authorization error"})
+		c.JSON(http.StatusUnauthorized, enmiddleware.ErrorResponse{Error: systemErrProjectId, Message: "Authorization error"})
 		return
 	}
 
 	if userProjectId != projectId {
-		c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Message: "User does not have access to project " + projectId})
+		c.JSON(http.StatusUnauthorized, enmiddleware.ErrorResponse{Message: "User does not have access to project " + projectId})
 		return
 	}
 
 	database, err := eh.storage.CreateDatabase(projectId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed to create a database for project " + projectId + ": " + err.Error()})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Error: err, Message: "Failed to create a database for project " + projectId + ": " + err.Error()})
 		return
 	}
 

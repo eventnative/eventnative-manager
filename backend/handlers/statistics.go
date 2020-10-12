@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/eventnative/adapters"
 	"github.com/ksensehq/eventnative/logging"
+	enmiddleware "github.com/ksensehq/eventnative/middleware"
 	"net/http"
 	"time"
 )
@@ -56,40 +56,40 @@ func NewStatisticsHandler(config *adapters.DataSourceConfig, oldKeysMapping map[
 func (h *StatisticsHandler) GetHandler(c *gin.Context) {
 	projectId := c.Query("project_id")
 	if projectId == "" {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "[project_id] is a required query parameter"})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "[project_id] is a required query parameter"})
 		return
 	}
 
 	userProjectId := extractProjectId(c)
 	if userProjectId == "" {
 		logging.Error(systemErrProjectId)
-		c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Error: systemErrProjectId, Message: "Authorization error"})
+		c.JSON(http.StatusUnauthorized, enmiddleware.ErrorResponse{Error: systemErrProjectId, Message: "Authorization error"})
 		return
 	}
 
 	if userProjectId != projectId {
-		c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Message: "User does not have access to project " + projectId})
+		c.JSON(http.StatusUnauthorized, enmiddleware.ErrorResponse{Message: "User does not have access to project " + projectId})
 		return
 	}
 
 	from := c.Query("from")
 	if from == "" {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "[from] is a required query parameter"})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "[from] is a required query parameter"})
 		return
 	}
 	to := c.Query("to")
 	if to == "" {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "[to] is a required query parameter"})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "[to] is a required query parameter"})
 		return
 	}
 	granularity := c.Query("granularity")
 	if granularity != "day" && granularity != "hour" {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "[granularity] is a required query parameter and should have value 'day' or 'hour'"})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "[granularity] is a required query parameter and should have value 'day' or 'hour'"})
 		return
 	}
 	data, err := h.countEventsByProject(projectId, from, to, granularity)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to provide statistics: " + err.Error(), Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to provide statistics: " + err.Error(), Error: err})
 	}
 	response := ResponseBody{Data: data, Status: "ok"}
 	c.JSON(http.StatusOK, response)
