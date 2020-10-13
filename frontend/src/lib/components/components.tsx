@@ -49,6 +49,10 @@ export function CenteredSpin() {
     return (<div className="common-centered-spin"><Spin size="large"/></div>)
 }
 
+export function CenteredError({error}) {
+    return (<div className="common-centered-spin">Error: {error?.message ? error.message: "Unknown error"}</div>)
+}
+
 export function LabelWithTooltip({children, documentation}) {
     return (
         <>
