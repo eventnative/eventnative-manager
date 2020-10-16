@@ -1,10 +1,12 @@
 import React, {ReactElement, ReactNode} from 'react';
-import {CenteredSpin, handleError, LoadableComponent, StatCard} from "../components";
+import {CenteredSpin, handleError, lazyComponent, LoadableComponent, StatCard} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {Card, Col, Row} from "antd";
 import './StatusPage.less'
-import {Axis, Chart, Line, Point, Slider} from "bizcharts";
+const Chart = lazyComponent(() => import( /* webChunkName: "bizchartsChart" */ "bizcharts/es/components/Chart"));
+const Axis = lazyComponent(() => import("bizcharts/es/components/Axis"));
 import {numberFormat} from "../../commons/utils";
+const Line = lazyComponent(() => import("bizcharts/es/geometry/Line"));
 
 type State = {
     designationsCount?: number

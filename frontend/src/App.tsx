@@ -81,6 +81,7 @@ export default class App extends React.Component<AppProperties, AppState> {
     }
 
     public render() {
+        let route = new Route(window.location.hash);
         switch (this.state.lifecycle) {
             case AppLifecycle.REQUIRES_LOGIN:
                 return (<Switch>
@@ -93,7 +94,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                                                pagePath: routeProps.location
                                            })
                                            document.title = route.pageTitle;
-                                           return route.getComponent();
+                                           return route.getComponent({});
                                        }}
                         />)
                     })}
@@ -114,7 +115,7 @@ export default class App extends React.Component<AppProperties, AppState> {
             <div className="internal-page-wrapper">
                 <h1 className="internal-page-header">{route.pageHeader}</h1>
                 <div className="internal-page-content-wrapper">
-                    {route.getComponent()}
+                    {route.getComponent({})}
                 </div>
             </div>
         );
@@ -137,7 +138,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                 return (<CenteredSpin/>)
             }
         });
-        routes.push(<Redirect to="/dashboard"/>);
+        routes.push(<Redirect key="dashboardRedirect" to="/dashboard"/>);
         let extraForms = null;
         if (this.state.showOnboardingForm) {
             extraForms = <OnboardingForm user={this.state.user} onCompleted={async () => {

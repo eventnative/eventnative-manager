@@ -47,10 +47,6 @@ export abstract class DestinationConfig {
     protected readonly _onlyKeys = [];
     protected _formData: any = {};
 
-
-
-
-
     constructor(type: string, id: string) {
         this._id = id;
         this._type = type;
@@ -79,6 +75,20 @@ export abstract class DestinationConfig {
 
     get formData(): any {
         return this._formData;
+    }
+
+    /**
+     * Trims all the string fields of _formData
+     */
+    public trim() {
+        for (const key in this._formData) {
+            if (this._formData.hasOwnProperty(key)) {
+                let val = this._formData[key];
+                if (typeof val === 'string') {
+                    this._formData[key] = val.trim();
+                }
+            }
+        }
     }
 
     abstract describe();

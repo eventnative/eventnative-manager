@@ -3,11 +3,9 @@ import {Button, Col, Input, message, Modal, Row, Select, Space, Switch, Table, T
 import ApplicationServices from "../../services/ApplicationServices";
 import {CodeFilled, DeleteFilled, PlusOutlined, RollbackOutlined, SaveOutlined} from "@ant-design/icons/lib";
 import './ApiKeys.less'
-import {Align, CenteredError, CenteredSpin, handleError, LabelWithTooltip, LoadableComponent} from "../components";
+import {Align, CenteredError, CenteredSpin, handleError, LabelWithTooltip, lazyComponent, LoadableComponent} from "../components";
 import {copyToClipboard, randomId} from "../../commons/utils";
 import TagsInput from "../TagsInput/TagsInput";
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import {docco} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {EVENTNATIVE_HOST, getCurlDocumentation, getEmpeddedJS, getNPMDocumentation} from "../../commons/api-documentation";
 
 type Token = {
@@ -311,9 +309,11 @@ function CodeInline({children}) {
     return <span className="code-snippet-inline">{children}</span>
 }
 
+const SyntaxHighlighterAsync = lazyComponent(() => import('react-syntax-highlighter'));
+
 function CodeSnippet(props: { children: ReactNode, language: string, extra?: ReactNode }) {
     return <div className="code-snippet-wrapper">
-        <SyntaxHighlighter language={props.language} style={docco}>{props.children}</SyntaxHighlighter>
+        <SyntaxHighlighterAsync language={props.language}>{props.children}</SyntaxHighlighterAsync>
         <Row><Col span={16}>
             {props.extra}
         </Col><Col span={8}>
