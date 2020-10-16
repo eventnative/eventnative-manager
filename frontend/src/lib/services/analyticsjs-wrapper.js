@@ -5,7 +5,6 @@
 
 const AnalyticsJS = {
     init: function (apiKey) {
-        alert('Init started!')
         (function () {
             var analytics = window.analytics = window.analytics || [];
             if (!analytics.initialize) if (analytics.invoked) window.console && console.error && console.error("Segment snippet included twice."); else {
@@ -36,7 +35,6 @@ const AnalyticsJS = {
                 analytics.load(apiKey);
             }
         })();
-        alert('Init!' + window.analytics)
     },
 
     get: function () {
