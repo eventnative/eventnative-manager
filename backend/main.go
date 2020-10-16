@@ -148,7 +148,19 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 		logging.Fatal("Failed to initialize statistics handler", err)
 	}
 	appconfig.Instance.ScheduleClosing(statisticsHandler)
-	sslHandler := handlers.NewCustomDomainHandler(customDomainProcessor)
+	sshUser := viper.GetString("eventnative.ssl.ssh.user")
+	if sshUser == "" {
+		logging.Fatal("[eventnative.ssl.ssh.user] is not set")
+	}
+	privateKeyPath := viper.GetString("eventnative.ssl.ssh.privateKeyPath")
+	if privateKeyPath == "" {
+		logging.Fatal("[eventnative.ssl.ssh.privateKeyPath] is not set")
+	}
+	hosts := viper.GetStringSlice("eventnative.ssl.hosts")
+	if hosts == nil || len(hosts) == 0 {
+		logging.Fatal("[eventnative.ssl.hosts] must not be empty")
+	}
+	sslHandler := handlers.NewCustomDomainHandler(customDomainProcessor, hosts, sshUser, privateKeyPath)
 
 	apiV1 := router.Group("/api/v1")
 	{
