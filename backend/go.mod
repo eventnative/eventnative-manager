@@ -10,6 +10,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/ksensehq/eventnative v1.8.0
 	github.com/lib/pq v1.8.0
+	github.com/prometheus/common v0.4.0
 	github.com/spf13/viper v1.7.1
 	google.golang.org/api v0.17.0
 	google.golang.org/grpc v1.27.0
