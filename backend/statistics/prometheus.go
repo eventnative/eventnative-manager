@@ -39,23 +39,6 @@ type QueryRangeResponse struct {
 	Data   QueryRangeData `json:"data"`
 }
 
-func (qrr *QueryRangeResponse) ExtractData() ([]model.SamplePair, error) {
-	if qrr.Data.ResultType != model.ValMatrix.String() {
-		return nil, fmt.Errorf("Unknown Prometheus response type: %s. Expected - %s", qrr.Data.ResultType, model.ValMatrix.String())
-	}
-
-	if len(qrr.Data.Result) != 1 {
-		return nil, nil
-	}
-
-	unit := qrr.Data.Result[0]
-	if unit == nil {
-		return nil, errors.New("Malformed Prometheus response: nil element")
-	}
-
-	return unit.Values, nil
-}
-
 type QueryRangeData struct {
 	ResultType string       `json:"resultType"`
 	Result     model.Matrix `json:"result"`
@@ -129,13 +112,21 @@ func (p *Prometheus) GetEvents(projectId, from, to, granularity string) ([]Event
 		return nil, fmt.Errorf("Error parsing Prometheus response: %v", err)
 	}
 
-	values, err := qrr.ExtractData()
-	if err != nil {
-		return nil, err
+	if qrr.Data.ResultType != model.ValMatrix.String() {
+		return nil, fmt.Errorf("Unknown Prometheus response type: %s. Expected - %s", qrr.Data.ResultType, model.ValMatrix.String())
+	}
+
+	if len(qrr.Data.Result) == 0 {
+		return []EventsPerTime{}, nil
+	}
+
+	unit := qrr.Data.Result[0]
+	if unit == nil {
+		return nil, errors.New("Malformed Prometheus response: nil element")
 	}
 
 	eventsPerTime := []EventsPerTime{}
-	for _, v := range values {
+	for _, v := range unit.Values {
 		eventsPerTime = append(eventsPerTime, EventsPerTime{Key: v.Timestamp.Time().Format(responseTimestampLayout), Events: uint(v.Value)})
 	}
 

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/ksensehq/eventnative/adapters"
-	"github.com/ksensehq/eventnative/logging"
 	"time"
 )
 
@@ -37,6 +36,10 @@ func NewPostgres(config *adapters.DataSourceConfig, oldKeysByProject map[string]
 		return nil, err
 	}
 
+	if oldKeysByProject == nil {
+		oldKeysByProject = map[string][]string{}
+	}
+
 	return &Postgres{db: db, oldKeysByProject: oldKeysByProject}, nil
 }
 
@@ -52,13 +55,14 @@ func (p *Postgres) GetEvents(projectId, from, to, granularity string) ([]EventsP
 		}
 		oldKeysHackPart = oldKeysHackPart + ") or"
 	}
+
 	query := fmt.Sprintf(queryTemplate, granularity, from, to, oldKeysHackPart, projectId)
-	logging.Info(query)
 	rows, err := p.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
 	eventsPerTime := make([]EventsPerTime, 0)
 	for rows.Next() {
 		data := EventsPerTime{}
@@ -73,6 +77,7 @@ func (p *Postgres) GetEvents(projectId, from, to, granularity string) ([]EventsP
 		}
 		eventsPerTime = append(eventsPerTime, data)
 	}
+
 	return eventsPerTime, nil
 }
 
