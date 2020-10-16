@@ -12,7 +12,7 @@ module.exports = {
     devtool: process.env.ENV === 'prod' ? 'source-map' : 'inline-source-map',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: `${process.env.ENV}.[name].js`,
+        filename: `${process.env.ENV}.[name].[contenthash].js`,
         chunkFilename: `${process.env.ENV}.[name].[contenthash].js`,
     },
     watchOptions: {
