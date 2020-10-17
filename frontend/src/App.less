@@ -3,7 +3,6 @@
 //@import '~antd/lib/style/index.less';
 @import "theme.less";
 
-@content-bg: rgb(240, 242, 245);
 
 body {
   height: 100%;
@@ -89,3 +88,31 @@ body {
   border-bottom: 1px solid lightgray;
   //display: inline-block;
 }
+
+.ant-table-content table,
+.ant-table,
+.ant-table-container,
+.ant-table-wrapper,
+.ant-table-wrapper .ant-spin-nested-loading,
+.ant-table-wrapper .ant-spin-container {
+  border-radius: @large-border-radius;
+  border: 0 !important;
+}
+.ant-table-thead,
+.ant-table-thead tr {
+  border-top-left-radius: @large-border-radius;
+  border-top-right-radius: @large-border-radius;
+}
+
+.ant-table-thead tr th:first-child {
+  border-top-left-radius: @large-border-radius !important;
+}
+
+.ant-table-thead tr th:last-child {
+  border-top-right-radius: @large-border-radius !important;
+}
+
+.ant-table-tbody > tr:last-child > td, .ant-table-tbody > tr:last-child {
+  border-bottom: 0 !important;
+}
+
