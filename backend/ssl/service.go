@@ -1,6 +1,7 @@
 package ssl
 
 import (
+	"github.com/ksensehq/enhosted/entities"
 	"github.com/ksensehq/enhosted/storages"
 	"io/ioutil"
 )
@@ -11,6 +12,10 @@ type CustomDomainProcessor struct {
 
 func NewCustomDomainProcessor(firebase *storages.Firebase) *CustomDomainProcessor {
 	return &CustomDomainProcessor{fbStorage: firebase}
+}
+
+func (p *CustomDomainProcessor) UpdateCustomDomains(projectId string, domains *entities.CustomDomains) error {
+	return p.fbStorage.UpdateCustomDomain(projectId, domains)
 }
 
 func (p *CustomDomainProcessor) CreateChallenge(domain string) (string, string, error) {
@@ -36,16 +41,16 @@ func (p *CustomDomainProcessor) LoadCertificate(domains []string) ([]byte, []byt
 	return cert, private, nil
 }
 
-func (p *CustomDomainProcessor) LoadCustomDomains() ([]string, error) {
-	domains, err := p.fbStorage.GetCustomDomains()
-	if err != nil {
-		return nil, err
-	}
-	var result []string
-	for _, domain := range domains {
-		if domain.Name != "" {
-			result = append(result, domain.Name)
-		}
-	}
-	return result, nil
+func (p *CustomDomainProcessor) LoadCustomDomains() (map[string]*entities.CustomDomains, error) {
+	return p.fbStorage.GetCustomDomains()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//var result []string
+	//for _, domain := range domains {
+	//	if domain.Name != "" {
+	//		result = append(result, domain.Name)
+	//	}
+	//}
+	//return result, nil
 }

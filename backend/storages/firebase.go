@@ -144,9 +144,9 @@ func (fb *Firebase) GetApiKeysByProjectId(projectId string) ([]*entities.ApiKey,
 	return apiKeys.Keys, nil
 }
 
-func (fb *Firebase) GetCustomDomains() ([]*entities.CustomDomain, error) {
+func (fb *Firebase) GetCustomDomains() (map[string]*entities.CustomDomains, error) {
 	docIterator := fb.client.Collection(customDomainsCollection).DocumentRefs(fb.ctx)
-	var result []*entities.CustomDomain
+	var result = map[string]*entities.CustomDomains{}
 	for {
 		document, err := docIterator.Next()
 		if err != nil {
@@ -157,6 +157,7 @@ func (fb *Firebase) GetCustomDomains() ([]*entities.CustomDomain, error) {
 			return nil, fmt.Errorf("error reading custom domains: %v", err)
 		}
 
+		projectId := document.ID
 		data, err := document.Get(fb.ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error getting custom domains of project [%s]: %v", document.ID, err)
@@ -165,12 +166,31 @@ func (fb *Firebase) GetCustomDomains() ([]*entities.CustomDomain, error) {
 		customDomains := &entities.CustomDomains{}
 		err = data.DataTo(customDomains)
 		if err != nil {
-			return nil, fmt.Errorf("Error parsing api keys: %v", err)
+			return nil, fmt.Errorf("error parsing custom domains: %v", err)
 		}
-
-		result = append(result, customDomains.Domains...)
+		result[projectId] = customDomains
 	}
 	return result, nil
+}
+
+func (fb *Firebase) UpdateCustomDomain(projectId string, customDomains *entities.CustomDomains) error {
+	var ups []firestore.Update
+	for i, domain := range customDomains.Domains {
+		ups = append(ups, firestore.Update{
+			FieldPath: firestore.FieldPath{"domains[" + fmt.Sprint(i) + "].status"},
+			Value:     domain.Status,
+		})
+	}
+	ups = append(ups, firestore.Update{
+		Path:  "_lastUpdated",
+		Value: customDomains.LastUpdated,
+	})
+	ups = append(ups, firestore.Update{
+		Path:  "_certificateExpiration",
+		Value: customDomains.CertificateExpirationDate,
+	})
+	_, err := fb.client.Collection(customDomainsCollection).Doc(projectId).Update(fb.ctx, ups)
+	return err
 }
 
 func (fb *Firebase) Close() (multiErr error) {
