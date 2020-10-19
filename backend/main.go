@@ -121,7 +121,15 @@ func main() {
 		logging.Fatal("Failed to create SSH client, %s", err)
 	}
 	serverConfigTemplatePath := viper.GetString("eventnative.ssl.server_config_template")
-	customDomainProcessor, err := ssl.NewCustomDomainService(sshClient, enHosts, firebaseStorage, serverConfigTemplatePath)
+	sslNginxPath := viper.GetString("eventnative.ssl.nginx_conf_path")
+	if sslNginxPath == "" {
+		logging.Fatal("[eventnative.ssl.nginx_conf_path] is a required parameter")
+	}
+	acmeChallengePath := viper.GetString("eventnative.ssl.acme_challenge_path")
+	if acmeChallengePath == "" {
+		logging.Fatal("[eventnative.ssl.acme_challenge_path] is a required parameter")
+	}
+	customDomainProcessor, err := ssl.NewCustomDomainService(sshClient, enHosts, firebaseStorage, serverConfigTemplatePath, sslNginxPath, acmeChallengePath)
 	if err != nil {
 		logging.Fatal("Failed to create customDomainProcessor")
 	}
@@ -129,7 +137,16 @@ func main() {
 	if enCName == "" {
 		logging.Fatal("[eventnative.cname] is a required parameter")
 	}
-	sslHandler := handlers.NewCustomDomainHandler(customDomainProcessor, enHosts, sshUser, privateKeyPath, enCName)
+	certPath := viper.GetString("eventnative.ssl.cert_path")
+	if certPath == "" {
+		logging.Fatal("[eventnative.ssl.cert_path] is a required parameter")
+	}
+	pkPath := viper.GetString("eventnative.ssl.pk_path")
+	if pkPath == "" {
+		logging.Fatal("[eventnative.ssl.pk_path] is a required parameter")
+	}
+
+	sslHandler := handlers.NewCustomDomainHandler(customDomainProcessor, enHosts, sshUser, privateKeyPath, enCName, certPath, pkPath, acmeChallengePath)
 
 	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, sslHandler)
 	server := &http.Server{

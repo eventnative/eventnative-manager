@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/ksensehq/enhosted/entities"
+	files "github.com/ksensehq/enhosted/files"
 	"github.com/ksensehq/enhosted/ssl"
 	entime "github.com/ksensehq/enhosted/time"
 	"github.com/ksensehq/eventnative/middleware"
@@ -18,15 +19,18 @@ const okStatus = "ok"
 const rwPermission = 0666
 
 type CustomDomainHandler struct {
-	sslService     *ssl.CustomDomainService
-	enHosts        []string
-	user           string
-	privateKeyPath string
-	enCName        string // required to validate if CNAME is set to our balancer
+	sslService               *ssl.CustomDomainService
+	enHosts                  []string
+	user                     string
+	privateKeyPath           string
+	enCName                  string // required to validate if CNAME is set to our balancer
+	sslCertificatesStorePath string
+	sslPkStorePath           string
+	acmeChallengePath        string
 }
 
-func NewCustomDomainHandler(processor *ssl.CustomDomainService, targetHosts []string, user string, privateKeyPath string, balancerName string) *CustomDomainHandler {
-	return &CustomDomainHandler{sslService: processor, enHosts: targetHosts, user: user, privateKeyPath: privateKeyPath, enCName: balancerName}
+func NewCustomDomainHandler(processor *ssl.CustomDomainService, targetHosts []string, user string, privateKeyPath string, balancerName string, certsPath string, pkPath string, acmeChallengePath string) *CustomDomainHandler {
+	return &CustomDomainHandler{sslService: processor, enHosts: targetHosts, user: user, privateKeyPath: privateKeyPath, enCName: balancerName, sslCertificatesStorePath: files.FixPath(certsPath), sslPkStorePath: files.FixPath(pkPath), acmeChallengePath: files.FixPath(acmeChallengePath)}
 }
 
 func (h *CustomDomainHandler) Handler(c *gin.Context) {
@@ -58,12 +62,12 @@ func (h *CustomDomainHandler) run() error {
 		if err != nil {
 			return err
 		}
-		certFileName := projectId + "_cert.pem"
+		certFileName := h.sslCertificatesStorePath + projectId + "_cert.pem"
 		err = ioutil.WriteFile(certFileName, certificate, rwPermission)
 		if err != nil {
 			return err
 		}
-		pkFileName := projectId + "_pk.pem"
+		pkFileName := h.privateKeyPath + projectId + "_pk.pem"
 		err = ioutil.WriteFile(pkFileName, privateKey, rwPermission)
 		if err != nil {
 			return err

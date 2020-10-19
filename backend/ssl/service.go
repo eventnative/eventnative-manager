@@ -12,6 +12,7 @@ import (
 	"github.com/go-acme/lego/lego"
 	"github.com/go-acme/lego/registration"
 	"github.com/ksensehq/enhosted/entities"
+	"github.com/ksensehq/enhosted/files"
 	"github.com/ksensehq/enhosted/ssh"
 	"github.com/ksensehq/enhosted/storages"
 	"github.com/ksensehq/eventnative/logging"
@@ -34,6 +35,8 @@ type CustomDomainService struct {
 	sshClient            *ssh.ClientWrapper
 	fbStorage            *storages.Firebase
 	serverConfigTemplate *template.Template
+	nginxConfigPath      string
+	acmeChallengePath    string
 }
 
 type EnUser struct {
@@ -56,10 +59,11 @@ type MultipleServersProvider struct {
 	SshClient              *ssh.ClientWrapper
 	TargetHosts            []string
 	HostChallengeDirectory string
+	AcmeChallengePath      string
 }
 
 func (p *MultipleServersProvider) Present(domain, token, keyAuth string) error {
-	err := ioutil.WriteFile(token, []byte(keyAuth), rwPermission)
+	err := ioutil.WriteFile(p.AcmeChallengePath+token, []byte(keyAuth), rwPermission)
 	if err != nil {
 		return err
 	}
@@ -85,7 +89,7 @@ func (s *CustomDomainService) ExecuteHttp01Challenge(domains []string) ([]byte, 
 		Email: email,
 		key:   privateKey,
 	}
-	http01Provider := &MultipleServersProvider{SshClient: s.sshClient, TargetHosts: s.enHosts, HostChallengeDirectory: defaultHttp01Location}
+	http01Provider := &MultipleServersProvider{SshClient: s.sshClient, TargetHosts: s.enHosts, HostChallengeDirectory: defaultHttp01Location, AcmeChallengePath: s.acmeChallengePath}
 
 	config := lego.NewConfig(&myUser)
 	config.CADirURL = certificationServer
@@ -127,7 +131,7 @@ func (s *CustomDomainService) UploadCertificate(certificatePath string, privateK
 	if err := s.serverConfigTemplate.Execute(&tpl, templateVariables); err != nil {
 		return err
 	}
-	serverConfigPath := "serverConfig.conf"
+	serverConfigPath := s.nginxConfigPath + projectId + ".conf"
 	if err := ioutil.WriteFile(serverConfigPath, tpl.Bytes(), rwPermission); err != nil {
 		return err
 	}
@@ -148,7 +152,7 @@ func (s *CustomDomainService) UploadCertificate(certificatePath string, privateK
 	return nil
 }
 
-func NewCustomDomainService(sshClient *ssh.ClientWrapper, enHosts []string, firebase *storages.Firebase, serverConfigTemplatePath string) (*CustomDomainService, error) {
+func NewCustomDomainService(sshClient *ssh.ClientWrapper, enHosts []string, firebase *storages.Firebase, serverConfigTemplatePath string, nginxSSLConfigPath string, acmeChallengePath string) (*CustomDomainService, error) {
 	if enHosts == nil || len(enHosts) == 0 {
 		return nil, fmt.Errorf("failed to create custom domain processor: [enHosts] must not be empty")
 	}
@@ -159,7 +163,7 @@ func NewCustomDomainService(sshClient *ssh.ClientWrapper, enHosts []string, fire
 	if err != nil {
 		return nil, err
 	}
-	return &CustomDomainService{sshClient: sshClient, enHosts: enHosts, fbStorage: firebase, serverConfigTemplate: serverConfigTemplate}, nil
+	return &CustomDomainService{sshClient: sshClient, enHosts: enHosts, fbStorage: firebase, serverConfigTemplate: serverConfigTemplate, nginxConfigPath: files.FixPath(nginxSSLConfigPath), acmeChallengePath: files.FixPath(acmeChallengePath)}, nil
 }
 
 func (s *CustomDomainService) UpdateCustomDomains(projectId string, domains *entities.CustomDomains) error {
