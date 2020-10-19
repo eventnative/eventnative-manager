@@ -22,6 +22,7 @@ const (
 	defaultDatabaseCredentialsCollection = "default_database_credentials"
 	destinationsCollection               = "destinations"
 	apiKeysCollection                    = "api_keys"
+	customDomainsCollection              = "custom_domains"
 	lastUpdatedField                     = "_lastUpdated"
 
 	LastUpdatedLayout = "2006-01-02T15:04:05.000Z"
@@ -224,6 +225,40 @@ func (fb *Firebase) GetApiKeysByProjectId(projectId string) ([]*entities.ApiKey,
 	}
 
 	return apiKeys.Keys, nil
+}
+
+func (fb *Firebase) GetCustomDomains() (map[string]*entities.CustomDomains, error) {
+	docIterator := fb.client.Collection(customDomainsCollection).DocumentRefs(fb.ctx)
+	var result = map[string]*entities.CustomDomains{}
+	for {
+		document, err := docIterator.Next()
+		if err != nil {
+			if err == iterator.Done {
+				break
+			}
+
+			return nil, fmt.Errorf("error reading custom domains: %v", err)
+		}
+
+		projectId := document.ID
+		data, err := document.Get(fb.ctx)
+		if err != nil {
+			return nil, fmt.Errorf("error getting custom domains of project [%s]: %v", document.ID, err)
+		}
+
+		customDomains := &entities.CustomDomains{}
+		err = data.DataTo(customDomains)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing custom domains: %v", err)
+		}
+		result[projectId] = customDomains
+	}
+	return result, nil
+}
+
+func (fb *Firebase) UpdateCustomDomain(projectId string, customDomains *entities.CustomDomains) error {
+	_, err := fb.client.Collection(customDomainsCollection).Doc(projectId).Set(fb.ctx, customDomains)
+	return err
 }
 
 func (fb *Firebase) Close() (multiErr error) {
