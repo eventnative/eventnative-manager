@@ -2,7 +2,7 @@
  * Library of small components that are usefull for different purposes
  */
 
-import React, {CSSProperties, ReactNode} from "react";
+import React, {ReactNode} from "react";
 import './components.less'
 import {Card, message, Spin, Tooltip} from "antd";
 import {CaretDownFilled, CaretRightFilled, CaretUpFilled, QuestionCircleOutlined} from "@ant-design/icons/lib";
@@ -47,6 +47,10 @@ export function GlobalError(props) {
 
 export function CenteredSpin() {
     return (<div className="common-centered-spin"><Spin size="large"/></div>)
+}
+
+export function CenteredError({error}) {
+    return (<div className="common-centered-spin">Error: {error?.message ? error.message: "Unknown error"}</div>)
 }
 
 export function LabelWithTooltip({children, documentation}) {
@@ -291,6 +295,15 @@ export function Align(props: IAlignProps) {
 
     // @ts-ignore
     return <div style={{textAlign: HORIZONTAL_ALIGN_MAP[props.horizontal]}}>{props.children}</div>
+}
+
+export function lazyComponent(importFactory) {
+    let LazyComponent = React.lazy(importFactory);
+    return (props) => {
+        return <React.Suspense fallback={<CenteredSpin />}>
+            <LazyComponent {...props} />
+        </React.Suspense>
+    }
 }
 
 

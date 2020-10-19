@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const defaultStatisticsBigQueryDestinationId = "statistics.postgres"
+const defaultStatisticsPostgresDestinationId = "statistics.postgres"
 
 type DestinationsHandler struct {
 	storage            *storages.Firebase
@@ -91,8 +91,10 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 		}
 	}
 
-	//default statistic storage
-	idConfig[defaultStatisticsBigQueryDestinationId] = *dh.statisticsPostgres
+	if dh.statisticsPostgres != nil {
+		//default statistic storage
+		idConfig[defaultStatisticsPostgresDestinationId] = *dh.statisticsPostgres
+	}
 
 	c.JSON(http.StatusOK, &endestinations.Payload{Destinations: idConfig})
 }

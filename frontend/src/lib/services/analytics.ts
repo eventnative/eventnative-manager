@@ -16,21 +16,19 @@ export default class AnalyticsService {
             key: "daaac3a7-a7e4-475f-80dd-43a2985680c5",
             tracking_host: "https://track.ksense.io"
         });
-        AnalyticsJS.init("jEB5Eas68Pz2zmwNIm2QSlxFE7PGsndX");
-        if (this.appConfig.appEnvironment !== 'dev') {
-            LogRocket.init('6gfkmj/ksense');
-            posthog.init('72gPORhrnFw9os9uBF_IHSEohx9fObmIAyFyhHq_1mA',{api_host:'https://ph-ksense.herokuapp.com'});
-        }
     }
 
     public onUserKnown(user: User) {
         if (!user || this.appConfig.appEnvironment === 'dev') {
             return;
         }
+        LogRocket.init('6gfkmj/ksense');
+        posthog.init('72gPORhrnFw9os9uBF_IHSEohx9fObmIAyFyhHq_1mA',{api_host:'https://ph-ksense.herokuapp.com'});
         this.user = user;
         LogRocket.identify(user.uid, {
             email: user.email,
         });
+        AnalyticsJS.init("jEB5Eas68Pz2zmwNIm2QSlxFE7PGsndX");
         AnalyticsJS.get().identify(user.uid, {
             email: user.email
         })
@@ -50,10 +48,13 @@ export default class AnalyticsService {
             path: pagePath,
             app: "hosted_ui"
         })
-        AnalyticsJS.get().page('app_page', pagePath, {
-            app: "hosted_ui"
-        })
 
+        if (this.user) {
+            AnalyticsJS.get().page('app_page', pagePath, {
+                app: "hosted_ui"
+            });
+            posthog.capture('$pageview');
+        }
     }
 
     public onError(error: any) {

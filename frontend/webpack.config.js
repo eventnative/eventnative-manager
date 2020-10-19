@@ -1,19 +1,32 @@
 const webpack = require('webpack');
+
+const path = require('path')
 const CopyPlugin = require('copy-webpack-plugin');
 const FaviconsWebpackPlugin = require('favicons-webpack-plugin')
+const CompressionPlugin = require('compression-webpack-plugin');
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = {
+    mode: 'development',
+    devtool: process.env.ENV === 'prod' ? 'source-map' : 'inline-source-map',
+    output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: `${process.env.ENV}.[name].[contenthash].js`,
+        chunkFilename: `${process.env.ENV}.[name].[contenthash].js`,
+    },
+    watchOptions: {
+        ignored: /node_modules/,
+    },
     resolve: {
         extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
     },
     optimization: {
         splitChunks: {
             chunks: 'all',
-            maxSize: 200000
+            maxSize: 240_000,
         },
-        minimize: true,
+        minimize:  process.env.ENV === 'prod',
         minimizer: [new TerserPlugin({
             terserOptions: {
                 keep_classnames: true
@@ -75,7 +88,7 @@ module.exports = {
     }, plugins: [
         new HtmlWebPackPlugin({
             template: "./src/index.html",
-            filename: "./index.html"
+            filename: "./index.html",
         }),
         new FaviconsWebpackPlugin({
             logo: './src/icons/logo.svg',
@@ -91,6 +104,7 @@ module.exports = {
             patterns: [
                 { from: 'src/boot', to: "boot" }
             ]
-        })
+        }),
+        new CompressionPlugin()
     ]
 };

@@ -7,10 +7,8 @@ const googleLogo = require('../../../icons/google.svg').default;
 const githubLogo = require('../../../icons/github.svg').default;
 import './LoginForm.less'
 import ApplicationServices from "../../services/ApplicationServices";
-import * as firebase from "firebase";
 import {navigateAndReload, reloadPage} from "../../commons/utils";
 import {useState} from "react";
-import {Simulate} from "react-dom/test-utils";
 
 type State = {
     loading: boolean
@@ -49,7 +47,7 @@ export default class LoginForm extends React.Component<Props, State> {
                 visible={this.state.showPasswordReset}
                 close={() => this.setState({showPasswordReset: false})}
                 onSuccess={() => message.info("Password reset e-mail has been sent!")}
-            />,
+            />
             <Card title={title} style={{margin: 'auto', 'marginTop': '100px', 'maxWidth': '500px'}} bordered={false}>
                 <Row>
                     <Col span={12} className="login-form-left-panel">
@@ -59,8 +57,7 @@ export default class LoginForm extends React.Component<Props, State> {
                             initialValues={{
                                 remember: true,
                             }}
-                            onFinish={(values) => this.passwordLogin(values)}
-                        >
+                            onFinish={(values) => this.passwordLogin(values)}>
                             <Form.Item
                                 name="username"
                                 rules={[
@@ -68,8 +65,7 @@ export default class LoginForm extends React.Component<Props, State> {
                                         required: true,
                                         message: 'Please, input your e-mail!',
                                     },
-                                ]}
-                            >
+                                ]}>
                                 <Input prefix={<MailOutlined/>} placeholder="E-Mail"/>
                             </Form.Item>
                             <Form.Item
@@ -79,8 +75,7 @@ export default class LoginForm extends React.Component<Props, State> {
                                         required: true,
                                         message: 'Please input your password!',
                                     },
-                                ]}
-                            >
+                                ]}>
                                 <Input
                                     prefix={<LockOutlined className="site-form-item-icon"/>}
                                     type="password"
@@ -158,7 +153,7 @@ export default class LoginForm extends React.Component<Props, State> {
             message.destroy()
             console.log("Google auth error", error);
             message.error("Access denied: " + error.message)
-        });;
+        });
     }
 }
 

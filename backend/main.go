@@ -10,6 +10,7 @@ import (
 	"github.com/ksensehq/enhosted/destinations"
 	"github.com/ksensehq/enhosted/handlers"
 	"github.com/ksensehq/enhosted/middleware"
+	"github.com/ksensehq/enhosted/statistics"
 	"github.com/ksensehq/enhosted/ssh"
 	"github.com/ksensehq/enhosted/ssl"
 	"github.com/ksensehq/enhosted/storages"
@@ -44,17 +45,20 @@ func main() {
 	}()
 
 	//statistics postgres
-	pgDestinationConfig := enstorages.DestinationConfig{}
-	if err := viper.UnmarshalKey("destinations.statistics.postgres", &pgDestinationConfig); err != nil {
-		logging.Fatal("Error unmarshalling statistics postgres config:", err)
-	}
-	if err := pgDestinationConfig.DataSource.Validate(); err != nil {
-		logging.Fatal("Error validation statistics postgres config:", err)
+	var pgDestinationConfig *enstorages.DestinationConfig
+	if viper.IsSet("destinations.statistics.postgres") {
+		pgDestinationConfig = &enstorages.DestinationConfig{}
+		if err := viper.UnmarshalKey("destinations.statistics.postgres", pgDestinationConfig); err != nil {
+			logging.Fatal("Error unmarshalling statistics postgres config:", err)
+		}
+		if err := pgDestinationConfig.DataSource.Validate(); err != nil {
+			logging.Fatal("Error validation statistics postgres config:", err)
+		}
 	}
 
 	//default s3
-	s3Config := enadapters.S3Config{}
-	if err := viper.UnmarshalKey("destinations.hosted.s3", &s3Config); err != nil {
+	s3Config := &enadapters.S3Config{}
+	if err := viper.UnmarshalKey("destinations.hosted.s3", s3Config); err != nil {
 		logging.Fatal("Error unmarshalling default s3 config:", err)
 	}
 	if err := s3Config.Validate(); err != nil {
@@ -103,6 +107,26 @@ func main() {
 	if eventnativeAdminToken == "" {
 		logging.Fatal("eventnative.admin_token is not set")
 	}
+
+	//statistics prometheus
+	var prometheusConfig *statistics.PrometheusConfig
+	if viper.IsSet("destinations.statistics.prometheus") {
+		prometheusConfig = &statistics.PrometheusConfig{}
+		if err := viper.UnmarshalKey("destinations.statistics.prometheus", prometheusConfig); err != nil {
+			logging.Fatal("Error unmarshalling statistics prometheus config:", err)
+		}
+		if err := prometheusConfig.Validate(); err != nil {
+			logging.Fatal("Error validation statistics prometheus config:", err)
+		}
+	}
+
+	statisticsStorage, err := statistics.NewStorage(pgDestinationConfig, prometheusConfig, viper.GetStringMapStringSlice("old_keys"))
+	if err != nil {
+		logging.Fatal("Error initializing statistics storage:", err)
+	}
+	appconfig.Instance.ScheduleClosing(statisticsStorage)
+
+	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage)
 
 	sshUser := viper.GetString("eventnative.ssl.ssh.user")
 	if sshUser == "" {
@@ -177,6 +201,8 @@ func readConfiguration(configFilePath string) {
 }
 
 func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, eventnativeAdminToken string,
+	storage *storages.Firebase, authService *authorization.Service, defaultS3 *enadapters.S3Config,
+	statisticsPostgres *enstorages.DestinationConfig, statisticsStorage statistics.Storage) *gin.Engine {
 	storage *storages.Firebase, authService *authorization.Service,
 	defaultS3 enadapters.S3Config, statisticsPostgres enstorages.DestinationConfig,
 	customDomainHandler *handlers.CustomDomainHandler) *gin.Engine {
@@ -188,12 +214,8 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 	})
 
 	serverToken := viper.GetString("server.auth")
-	oldKeysPerProject := viper.GetStringMapStringSlice("old_keys")
-	statisticsHandler, err := handlers.NewStatisticsHandler(statisticsPostgres.DataSource, oldKeysPerProject)
-	if err != nil {
-		logging.Fatal("Failed to initialize statistics handler", err)
-	}
-	appconfig.Instance.ScheduleClosing(statisticsHandler)
+
+	statisticsHandler := handlers.NewStatisticsHandler(statisticsStorage)
 
 	apiV1 := router.Group("/api/v1")
 	{
@@ -201,6 +223,7 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 		apiV1.GET("/apikeys", middleware.ServerAuth(handlers.NewApiKeysHandler(storage).GetHandler, serverToken))
 		apiV1.GET("/statistics", middleware.ClientAuth(statisticsHandler.GetHandler, authService))
 
+		destinationsHandler := handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
 		apiV1.GET("/ssl", customDomainHandler.Handler)
 
 		destinationsHandler := handlers.NewDestinationsHandler(storage, &defaultS3, &statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)

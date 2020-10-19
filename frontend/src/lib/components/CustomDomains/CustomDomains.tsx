@@ -2,16 +2,11 @@ import * as React from "react";
 import ApplicationServices from "../../services/ApplicationServices";
 import {Button, Form, Input, message, Modal, Table, Tag} from "antd";
 import {CheckOutlined, ClockCircleOutlined, CloudOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RightCircleOutlined} from "@ant-design/icons/lib";
-import {handleError, LoadableComponent} from "../components";
+import {LoadableComponent} from "../components";
 import './CustomDomains.less'
+import {Domain} from "../../services/model";
 
 const CNAME = "hosting.eventnative.com"
-
-type Domain = {
-    name: string
-    status: "pending" | "verified"
-    comment?: string
-}
 
 type State = {
     enterNameVisible: boolean

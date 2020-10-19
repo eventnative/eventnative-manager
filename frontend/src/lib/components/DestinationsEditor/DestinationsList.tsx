@@ -108,9 +108,9 @@ export class DestinationsList extends LoadableComponent<any, State> {
                 });
             }
         };
-        return (<List.Item actions={[
-            (<Button icon={<EditOutlined/>} shape="round" onClick={onEdit}>Edit</Button>),
-            (<Button icon={<DeleteOutlined/>} shape="round" onClick={onClick}>Delete</Button>)
+        return (<List.Item key={config.id} actions={[
+            (<Button icon={<EditOutlined/>} key="edit" shape="round" onClick={onEdit}>Edit</Button>),
+            (<Button icon={<DeleteOutlined/>} key="delete" shape="round" onClick={onClick}>Delete</Button>)
         ]} className="destination-list-item">
             <List.Item.Meta
                 avatar={<Avatar shape="square" src={DestinationsList.getIconSrc(config.type)}/>}
@@ -147,7 +147,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
     renderReady() {
 
         let componentList = [
-            <List className="destinations-list" itemLayout="horizontal" header={this.addButton()} split={true}>
+            <List key="list" className="destinations-list" itemLayout="horizontal" header={this.addButton()} split={true}>
                 {this.state.destinations.toArray().map((config) => this.destinationComponent(config))}
             </List>
         ];
@@ -155,6 +155,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
 
         if (this.state.activeEditorConfig) {
             componentList.push((<DestinationsEditorModal
+                key="active-modal"
                 config={this.state.activeEditorConfig}
                 onCancel={() => this.setState({activeEditorConfig: null})}
                 testConnection={async (values) => {
@@ -164,6 +165,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
                 }}
                 onSave={(formValues) => {
                     this.state.activeEditorConfig.update(formValues);
+                    this.state.activeEditorConfig.trim();
                     this.state.destinations.addOrUpdate(this.state.activeEditorConfig);
                     this.saveCurrentDestinations();
                 }}
@@ -173,7 +175,8 @@ export class DestinationsList extends LoadableComponent<any, State> {
     }
 
     private saveCurrentDestinations() {
-        this.services.storageService.save("destinations", {destinations: this.state.destinations.toArray()}, this.services.activeProject.id).then(() => {
+        let payload = {destinations: this.state.destinations.toArray()};
+        this.services.storageService.save("destinations", payload, this.services.activeProject.id).then(() => {
             this.setState({
                 destinations: this.state.destinations,
                 activeEditorConfig: null
@@ -192,7 +195,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
 
     addMenu() {
         return (<Menu>
-            {destinationConfigTypes.map(type => <Menu.Item onClick={() => this.addDestination(type.type)}>Add {type.name}</Menu.Item>)}
+            {destinationConfigTypes.map(type => <Menu.Item key={type.name} onClick={() => this.addDestination(type.type)}>Add {type.name}</Menu.Item>)}
         </Menu>);
     }
 
@@ -312,7 +315,7 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
         title={title}
         visible={true}
         onCancel={onCancel}
-        footer={[
+        footer={<>
             <Button className="destination-connection-test" loading={connectionTesting} onClick={async () => {
                 setConnectionTesting(true);
                 let values;
@@ -331,7 +334,7 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
                 } finally {
                     setConnectionTesting(false);
                 }
-            }}>Test connection</Button>,
+            }}>Test connection</Button>
             <Button onClick={onCancel}>Close</Button>,
             <Button type="primary" loading={saving} onClick={async () => {
                 setSaving(true);
@@ -351,8 +354,8 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
                 } finally {
                     setSaving(false);
                 }
-            }}>Save</Button>,
-        ]}
+            }}>Save</Button>
+        </>}
     >{React.createElement(dialogsByType[configType.type], {
         initialConfigValue: config,
         form: form

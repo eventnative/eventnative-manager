@@ -1,4 +1,3 @@
-import {strict} from "assert";
 import Marshal from "../commons/marshalling";
 
 export class Project {
@@ -142,3 +141,8 @@ export class User {
     }
 }
 
+export type Domain = {
+    name: string
+    status: "pending" | "verified"
+    comment?: string
+}

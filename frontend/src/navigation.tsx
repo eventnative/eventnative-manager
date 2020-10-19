@@ -1,14 +1,16 @@
 import React, {ReactElement, ReactNode} from "react";
-import LoginForm from "./lib/components/LoginForm/LoginForm";
-import SignupForm from "./lib/components/SignupForm/SignupForm";
 import {DestinationsList} from "./lib/components/DestinationsEditor/DestinationsList";
 import ApiKeys from "./lib/components/ApiKeys/ApiKeys";
-import ComponentTest from "./lib/components/componentTest";
 import {CustomDomains} from "./lib/components/CustomDomains/CustomDomains";
+import {CenteredSpin} from "./lib/components/components";
+import ComponentTest from "./lib/components/componentTest";
+import SignupForm from "./lib/components/SignupForm/SignupForm";
+import LoginForm from "./lib/components/LoginForm/LoginForm";
 import StatusPage from "./lib/components/StatusPage/StatusPage";
 
+
 export class Page {
-    componentFactory: () => ReactElement
+    componentFactory: (params: Record<any, string>) => ReactElement
     pageTitle: string
     path: string[]
     pageHeader: React.ReactNode;
@@ -17,18 +19,26 @@ export class Page {
         return this.path.map(el => el.startsWith("/") ? el : "/" + el)
     }
 
-    public getComponent(): ReactNode {
-        return this.componentFactory();
+    public getComponent(params: Record<any, string>): ReactNode {
+        return this.componentFactory(params);
     }
 
 
-    constructor(pageTitle: string, path: string[] | string, component: () => ReactElement, pageHeader?: ReactNode) {
+    constructor(pageTitle: string, path: string[] | string, component: (params: Record<any, string>) => ReactElement, pageHeader?: ReactNode) {
         this.componentFactory = component;
         this.pageTitle = pageTitle;
         this.pageHeader = pageHeader;
         this.path = path instanceof Array ? path : [path];
     }
+}
 
+function lazyPageFactory(importF): (params: Record<any, string>) => ReactElement {
+    return (params: Record<any, string>) => {
+        let LazyComponent = React.lazy(importF);
+        return <React.Suspense fallback={<CenteredSpin />}>
+            <LazyComponent {...params} />
+        </React.Suspense>
+    }
 }
 
 export const PUBLIC_PAGES: Page[] = [

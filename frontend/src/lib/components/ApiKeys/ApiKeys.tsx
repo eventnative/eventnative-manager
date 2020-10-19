@@ -1,13 +1,11 @@
-import React, {ReactElement, ReactNode, useState} from 'react';
-import {Button, Col, Form, Input, List, Mentions, message, Modal, Row, Space, Switch, Table, Tabs, Tag, Tooltip} from "antd";
+import React, {ReactElement, ReactNode, useEffect, useState} from 'react';
+import {Button, Col, Input, message, Modal, Row, Select, Space, Switch, Table, Tabs, Tooltip} from "antd";
 import ApplicationServices from "../../services/ApplicationServices";
-import {CodeFilled, DeleteFilled, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RollbackOutlined, SaveOutlined} from "@ant-design/icons/lib";
+import {CodeFilled, DeleteFilled, PlusOutlined, RollbackOutlined, SaveOutlined} from "@ant-design/icons/lib";
 import './ApiKeys.less'
-import {Align, handleError, LabelWithTooltip, LoadableComponent} from "../components";
+import {Align, CenteredError, CenteredSpin, handleError, LabelWithTooltip, lazyComponent, LoadableComponent} from "../components";
 import {copyToClipboard, randomId} from "../../commons/utils";
 import TagsInput from "../TagsInput/TagsInput";
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import {docco} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {EVENTNATIVE_HOST, getCurlDocumentation, getEmpeddedJS, getNPMDocumentation} from "../../commons/api-documentation";
 
 type Token = {
@@ -126,7 +124,8 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
                 width: "140px", className: "api-keys-column-actions", title: "Actions", dataIndex: 'actions', render: (text, row: TokenDisplay, index) => {
                     return <>
                         <Tooltip trigger={["hover"]} title={"Show integration documentation"}>
-                            <a style={{display: row.status === "deleted" ? "none" : "inline-block"}} onClick={() => {
+                            <a style={{display: row.status === "deleted" ? "none" : "inline-block"}} onClick={async () => {
+
                                 Modal.info({
                                     content: <KeyDocumentation token={row}/>,
                                     title: null,
@@ -233,6 +232,28 @@ function ActionLink({children, onClick}: { children: any, onClick: () => void })
 function KeyDocumentation({token}: { token: Token }) {
     const [gaEnabled, setGAEnabled] = useState(false);
     const [segment, setSegmentEnabled] = useState(false);
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null);
+    const [domains, setDomains] = useState([]);
+    const [selectedDomain, setSelectedDomain] = useState(null);
+    const services = ApplicationServices.get();
+
+    useEffect(() => {
+        services.storageService.get("custom_domains", services.activeProject.id)
+            .then(result => {
+                let newDomains = [...result.domains.map(domain => domain.name), EVENTNATIVE_HOST];
+                setDomains(newDomains);
+                setSelectedDomain(newDomains[0]);
+            })
+            .catch(e => setError(e))
+            .finally(() => setLoading(false));
+    });
+    if (error) {
+        handleError(error, "Failed to load data from server");
+        return <CenteredError error={error}/>
+    } else if (loading) {
+        return <CenteredSpin/>
+    }
 
 
     let exampleSwitches = <div className="api-keys-doc-embed-switches">
@@ -240,19 +261,19 @@ function KeyDocumentation({token}: { token: Token }) {
             <>Check if you want to intercept events from Google Analytics
                 (<a href="https://docs.eventnative.dev/javascript-reference">Read more</a>)
             </>}>Intercept GA events</LabelWithTooltip>
-        <Switch size="small" checked={gaEnabled} onChange={() => setGAEnabled(!gaEnabled)}/>
-        <LabelWithTooltip documentation={
-            <>Check if you want to intercept events from Segment
-                (<a href="https://docs.eventnative.dev/javascript-reference">Read more</a>)
-            </>}>Intercept Segment events</LabelWithTooltip>
+            <Switch size="small" checked={gaEnabled} onChange={() => setGAEnabled(!gaEnabled)}/>
+            <LabelWithTooltip documentation={
+                <>Check if you want to intercept events from Segment
+                    (<a href="https://docs.eventnative.dev/javascript-reference">Read more</a>)
+                </>}>Intercept Segment events</LabelWithTooltip>
             <Switch size="small" checked={segment} onChange={() => setSegmentEnabled(!segment)}/></Space>
-        </div>
-
-
+    </div>
 
 
     return <Tabs className="api-keys-documentation-tabs" defaultActiveKey="1" tabBarExtraContent={(<>
-
+        <LabelWithTooltip documentation="Domain">Domain</LabelWithTooltip>: <Select defaultValue={domains[0]} onChange={(value) => setSelectedDomain(value)}>
+            {domains.map(domain => {return (<Select.Option value={domain}>{domain}</Select.Option>)})}
+        </Select>
     </>)}>
         <Tabs.TabPane tab="Embed JavaScript" key="1">
             <p className="api-keys-documentation-tab-description">Easiest way to start tracking events within your web app is to
@@ -261,23 +282,24 @@ function KeyDocumentation({token}: { token: Token }) {
                 on our documentation website
             </p>
             <CodeSnippet language="javascript"
-            extra={exampleSwitches}>
-                {getEmpeddedJS(segment, gaEnabled, token.jsAuth, EVENTNATIVE_HOST)}
+                         extra={exampleSwitches}>
+                {getEmpeddedJS(segment, gaEnabled, token.jsAuth, selectedDomain)}
             </CodeSnippet>
         </Tabs.TabPane>
         <Tabs.TabPane tab="Use NPM/YARN" key="2">
             <p className="api-keys-documentation-tab-description">
                 Use <CodeInline>npm install --save @ksense/eventnative</CodeInline> or <CodeInline>yarn add @ksense/eventnative</CodeInline>.
-                Read more <a href="https://docs.eventnative.dev/javascript-reference/direct-tracking">about configuration properties</a> and <a href="https://docs.eventnative.dev/javascript-reference/direct-tracking">tracking api</a>
+                Read more <a href="https://docs.eventnative.dev/javascript-reference/direct-tracking">about configuration properties</a> and <a
+                href="https://docs.eventnative.dev/javascript-reference/direct-tracking">tracking api</a>
             </p>
             <CodeSnippet language="javascript">
-                {getNPMDocumentation(token.jsAuth, EVENTNATIVE_HOST)}
+                {getNPMDocumentation(token.jsAuth, selectedDomain)}
             </CodeSnippet>
         </Tabs.TabPane>
         <Tabs.TabPane tab="Server to server" key="3">
             Events can be send directly to API end-point. In that case, server secret should be used. Please, see curl example:
             <CodeSnippet language="bash">
-                {getCurlDocumentation(token.serverAuth, EVENTNATIVE_HOST)}
+                {getCurlDocumentation(token.serverAuth, selectedDomain)}
             </CodeSnippet>
         </Tabs.TabPane>
     </Tabs>
@@ -287,9 +309,11 @@ function CodeInline({children}) {
     return <span className="code-snippet-inline">{children}</span>
 }
 
+const SyntaxHighlighterAsync = lazyComponent(() => import('react-syntax-highlighter'));
+
 function CodeSnippet(props: { children: ReactNode, language: string, extra?: ReactNode }) {
     return <div className="code-snippet-wrapper">
-        <SyntaxHighlighter language={props.language} style={docco}>{props.children}</SyntaxHighlighter>
+        <SyntaxHighlighterAsync language={props.language}>{props.children}</SyntaxHighlighterAsync>
         <Row><Col span={16}>
             {props.extra}
         </Col><Col span={8}>
