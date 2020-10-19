@@ -134,6 +134,24 @@ func (fb *Firebase) GetDestinations() (map[string]*entities.Destinations, error)
 	return result, nil
 }
 
+func (fb *Firebase) GetDestinationsByProjectId(projectId string) ([]*entities.Destination, error) {
+	doc, err := fb.client.Collection(destinationsCollection).Doc(projectId).Get(fb.ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, ErrNoFound
+		} else {
+			return nil, fmt.Errorf("error getting destinations by projectId [%s]: %v", projectId, err)
+		}
+	}
+
+	dest := &entities.Destinations{}
+	err = doc.DataTo(dest)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing destinations of projectId [%s]: %v", projectId, err)
+	}
+	return dest.Destinations, nil
+}
+
 func (fb *Firebase) GetApiKeysLastUpdated() (*time.Time, error) {
 	result := fb.client.Collection(apiKeysCollection).Select(lastUpdatedField).OrderBy(lastUpdatedField, firestore.Desc).Limit(1).Documents(fb.ctx)
 

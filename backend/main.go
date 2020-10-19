@@ -172,7 +172,7 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 		apiV1.GET("/apikeys", middleware.ServerAuth(middleware.IfModifiedSince(handlers.NewApiKeysHandler(storage).GetHandler, storage.GetApiKeysLastUpdated), serverToken))
 		apiV1.GET("/statistics", middleware.ClientAuth(statisticsHandler.GetHandler, authService))
 
-		apiV1.GET("/eventnative/configuration", middleware.ClientAuth(handlers.NewConfigurationHandler().Handler, authService))
+		apiV1.GET("/eventnative/configuration", middleware.ClientAuth(handlers.NewConfigurationHandler(storage).Handler, authService))
 
 		destinationsHandler := handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
 
