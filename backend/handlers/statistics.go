@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/enhosted/statistics"
 	"github.com/ksensehq/eventnative/logging"
+	"github.com/ksensehq/eventnative/middleware"
 	"net/http"
 )
 

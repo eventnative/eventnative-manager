@@ -152,7 +152,7 @@ func main() {
 	}
 	customDomainProcessor, err := ssl.NewCustomDomainService(sshClient, enHosts, firebaseStorage, serverConfigTemplatePath, sslNginxPath, acmeChallengePath)
 	if err != nil {
-		logging.Fatal("Failed to create customDomainProcessor")
+		logging.Fatal("Failed to create customDomainProcessor " + err.Error())
 	}
 	enCName := viper.GetString("eventnative.cname")
 	if enCName == "" {
