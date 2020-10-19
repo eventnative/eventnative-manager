@@ -19,7 +19,9 @@ import (
 	"time"
 )
 
-const defaultStatisticsPostgresDestinationId = "statistics.postgres"
+const (
+	defaultStatisticsPostgresDestinationId = "statistics.postgres"
+)
 
 type DestinationsHandler struct {
 	storage            *storages.Firebase
@@ -44,6 +46,7 @@ func NewDestinationsHandler(storage *storages.Firebase, defaultS3 *enadapters.S3
 }
 
 func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
+	start := time.Now()
 	destinationsMap, err := dh.storage.GetDestinations()
 	if err != nil {
 		logging.Error(err)
@@ -60,11 +63,14 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 		//if only tokens empty - put all tokens by project
 		keys, err := dh.storage.GetApiKeysByProjectId(projectId)
 		if err != nil {
-			logging.Errorf("Error getting api keys for [%s] project. All destinations will be skipped", projectId, err)
+			if err != storages.ErrNoFound {
+				logging.Errorf("Error getting api keys for [%s] project. All destinations will be skipped: %v", projectId, err)
+			}
+
 			continue
 		}
+
 		if len(keys) == 0 {
-			logging.Errorf("Project [%s] doesn't have api keys. All destinations will be skipped", projectId)
 			continue
 		}
 
@@ -96,6 +102,7 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 		idConfig[defaultStatisticsPostgresDestinationId] = *dh.statisticsPostgres
 	}
 
+	logging.Infof("Destinations response in [%.2f] seconds", time.Now().Sub(start).Seconds())
 	c.JSON(http.StatusOK, &endestinations.Payload{Destinations: idConfig})
 }
 

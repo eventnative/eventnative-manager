@@ -10,5 +10,6 @@ type ApiKey struct {
 
 //ApiKeys entity is stored in main storage (Firebase)
 type ApiKeys struct {
-	Keys []*ApiKey `firestore:"keys" json:"keys"`
+	LastUpdated string    `firestore:"_lastUpdated"`
+	Keys        []*ApiKey `firestore:"keys" json:"keys"`
 }
