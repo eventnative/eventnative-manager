@@ -14,23 +14,33 @@
 @box-shadow-base: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08),
 0 9px 28px 8px rgba(0, 0, 0, 0.05); // major shadow for layers
 
+@large-border-radius: 12px;
+@small-border-radius: 6px;
+
+@content-bg: rgb(240, 242, 245);
+
+@import url('https://fonts.googleapis.com/css2?family=Arimo&display=swap');
+
+body {
+  font-family: Arimo, sans-serif;
+}
 
 .ant-card, .ant-modal-content {
-  border-radius: 10px;
+  border-radius: @large-border-radius;
 }
 
 .ant-table-tbody {
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: @large-border-radius;
+  border-bottom-right-radius: @large-border-radius;
 }
 
 .ant-table-thead {
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
+  border-top-left-radius: @large-border-radius;
+  border-top-right-radius: @large-border-radius;
 }
 
 .ant-input, .ant-btn {
-  border-radius: 5px;
+  border-radius: @small-border-radius;
 }
 
 //.ant-btn, .ant-btn-primary {
@@ -38,20 +48,28 @@
 //}
 
 .ant-input-affix-wrapper {
-  border-radius: 5px;
+  border-radius: @small-border-radius;
 }
 
 .ant-modal-header {
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
+  border-top-left-radius: @large-border-radius;
+  border-top-right-radius: @large-border-radius;
 }
 
 .ant-radio-group {
-  border-radius: 5px;
+  border-radius: @small-border-radius;
 }
 
-.ant-card, .ant-table-content {
+.ant-card, .ant-table {
   box-shadow: 0 4px 24px rgba(0,0,0,.12);
+}
+
+.ant-list-split .ant-list-header {
+  border-bottom: 0 !important;
+}
+
+.ant-tag {
+  border-radius: @small-border-radius;
 }
 
 
