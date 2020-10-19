@@ -10,9 +10,9 @@ import (
 	"github.com/ksensehq/enhosted/destinations"
 	"github.com/ksensehq/enhosted/handlers"
 	"github.com/ksensehq/enhosted/middleware"
-	"github.com/ksensehq/enhosted/statistics"
 	"github.com/ksensehq/enhosted/ssh"
 	"github.com/ksensehq/enhosted/ssl"
+	"github.com/ksensehq/enhosted/statistics"
 	"github.com/ksensehq/enhosted/storages"
 	enadapters "github.com/ksensehq/eventnative/adapters"
 	"github.com/ksensehq/eventnative/logging"
@@ -125,9 +125,6 @@ func main() {
 		logging.Fatal("Error initializing statistics storage:", err)
 	}
 	appconfig.Instance.ScheduleClosing(statisticsStorage)
-
-	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage)
-
 	sshUser := viper.GetString("eventnative.ssl.ssh.user")
 	if sshUser == "" {
 		logging.Fatal("[eventnative.ssl.ssh.user] is not set")
@@ -172,7 +169,7 @@ func main() {
 
 	sslHandler := handlers.NewCustomDomainHandler(customDomainProcessor, enHosts, sshUser, privateKeyPath, enCName, certPath, pkPath, acmeChallengePath)
 
-	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, sslHandler)
+	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage, sslHandler)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
 		Handler:           middleware.Cors(router),
@@ -202,9 +199,7 @@ func readConfiguration(configFilePath string) {
 
 func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, eventnativeAdminToken string,
 	storage *storages.Firebase, authService *authorization.Service, defaultS3 *enadapters.S3Config,
-	statisticsPostgres *enstorages.DestinationConfig, statisticsStorage statistics.Storage) *gin.Engine {
-	storage *storages.Firebase, authService *authorization.Service,
-	defaultS3 enadapters.S3Config, statisticsPostgres enstorages.DestinationConfig,
+	statisticsPostgres *enstorages.DestinationConfig, statisticsStorage statistics.Storage,
 	customDomainHandler *handlers.CustomDomainHandler) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
@@ -225,8 +220,6 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 
 		destinationsHandler := handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
 		apiV1.GET("/ssl", customDomainHandler.Handler)
-
-		destinationsHandler := handlers.NewDestinationsHandler(storage, &defaultS3, &statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
 
 		destinationsRoute := apiV1.Group("/destinations")
 		destinationsRoute.GET("/", middleware.ServerAuth(destinationsHandler.GetHandler, serverToken))
