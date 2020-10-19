@@ -174,22 +174,7 @@ func (fb *Firebase) GetCustomDomains() (map[string]*entities.CustomDomains, erro
 }
 
 func (fb *Firebase) UpdateCustomDomain(projectId string, customDomains *entities.CustomDomains) error {
-	var ups []firestore.Update
-	for i, domain := range customDomains.Domains {
-		ups = append(ups, firestore.Update{
-			FieldPath: firestore.FieldPath{"domains[" + fmt.Sprint(i) + "].status"},
-			Value:     domain.Status,
-		})
-	}
-	ups = append(ups, firestore.Update{
-		Path:  "_lastUpdated",
-		Value: customDomains.LastUpdated,
-	})
-	ups = append(ups, firestore.Update{
-		Path:  "_certificateExpiration",
-		Value: customDomains.CertificateExpirationDate,
-	})
-	_, err := fb.client.Collection(customDomainsCollection).Doc(projectId).Update(fb.ctx, ups)
+	_, err := fb.client.Collection(customDomainsCollection).Doc(projectId).Set(fb.ctx, customDomains)
 	return err
 }
 
@@ -197,7 +182,6 @@ func (fb *Firebase) Close() (multiErr error) {
 	if err := fb.defaultDestination.Close(); err != nil {
 		multiErr = multierror.Append(multiErr, err)
 	}
-
 	if err := fb.client.Close(); err != nil {
 		multiErr = multierror.Append(multiErr, fmt.Errorf("Error closing firestore client in storage: %v", err))
 	}

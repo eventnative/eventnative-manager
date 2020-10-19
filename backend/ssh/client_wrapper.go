@@ -14,6 +14,7 @@ type ClientWrapper struct {
 }
 
 const defaultSSHPort = "22"
+const rwPermission = "0666"
 
 func (clientWrapper *ClientWrapper) CopyFile(sourceFilePath string, host string, targetFilePath string) error {
 
@@ -28,7 +29,7 @@ func (clientWrapper *ClientWrapper) CopyFile(sourceFilePath string, host string,
 		return err
 	}
 	defer client.Close()
-	return client.CopyFile(f, targetFilePath, "0440")
+	return client.CopyFile(f, targetFilePath, rwPermission)
 }
 
 // Adds port if it was not set before

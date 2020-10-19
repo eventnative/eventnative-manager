@@ -3,131 +3,89 @@ package handlers
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/ksensehq/enhosted/entities"
-	"github.com/ksensehq/enhosted/ssh"
 	"github.com/ksensehq/enhosted/ssl"
 	entime "github.com/ksensehq/enhosted/time"
 	"github.com/ksensehq/eventnative/middleware"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 )
 
-const defaultHttp01Location = "/var/www/html/.well-known/acme-challenge"
-const configReloadCommand = "sudo nginx -s reload"
 const maxDaysBeforeExpiration = 30
+const okStatus = "ok"
+const rwPermission = 0666
 
 type CustomDomainHandler struct {
-	processor      *ssl.CustomDomainProcessor
-	targetHosts    []string
+	sslService     *ssl.CustomDomainService
+	enHosts        []string
 	user           string
 	privateKeyPath string
+	enCName        string // required to validate if CNAME is set to our balancer
 }
 
-func NewCustomDomainHandler(processor *ssl.CustomDomainProcessor, targetHosts []string, user string, privateKeyPath string) *CustomDomainHandler {
-	return &CustomDomainHandler{processor: processor, targetHosts: targetHosts, user: user, privateKeyPath: privateKeyPath}
+func NewCustomDomainHandler(processor *ssl.CustomDomainService, targetHosts []string, user string, privateKeyPath string, balancerName string) *CustomDomainHandler {
+	return &CustomDomainHandler{sslService: processor, enHosts: targetHosts, user: user, privateKeyPath: privateKeyPath, enCName: balancerName}
 }
 
 func (h *CustomDomainHandler) Handler(c *gin.Context) {
-	domainsPerProject, err := h.processor.LoadCustomDomains()
+	err := h.run()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, middleware.OkResponse{Status: "ok"})
+}
+
+func (h *CustomDomainHandler) run() error {
+	domainsPerProject, err := h.sslService.LoadCustomDomains()
 	if err != nil {
 
 	}
 	for projectId, domains := range domainsPerProject {
-		println(projectId)
 		domainNames := extractDomainNames(domains)
-		validDomains := filterExistingCNames(domainNames)
+		validDomains := filterExistingCNames(domainNames, h.enCName)
 		updateRequired, err := updateRequired(domains, validDomains)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-			return
+			return err
 		}
 		if !updateRequired {
 			continue
 		}
 
+		certificate, privateKey, err := h.sslService.ExecuteHttp01Challenge(validDomains)
+		if err != nil {
+			return err
+		}
+		certFileName := projectId + "_cert.pem"
+		err = ioutil.WriteFile(certFileName, certificate, rwPermission)
+		if err != nil {
+			return err
+		}
+		pkFileName := projectId + "_pk.pem"
+		err = ioutil.WriteFile(pkFileName, privateKey, rwPermission)
+		if err != nil {
+			return err
+		}
+		if err = h.sslService.UploadCertificate(certFileName, pkFileName, projectId, validDomains, h.enHosts); err != nil {
+			return err
+		}
+
 		for _, domain := range domains.Domains {
-			for _, validDomain := range validDomains {
-				if domain.Name == validDomain {
-					domain.Status = "test"
-				}
+			if contains(validDomains, domain.Name) {
+				domain.Status = okStatus
 			}
 		}
-		domains.LastUpdated = entime.AsISOString(time.Now())
-		expirationDate := time.Now().Local().Add(time.Hour * time.Duration(24*90))
+		domains.LastUpdated = entime.AsISOString(time.Now().UTC())
+		expirationDate := time.Now().UTC().Add(time.Hour * time.Duration(24*90))
 		domains.CertificateExpirationDate = entime.AsISOString(expirationDate)
-		err = h.processor.UpdateCustomDomains(projectId, domains)
+		err = h.sslService.UpdateCustomDomains(projectId, domains)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
-	//if err != nil {
-	//	c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-	//	return
-	//}
-	//validDomains := filterExistingCNames(domains)
-	//for _, domain := range validDomains {
-	//	fileName, content, err := h.processor.CreateChallenge(domain)
-	//	if err != nil {
-	//		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-	//		return
-	//	}
-	//	err = ioutil.WriteFile(fileName, []byte(content), 0440)
-	//	if err != nil {
-	//		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-	//		return
-	//	}
-	//	for _, client := range h.targetHostsClients{
-	//		if err := client.CopyFile(fileName, defaultHttp01Location); err != nil {
-	//			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-	//			return
-	//		}
-	//	}
-	//	if err = h.processor.Validate(domain); err != nil {
-	//		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-	//		return
-	//	}
-	//}
-
-	//cert, private, err := h.processor.LoadCertificate(validDomains)
-	//if err != nil {
-	//	c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-	//	return
-	//}
-	//err = ioutil.WriteFile("new_ksense.ai.fullchain.pem", cert, 0666)
-	//if err != nil {
-	//	c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-	//	return
-	//}
-	//err = ioutil.WriteFile("new_ksense.ai.pem", private, 0666)
-	//if err != nil {
-	//	c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-	//	return
-	//}
-	//client, err := initializeSshClient(h.user, h.privateKeyPath)
-	//if err != nil {
-	//	c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-	//	return
-	//}
-	//for _, host := range h.targetHosts {
-	//	err := client.CopyFile("new_ksense.ai.fullchain.pem", host, "/opt/letsencrypt/certs/ksense.ai.fullchain.pem")
-	//	if err != nil {
-	//		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-	//		return
-	//	}
-	//	err = client.CopyFile("new_ksense.ai.pem", host, "/opt/letsencrypt/certs/ksense.ai.pem")
-	//	if err != nil {
-	//		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
-	//		return
-	//	}
-	//
-	//	err = client.ExecuteCommand(host, configReloadCommand)
-	//	if err != nil {
-	//		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: fmt.Sprintf("failed to execute [%s]", configReloadCommand)})
-	//		return
-	//	}
-	//}
-	//c.JSON(http.StatusOK, middleware.OkResponse{Status: "ok"})
+	return nil
 }
 
 func updateRequired(domains *entities.CustomDomains, validDomains []string) (bool, error) {
@@ -148,7 +106,7 @@ func updateRequired(domains *entities.CustomDomains, validDomains []string) (boo
 		return true, nil
 	}
 	for _, domain := range domains.Domains {
-		if contains(validDomains, domain.Name) && domain.Status != "ok" {
+		if contains(validDomains, domain.Name) && domain.Status != okStatus {
 			return true, nil
 		}
 	}
@@ -175,18 +133,16 @@ func extractDomainNames(domains *entities.CustomDomains) []string {
 	return result
 }
 
-func initializeSshClient(user string, keyPath string) (*ssh.ClientWrapper, error) {
-	return ssh.NewSshClient(keyPath, user)
-}
-
-func filterExistingCNames(domains []string) []string {
+func filterExistingCNames(domains []string, enCName string) []string {
 	isNotDigit := func(c rune) bool { return c < '0' || c > '9' }
 	resultDomains := make([]string, 0)
 	for _, domain := range domains {
 		onlyNumbers := strings.IndexFunc(domain, isNotDigit) == -1
 		if !onlyNumbers {
-			if _, err := net.LookupCNAME(domain); err == nil {
-				resultDomains = append(resultDomains, domain)
+			if cname, err := net.LookupCNAME(domain); err == nil {
+				if strings.TrimRight(cname, ".") == enCName {
+					resultDomains = append(resultDomains, domain)
+				}
 			}
 		}
 	}

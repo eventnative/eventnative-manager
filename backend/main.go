@@ -10,6 +10,7 @@ import (
 	"github.com/ksensehq/enhosted/destinations"
 	"github.com/ksensehq/enhosted/handlers"
 	"github.com/ksensehq/enhosted/middleware"
+	"github.com/ksensehq/enhosted/ssh"
 	"github.com/ksensehq/enhosted/ssl"
 	"github.com/ksensehq/enhosted/storages"
 	enadapters "github.com/ksensehq/eventnative/adapters"
@@ -102,8 +103,35 @@ func main() {
 	if eventnativeAdminToken == "" {
 		logging.Fatal("eventnative.admin_token is not set")
 	}
-	processor := ssl.NewCustomDomainProcessor(firebaseStorage)
-	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, processor)
+
+	sshUser := viper.GetString("eventnative.ssl.ssh.user")
+	if sshUser == "" {
+		logging.Fatal("[eventnative.ssl.ssh.user] is not set")
+	}
+	privateKeyPath := viper.GetString("eventnative.ssl.ssh.privateKeyPath")
+	if privateKeyPath == "" {
+		logging.Fatal("[eventnative.ssl.ssh.privateKeyPath] is not set")
+	}
+	enHosts := viper.GetStringSlice("eventnative.ssl.hosts")
+	if enHosts == nil || len(enHosts) == 0 {
+		logging.Fatal("[eventnative.ssl.hosts] must not be empty")
+	}
+	sshClient, err := ssh.NewSshClient(privateKeyPath, sshUser)
+	if err != nil {
+		logging.Fatal("Failed to create SSH client, %s", err)
+	}
+	serverConfigTemplatePath := viper.GetString("eventnative.ssl.server_config_template")
+	customDomainProcessor, err := ssl.NewCustomDomainService(sshClient, enHosts, firebaseStorage, serverConfigTemplatePath)
+	if err != nil {
+		logging.Fatal("Failed to create customDomainProcessor")
+	}
+	enCName := viper.GetString("eventnative.cname")
+	if enCName == "" {
+		logging.Fatal("[eventnative.cname] is a required parameter")
+	}
+	sslHandler := handlers.NewCustomDomainHandler(customDomainProcessor, enHosts, sshUser, privateKeyPath, enCName)
+
+	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, sslHandler)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
 		Handler:           middleware.Cors(router),
@@ -133,7 +161,8 @@ func readConfiguration(configFilePath string) {
 
 func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, eventnativeAdminToken string,
 	storage *storages.Firebase, authService *authorization.Service,
-	defaultS3 enadapters.S3Config, statisticsPostgres enstorages.DestinationConfig, customDomainProcessor *ssl.CustomDomainProcessor) *gin.Engine {
+	defaultS3 enadapters.S3Config, statisticsPostgres enstorages.DestinationConfig,
+	customDomainHandler *handlers.CustomDomainHandler) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 
@@ -148,19 +177,6 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 		logging.Fatal("Failed to initialize statistics handler", err)
 	}
 	appconfig.Instance.ScheduleClosing(statisticsHandler)
-	sshUser := viper.GetString("eventnative.ssl.ssh.user")
-	if sshUser == "" {
-		logging.Fatal("[eventnative.ssl.ssh.user] is not set")
-	}
-	privateKeyPath := viper.GetString("eventnative.ssl.ssh.privateKeyPath")
-	if privateKeyPath == "" {
-		logging.Fatal("[eventnative.ssl.ssh.privateKeyPath] is not set")
-	}
-	hosts := viper.GetStringSlice("eventnative.ssl.hosts")
-	if hosts == nil || len(hosts) == 0 {
-		logging.Fatal("[eventnative.ssl.hosts] must not be empty")
-	}
-	sslHandler := handlers.NewCustomDomainHandler(customDomainProcessor, hosts, sshUser, privateKeyPath)
 
 	apiV1 := router.Group("/api/v1")
 	{
@@ -168,7 +184,7 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 		apiV1.GET("/apikeys", middleware.ServerAuth(handlers.NewApiKeysHandler(storage).GetHandler, serverToken))
 		apiV1.GET("/statistics", middleware.ClientAuth(statisticsHandler.GetHandler, authService))
 
-		apiV1.GET("/ssl", sslHandler.Handler)
+		apiV1.GET("/ssl", customDomainHandler.Handler)
 
 		destinationsHandler := handlers.NewDestinationsHandler(storage, &defaultS3, &statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
 
