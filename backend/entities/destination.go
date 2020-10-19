@@ -10,5 +10,6 @@ type Destination struct {
 
 //Destinations entity is stored in main storage (Firebase)
 type Destinations struct {
+	LastUpdated  string         `firestore:"_lastUpdated"`
 	Destinations []*Destination `firestore:"destinations" json:"destinations"`
 }

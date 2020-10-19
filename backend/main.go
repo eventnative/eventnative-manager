@@ -169,13 +169,13 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 	apiV1 := router.Group("/api/v1")
 	{
 		apiV1.POST("/database", middleware.ClientAuth(handlers.NewDatabaseHandler(storage).PostHandler, authService))
-		apiV1.GET("/apikeys", middleware.ServerAuth(handlers.NewApiKeysHandler(storage).GetHandler, serverToken))
+		apiV1.GET("/apikeys", middleware.ServerAuth(middleware.IfModifiedSince(handlers.NewApiKeysHandler(storage).GetHandler, storage.GetApiKeysLastUpdated), serverToken))
 		apiV1.GET("/statistics", middleware.ClientAuth(statisticsHandler.GetHandler, authService))
 
 		destinationsHandler := handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
 
 		destinationsRoute := apiV1.Group("/destinations")
-		destinationsRoute.GET("/", middleware.ServerAuth(destinationsHandler.GetHandler, serverToken))
+		destinationsRoute.GET("/", middleware.ServerAuth(middleware.IfModifiedSince(destinationsHandler.GetHandler, storage.GetDestinationsLastUpdated), serverToken))
 		destinationsRoute.POST("/test", middleware.ClientAuth(destinationsHandler.TestHandler, authService))
 	}
 	router.Use(static.Serve("/", static.LocalFile(staticContentDirectory, false)))
