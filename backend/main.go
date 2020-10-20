@@ -168,11 +168,13 @@ func main() {
 		logging.Fatal("[eventnative.ssl.pk_path] is a required parameter")
 	}
 	sslUpdateExecutor := ssl.NewSSLUpdateExecutor(customDomainProcessor, enHosts, sshUser, privateKeyPath, enCName, certPath, pkPath, acmeChallengePath)
-	updatePeriodMin := viper.GetUint("eventnative.ssl.period")
-	if updatePeriodMin < 1 {
-		logging.Fatal("[eventnative.ssl.period] must be positive > 1")
-	}
-	sslUpdateExecutor.Schedule(time.Duration(updatePeriodMin) * time.Minute)
+
+	//updatePeriodMin := viper.GetUint("eventnative.ssl.period")
+	//if updatePeriodMin < 1 {
+	//	logging.Fatal("[eventnative.ssl.period] must be positive > 1")
+	//}
+	// using cron job now to avoid multiple servers simultaneous execution
+	// sslUpdateExecutor.Schedule(time.Duration(updatePeriodMin) * time.Minute)
 
 	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage, sslUpdateExecutor)
 	server := &http.Server{
