@@ -59,6 +59,7 @@ func (e *UpdateExecutor) Run() error {
 
 		certificate, privateKey, err := e.sslService.ExecuteHttp01Challenge(validDomains)
 		if err != nil {
+			logging.Error(err.Error())
 			return err
 		}
 		certFileName := e.sslCertificatesStorePath + projectId + "_cert.pem"
@@ -72,6 +73,7 @@ func (e *UpdateExecutor) Run() error {
 			return err
 		}
 		if err = e.sslService.UploadCertificate(certFileName, pkFileName, projectId, validDomains, e.enHosts); err != nil {
+			logging.Error(err.Error())
 			return err
 		}
 
@@ -85,6 +87,7 @@ func (e *UpdateExecutor) Run() error {
 		domains.CertificateExpirationDate = entime.AsISOString(expirationDate)
 		err = e.sslService.UpdateCustomDomains(projectId, domains)
 		if err != nil {
+			logging.Error(err.Error())
 			return err
 		}
 	}
@@ -102,7 +105,7 @@ func updateRequired(domains *entities.CustomDomains, validDomains []string) (boo
 	if err != nil {
 		return false, err
 	}
-	days := expirationDate.Sub(time.Now()).Hours() / 24
+	days := expirationDate.Sub(time.Now().UTC()).Hours() / 24
 
 	if days < maxDaysBeforeExpiration {
 		return true, nil
