@@ -92,6 +92,9 @@ func (e *UpdateExecutor) Run() error {
 }
 
 func updateRequired(domains *entities.CustomDomains, validDomains []string) (bool, error) {
+	if validDomains == nil || len(validDomains) == 0 {
+		return false, nil
+	}
 	if domains.LastUpdated == "" || domains.CertificateExpirationDate == "" {
 		return true, nil
 	}
