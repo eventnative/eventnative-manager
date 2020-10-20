@@ -12,6 +12,9 @@ func ServerAuth(main gin.HandlerFunc, originalToken string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		queryValues := c.Request.URL.Query()
 		token := queryValues.Get(TokenName)
+		if token == "" {
+			token = c.GetHeader("X-Admin-Token")
+		}
 
 		if token != originalToken {
 			c.Writer.WriteHeader(http.StatusUnauthorized)
