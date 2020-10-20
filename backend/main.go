@@ -125,6 +125,7 @@ func main() {
 		logging.Fatal("Error initializing statistics storage:", err)
 	}
 	appconfig.Instance.ScheduleClosing(statisticsStorage)
+
 	sshUser := viper.GetString("eventnative.ssl.ssh.user")
 	if sshUser == "" {
 		logging.Fatal("[eventnative.ssl.ssh.user] is not set")
@@ -141,7 +142,7 @@ func main() {
 	if err != nil {
 		logging.Fatal("Failed to create SSH client, %s", err)
 	}
-	serverConfigTemplatePath := viper.GetString("eventnative.ssl.server_config_template")
+	nginxServerConfigTemplatePath := viper.GetString("eventnative.ssl.server_config_template")
 	sslNginxPath := viper.GetString("eventnative.ssl.nginx_conf_path")
 	if sslNginxPath == "" {
 		logging.Fatal("[eventnative.ssl.nginx_conf_path] is a required parameter")
@@ -150,7 +151,7 @@ func main() {
 	if acmeChallengePath == "" {
 		logging.Fatal("[eventnative.ssl.acme_challenge_path] is a required parameter")
 	}
-	customDomainProcessor, err := ssl.NewCustomDomainService(sshClient, enHosts, firebaseStorage, serverConfigTemplatePath, sslNginxPath, acmeChallengePath)
+	customDomainProcessor, err := ssl.NewCertificateService(sshClient, enHosts, firebaseStorage, nginxServerConfigTemplatePath, sslNginxPath, acmeChallengePath)
 	if err != nil {
 		logging.Fatal("Failed to create customDomainProcessor " + err.Error())
 	}
@@ -166,10 +167,14 @@ func main() {
 	if pkPath == "" {
 		logging.Fatal("[eventnative.ssl.pk_path] is a required parameter")
 	}
+	sslUpdateExecutor := ssl.NewSSLUpdateExecutor(customDomainProcessor, enHosts, sshUser, privateKeyPath, enCName, certPath, pkPath, acmeChallengePath)
+	updatePeriodMin := viper.GetUint("eventnative.ssl.period")
+	if updatePeriodMin < 1 {
+		logging.Fatal("[eventnative.ssl.period] must be positive > 1")
+	}
+	sslUpdateExecutor.Schedule(time.Duration(updatePeriodMin) * time.Minute)
 
-	sslHandler := handlers.NewCustomDomainHandler(customDomainProcessor, enHosts, sshUser, privateKeyPath, enCName, certPath, pkPath, acmeChallengePath)
-
-	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage, sslHandler)
+	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage, sslUpdateExecutor)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
 		Handler:           middleware.Cors(router),
@@ -200,7 +205,7 @@ func readConfiguration(configFilePath string) {
 func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, eventnativeAdminToken string,
 	storage *storages.Firebase, authService *authorization.Service, defaultS3 *enadapters.S3Config,
 	statisticsPostgres *enstorages.DestinationConfig, statisticsStorage statistics.Storage,
-	customDomainHandler *handlers.CustomDomainHandler) *gin.Engine {
+	sslUpdateExecutor *ssl.UpdateExecutor) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 
@@ -220,9 +225,9 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 
 		apiV1.GET("/eventnative/configuration", middleware.ClientAuth(handlers.NewConfigurationHandler(storage).Handler, authService))
 
-		destinationsHandler := handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
-		apiV1.GET("/ssl", customDomainHandler.Handler)
+		apiV1.POST("/ssl", middleware.ClientAuth(handlers.NewCustomDomainHandler(sslUpdateExecutor).Handler, authService))
 
+		destinationsHandler := handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
 		destinationsRoute := apiV1.Group("/destinations")
 		destinationsRoute.GET("/", middleware.ServerAuth(middleware.IfModifiedSince(destinationsHandler.GetHandler, storage.GetDestinationsLastUpdated), serverToken))
 		destinationsRoute.POST("/test", middleware.ClientAuth(destinationsHandler.TestHandler, authService))

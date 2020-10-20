@@ -30,7 +30,7 @@ const configReloadCommand = "sudo nginx -s reload"
 const nginxServerConfigPath = "/etc/nginx/custom-domains/"
 const rwPermission = 0666
 
-type CustomDomainService struct {
+type CertificateService struct {
 	enHosts              []string
 	sshClient            *ssh.ClientWrapper
 	fbStorage            *storages.Firebase
@@ -80,7 +80,7 @@ func (p *MultipleServersProvider) CleanUp(domain, token, keyAuth string) error {
 	return nil
 }
 
-func (s *CustomDomainService) ExecuteHttp01Challenge(domains []string) ([]byte, []byte, error) {
+func (s *CertificateService) ExecuteHttp01Challenge(domains []string) ([]byte, []byte, error) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, nil, err
@@ -123,7 +123,7 @@ type serverTemplateVariables struct {
 	ServerNames string
 }
 
-func (s *CustomDomainService) UploadCertificate(certificatePath string, privateKeyPath string, projectId string,
+func (s *CertificateService) UploadCertificate(certificatePath string, privateKeyPath string, projectId string,
 	approvedDomainNames []string, hostsToDeliver []string) error {
 	serverNames := strings.Join(approvedDomainNames[:], " ")
 	templateVariables := serverTemplateVariables{ProjectId: projectId, ServerNames: serverNames}
@@ -152,7 +152,7 @@ func (s *CustomDomainService) UploadCertificate(certificatePath string, privateK
 	return nil
 }
 
-func NewCustomDomainService(sshClient *ssh.ClientWrapper, enHosts []string, firebase *storages.Firebase, serverConfigTemplatePath string, nginxSSLConfigPath string, acmeChallengePath string) (*CustomDomainService, error) {
+func NewCertificateService(sshClient *ssh.ClientWrapper, enHosts []string, firebase *storages.Firebase, serverConfigTemplatePath string, nginxSSLConfigPath string, acmeChallengePath string) (*CertificateService, error) {
 	if enHosts == nil || len(enHosts) == 0 {
 		return nil, fmt.Errorf("failed to create custom domain processor: [enHosts] must not be empty")
 	}
@@ -163,13 +163,13 @@ func NewCustomDomainService(sshClient *ssh.ClientWrapper, enHosts []string, fire
 	if err != nil {
 		return nil, err
 	}
-	return &CustomDomainService{sshClient: sshClient, enHosts: enHosts, fbStorage: firebase, serverConfigTemplate: serverConfigTemplate, nginxConfigPath: files.FixPath(nginxSSLConfigPath), acmeChallengePath: files.FixPath(acmeChallengePath)}, nil
+	return &CertificateService{sshClient: sshClient, enHosts: enHosts, fbStorage: firebase, serverConfigTemplate: serverConfigTemplate, nginxConfigPath: files.FixPath(nginxSSLConfigPath), acmeChallengePath: files.FixPath(acmeChallengePath)}, nil
 }
 
-func (s *CustomDomainService) UpdateCustomDomains(projectId string, domains *entities.CustomDomains) error {
+func (s *CertificateService) UpdateCustomDomains(projectId string, domains *entities.CustomDomains) error {
 	return s.fbStorage.UpdateCustomDomain(projectId, domains)
 }
 
-func (s *CustomDomainService) LoadCustomDomains() (map[string]*entities.CustomDomains, error) {
+func (s *CertificateService) LoadCustomDomains() (map[string]*entities.CustomDomains, error) {
 	return s.fbStorage.GetCustomDomains()
 }
