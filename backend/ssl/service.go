@@ -63,15 +63,17 @@ type MultipleServersProvider struct {
 }
 
 func (p *MultipleServersProvider) Present(domain, token, keyAuth string) error {
-	err := ioutil.WriteFile(p.AcmeChallengePath+token, []byte(keyAuth), rwPermission)
+	challengeFileName := p.AcmeChallengePath + token
+	err := ioutil.WriteFile(challengeFileName, []byte(keyAuth), rwPermission)
 	if err != nil {
 		return err
 	}
 	for _, host := range p.TargetHosts {
 		logging.Infof("Copying [%s] domain challenge to [%s]", domain, host)
-		if err := p.SshClient.CopyFile(token, host, p.HostChallengeDirectory+token); err != nil {
+		if err := p.SshClient.CopyFile(challengeFileName, host, p.HostChallengeDirectory+token); err != nil {
 			return err
 		}
+		logging.Info("Copy finished")
 	}
 	return nil
 }
