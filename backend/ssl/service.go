@@ -175,3 +175,7 @@ func (s *CertificateService) UpdateCustomDomains(projectId string, domains *enti
 func (s *CertificateService) LoadCustomDomains() (map[string]*entities.CustomDomains, error) {
 	return s.fbStorage.GetCustomDomains()
 }
+
+func (s *CertificateService) LoadCustomDomainsByProjectId(projectId string) (*entities.CustomDomains, error) {
+	return s.fbStorage.GetCustomDomainsByProjectId(projectId)
+}

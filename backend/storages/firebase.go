@@ -256,6 +256,23 @@ func (fb *Firebase) GetCustomDomains() (map[string]*entities.CustomDomains, erro
 	return result, nil
 }
 
+func (fb *Firebase) GetCustomDomainsByProjectId(projectId string) (*entities.CustomDomains, error) {
+	doc, err := fb.client.Collection(customDomainsCollection).Doc(projectId).Get(fb.ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, ErrNoFound
+		} else {
+			return nil, fmt.Errorf("error getting custom domains of projectId [%s]: %v", projectId, err)
+		}
+	}
+	customDomains := &entities.CustomDomains{}
+	err = doc.DataTo(customDomains)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing custom domains of projectId [%s]: %v", projectId, err)
+	}
+	return customDomains, nil
+}
+
 func (fb *Firebase) UpdateCustomDomain(projectId string, customDomains *entities.CustomDomains) error {
 	_, err := fb.client.Collection(customDomainsCollection).Doc(projectId).Set(fb.ctx, customDomains)
 	return err

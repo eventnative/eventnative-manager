@@ -47,49 +47,62 @@ func (e *UpdateExecutor) Run() error {
 		return err
 	}
 	for projectId, domains := range domainsPerProject {
-		domainNames := extractDomainNames(domains)
-		validDomains := filterExistingCNames(domainNames, e.enCName)
-		updateRequired, err := updateRequired(domains, validDomains)
-		if err != nil {
+		if err := e.processProjectDomains(projectId, domains); err != nil {
+			logging.Error(err)
 			return err
 		}
-		if !updateRequired {
-			continue
-		}
+	}
+	return nil
+}
 
-		certificate, privateKey, err := e.sslService.ExecuteHttp01Challenge(validDomains)
-		if err != nil {
-			logging.Error(err.Error())
-			return err
-		}
-		certFileName := e.sslCertificatesStorePath + projectId + "_cert.pem"
-		err = ioutil.WriteFile(certFileName, certificate, rwPermission)
-		if err != nil {
-			return err
-		}
-		pkFileName := e.privateKeyPath + projectId + "_pk.pem"
-		err = ioutil.WriteFile(pkFileName, privateKey, rwPermission)
-		if err != nil {
-			return err
-		}
-		if err = e.sslService.UploadCertificate(certFileName, pkFileName, projectId, validDomains, e.enHosts); err != nil {
-			logging.Error(err.Error())
-			return err
-		}
+func (e *UpdateExecutor) RunForProject(projectId string) error {
+	domains, err := e.sslService.LoadCustomDomainsByProjectId(projectId)
+	if err != nil {
+		return err
+	}
+	return e.processProjectDomains(projectId, domains)
+}
 
-		for _, domain := range domains.Domains {
-			if contains(validDomains, domain.Name) {
-				domain.Status = okStatus
-			}
+func (e *UpdateExecutor) processProjectDomains(projectId string, domains *entities.CustomDomains) error {
+	domainNames := extractDomainNames(domains)
+	validDomains := filterExistingCNames(domainNames, e.enCName)
+	updateRequired, err := updateRequired(domains, validDomains)
+	if err != nil {
+		return err
+	}
+	if !updateRequired {
+		return nil
+	}
+
+	certificate, privateKey, err := e.sslService.ExecuteHttp01Challenge(validDomains)
+	if err != nil {
+		return err
+	}
+	certFileName := e.sslCertificatesStorePath + projectId + "_cert.pem"
+	err = ioutil.WriteFile(certFileName, certificate, rwPermission)
+	if err != nil {
+		return err
+	}
+	pkFileName := e.privateKeyPath + projectId + "_pk.pem"
+	err = ioutil.WriteFile(pkFileName, privateKey, rwPermission)
+	if err != nil {
+		return err
+	}
+	if err = e.sslService.UploadCertificate(certFileName, pkFileName, projectId, validDomains, e.enHosts); err != nil {
+		return err
+	}
+
+	for _, domain := range domains.Domains {
+		if contains(validDomains, domain.Name) {
+			domain.Status = okStatus
 		}
-		domains.LastUpdated = entime.AsISOString(time.Now().UTC())
-		expirationDate := time.Now().UTC().Add(time.Hour * time.Duration(24*90))
-		domains.CertificateExpirationDate = entime.AsISOString(expirationDate)
-		err = e.sslService.UpdateCustomDomains(projectId, domains)
-		if err != nil {
-			logging.Error(err.Error())
-			return err
-		}
+	}
+	domains.LastUpdated = entime.AsISOString(time.Now().UTC())
+	expirationDate := time.Now().UTC().Add(time.Hour * time.Duration(24*90))
+	domains.CertificateExpirationDate = entime.AsISOString(expirationDate)
+	err = e.sslService.UpdateCustomDomains(projectId, domains)
+	if err != nil {
+		return err
 	}
 	return nil
 }
