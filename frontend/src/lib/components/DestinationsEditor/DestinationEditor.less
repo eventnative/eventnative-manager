@@ -2,9 +2,7 @@
   border-bottom: 1px solid lightgray !important;
 }
 
-.destinations-editor-modal  {
-  min-width: 1000px;
-}
+
 
 .destination-modal-header {
   img {
@@ -12,3 +10,18 @@
     margin-right: 20px;
   }
 }
+
+
+.destinations-editor-modal {
+  min-width: 1000px;
+  max-height: 80vh;
+}
+
+.destinations-editor-modal .ant-modal-body {
+  overflow-y: auto;
+  max-height: ~"calc(80vh - 130px)";
+  position: relative;
+}
+
+
+

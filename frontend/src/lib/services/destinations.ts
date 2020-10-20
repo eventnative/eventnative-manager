@@ -1,4 +1,5 @@
 import {randomId} from "../commons/utils";
+import {FieldMappings} from "./mappings";
 
 export class DestinationConfigFactory<T extends DestinationConfig> {
     private readonly _name: string;
@@ -40,6 +41,7 @@ export const destinationsByTypeId = destinationConfigTypes.reduce((map: Record<s
 
 
 export abstract class DestinationConfig {
+    private _mappings: FieldMappings = new FieldMappings([], true);
     protected readonly _uid = randomId();
     protected readonly _id: string
     private _comment: string = null;
@@ -91,6 +93,16 @@ export abstract class DestinationConfig {
         }
     }
 
+
+    get mappings(): FieldMappings {
+        return this._mappings;
+    }
+
+
+    set mappings(value: FieldMappings) {
+        this._mappings = value;
+    }
+
     abstract describe();
 
     protected fillInitialValues(_formData: any) {
@@ -106,9 +118,8 @@ export class PostgresConfig extends DestinationConfig {
     }
 
 
-
     describe() {
-        return `${this.formData['pguser']}:${this.formData['pgpassword']}@${this.formData['pghost']}:${this.formData['pgport']}/${this.formData['pgdatabase']}, ${this.formData['mode']}`
+        return `${this.formData['pguser']}:***@${this.formData['pghost']}:${this.formData['pgport']}/${this.formData['pgdatabase']}, ${this.formData['mode']}`
     }
 
 

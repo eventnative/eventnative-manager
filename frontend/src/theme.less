@@ -20,9 +20,13 @@
 @content-bg: rgb(240, 242, 245);
 
 @import url('https://fonts.googleapis.com/css2?family=Arimo&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oxygen+Mono&display=swap');
+@font-main: 'Arimo', sans-serif;
+@font-monospace: 'Oxygen Mono', monospace;
+
 
 body {
-  font-family: Arimo, sans-serif;
+  font-family: @font-main;
 }
 
 .ant-card, .ant-modal-content {
@@ -42,6 +46,21 @@ body {
 .ant-input, .ant-btn {
   border-radius: @small-border-radius;
 }
+
+.ant-radio-group {
+  border-radius: @small-border-radius !important;
+}
+
+.ant-radio-group .ant-radio-button-wrapper:first-child {
+  border-top-left-radius: @small-border-radius !important;
+  border-bottom-left-radius: @small-border-radius !important;
+}
+
+.ant-radio-group .ant-radio-button-wrapper:last-child {
+  border-top-right-radius: @small-border-radius !important;
+  border-bottom-right-radius: @small-border-radius !important;
+}
+
 
 //.ant-btn, .ant-btn-primary {
 //  box-shadow: 0 2px 12px rgba(0,0,0,.12) !important;

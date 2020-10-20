@@ -26,6 +26,7 @@ import {
     Switch
 } from "antd";
 import {
+    ColumnWidthOutlined,
     DatabaseOutlined,
     DeleteOutlined,
     EditOutlined,
@@ -38,6 +39,8 @@ import ApplicationServices from "../../services/ApplicationServices";
 import {IndexedList} from "../../commons/utils";
 import Marshal from "../../commons/marshalling";
 import {Option} from "antd/es/mentions";
+import {FieldMappings, Mapping} from "../../services/mappings";
+import {MappingEditor} from "./MappingEditor";
 
 const AWS_ZONES = [
     "us-east-2",
@@ -65,10 +68,14 @@ const AWS_ZONES = [
     "us-gov-west-1"
 ];
 
+
 type State = {
     destinations?: IndexedList<DestinationConfig>,
     activeEditorConfig?: DestinationConfig
+    activeMapping?: FieldMappings
 }
+
+const SERIALIZABLE_CLASSES = [DestinationConfig, PostgresConfig, ClickHouseConfig, RedshiftConfig, FieldMappings, Mapping];
 
 export class DestinationsList extends LoadableComponent<any, State> {
     private services: ApplicationServices;
@@ -88,13 +95,16 @@ export class DestinationsList extends LoadableComponent<any, State> {
     protected async load() {
         let destinations = await this.services.storageService.get("destinations", this.services.activeProject.id);
         return {
-            destinations: this.newDestinationsList(destinations ? Marshal.newInstance(destinations.destinations, [DestinationConfig, PostgresConfig, ClickHouseConfig, RedshiftConfig]) : []),
+            destinations: this.newDestinationsList(destinations ? Marshal.newInstance(destinations.destinations, SERIALIZABLE_CLASSES) : []),
             loading: false
         }
     }
 
     destinationComponent(config: DestinationConfig): ReactNode {
         let onClick = () => this.delete(config);
+        let onMappings = () => {
+            this.setState({activeMapping: config.mappings ? config.mappings : new FieldMappings([], true), activeEditorConfig: config});
+        }
         let onEdit = () => {
             let destinationType = destinationsByTypeId[config.type];
             if (dialogsByType[config.type]) {
@@ -109,8 +119,9 @@ export class DestinationsList extends LoadableComponent<any, State> {
             }
         };
         return (<List.Item key={config.id} actions={[
-            (<Button icon={<EditOutlined/>} key="edit" shape="round" onClick={onEdit}>Edit</Button>),
-            (<Button icon={<DeleteOutlined/>} key="delete" shape="round" onClick={onClick}>Delete</Button>)
+            <Button icon={<ColumnWidthOutlined />} key="edit" shape="round" onClick={onMappings}>Mappings</Button>,
+            <Button icon={<EditOutlined/>} key="edit" shape="round" onClick={onEdit}>Edit</Button>,
+            <Button icon={<DeleteOutlined/>} key="delete" shape="round" onClick={onClick}>Delete</Button>
         ]} className="destination-list-item">
             <List.Item.Meta
                 avatar={<Avatar shape="square" src={DestinationsList.getIconSrc(config.type)}/>}
@@ -153,7 +164,14 @@ export class DestinationsList extends LoadableComponent<any, State> {
         ];
 
 
-        if (this.state.activeEditorConfig) {
+        if (this.state.activeMapping) {
+            componentList.push(<MappingEditor key="mapping-editor" entity={this.state.activeMapping} onChange={async (newMapping) => {
+                this.state.activeEditorConfig.mappings = newMapping;
+                return this.saveCurrentDestinations();
+            }} closeDialog={() => {
+                this.setState({activeMapping: null, activeEditorConfig: null});
+            }} />)
+        } else if (this.state.activeEditorConfig) {
             componentList.push((<DestinationsEditorModal
                 key="active-modal"
                 config={this.state.activeEditorConfig}
@@ -171,7 +189,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
                 }}
             />))
         }
-        return componentList;
+        return <>{componentList}</>;
     }
 
     private saveCurrentDestinations() {
@@ -179,7 +197,8 @@ export class DestinationsList extends LoadableComponent<any, State> {
         this.services.storageService.save("destinations", payload, this.services.activeProject.id).then(() => {
             this.setState({
                 destinations: this.state.destinations,
-                activeEditorConfig: null
+                activeEditorConfig: null,
+                activeMapping: null
             });
             message.info("Destination configuration has been saved!")
         }).catch((error) => {

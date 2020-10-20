@@ -50,17 +50,17 @@ export function CenteredSpin() {
 }
 
 export function CenteredError({error}) {
-    return (<div className="common-centered-spin">Error: {error?.message ? error.message: "Unknown error"}</div>)
+    return (<div className="common-centered-spin">Error: {error?.message ? error.message : "Unknown error"}</div>)
 }
 
-export function LabelWithTooltip({children, documentation}) {
+export function LabelWithTooltip(props: { children?: React.ReactNode, documentation: React.ReactNode }) {
     return (
-        <>
-              {children}&nbsp;
-            <Tooltip title={documentation}>
+        <span className="label-with-tooltip">
+              {props.children ? props.children : ""}&nbsp;
+            <Tooltip title={props.documentation}>
                <QuestionCircleOutlined/>
               </Tooltip>
-            </>
+            </span>
     )
 }
 
@@ -89,15 +89,15 @@ export function StatCard({value, ...otherProps}) {
     if (valuePrev !== undefined) {
         if (valuePrev < value) {
             extraClassName = "stat-card-growth stat-card-comparison"
-            icon = <CaretUpFilled />
+            icon = <CaretUpFilled/>
             percent = valuePrev == 0 ? "∞" : formatPercent(value / valuePrev - 1)
         } else if (valuePrev > value) {
             extraClassName = "stat-card-decline stat-card-comparison"
-            icon = <CaretDownFilled />
+            icon = <CaretDownFilled/>
             percent = value == 0 ? "∞" : formatPercent(valuePrev / value - 1)
         } else {
             extraClassName = "stat-card-flat stat-card-comparison"
-            icon = <CaretRightFilled />
+            icon = <CaretRightFilled/>
             percent = "0"
         }
     }
@@ -157,7 +157,7 @@ export function handleError(error: any, errorDescription?: string) {
 }
 
 enum ComponentLifecycle {
-    LOADED,ERROR,WAITING
+    LOADED, ERROR, WAITING
 }
 
 /**
@@ -203,7 +203,7 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
     render() {
         let lifecycle = this.getLifecycle();
         if (lifecycle === ComponentLifecycle.WAITING) {
-            return <CenteredSpin />
+            return <CenteredSpin/>
         } else if (lifecycle === ComponentLifecycle.ERROR) {
             return LoadableComponent.error(this.state['__errorObject'])
         } else {
@@ -262,9 +262,15 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
 
 
     private static error(error: Error): ReactNode {
+        function firstToLower(string: string) {
+            if (string.length > 0) {
+                return string.charAt(0).toLowerCase() + string.slice(1);
+            }
+            return string;
+        }
+
         return <div className="common-error-wrapper">
-            <h1>Error</h1>
-            <div className="common-error-details">${error.message ? error.message : "Unknown error"}</div>
+            <div className="common-error-details"><b>Error occurred</b>: {firstToLower(error.message ? error.message : "Unknown error")}<br />See details in console log</div>
         </div>
     }
 }
@@ -276,7 +282,6 @@ type IAlignProps = {
     //vertical?: HorizontalAlign;
     horizontal?: HorizontalAlign;
 }
-
 
 
 const HORIZONTAL_ALIGN_MAP: Record<HorizontalAlign, string> = {
@@ -300,10 +305,14 @@ export function Align(props: IAlignProps) {
 export function lazyComponent(importFactory) {
     let LazyComponent = React.lazy(importFactory);
     return (props) => {
-        return <React.Suspense fallback={<CenteredSpin />}>
+        return <React.Suspense fallback={<CenteredSpin/>}>
             <LazyComponent {...props} />
         </React.Suspense>
     }
+}
+
+export function Nbsp({}) {
+    return '\u00A0';
 }
 
 
