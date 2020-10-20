@@ -102,11 +102,7 @@ func updateRequired(domains *entities.CustomDomains, validDomains []string) (boo
 	if err != nil {
 		return false, err
 	}
-	lastUpdated, err := entime.ParseISOString(domains.LastUpdated)
-	if err != nil {
-		return false, err
-	}
-	days := expirationDate.Sub(lastUpdated).Hours() / 24
+	days := expirationDate.Sub(time.Now()).Hours() / 24
 
 	if days < maxDaysBeforeExpiration {
 		return true, nil
