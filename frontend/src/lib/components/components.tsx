@@ -4,10 +4,10 @@
 
 import React, {ReactNode} from "react";
 import './components.less'
-import {Card, message, Spin, Tooltip} from "antd";
-import {CaretDownFilled, CaretRightFilled, CaretUpFilled, QuestionCircleOutlined} from "@ant-design/icons/lib";
+import {Card, Col, message, Row, Spin, Tooltip} from "antd";
+import {CaretDownFilled, CaretRightFilled, CaretUpFilled, CopyOutlined, QuestionCircleOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "../services/ApplicationServices";
-import {numberFormat, withDefaults} from "../commons/utils";
+import {copyToClipboard, numberFormat, withDefaults} from "../commons/utils";
 
 const plumber = require("../../icons/plumber.png").default;
 
@@ -270,7 +270,7 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
         }
 
         return <div className="common-error-wrapper">
-            <div className="common-error-details"><b>Error occurred</b>: {firstToLower(error.message ? error.message : "Unknown error")}<br />See details in console log</div>
+            <div className="common-error-details"><b>Error occurred</b>: {firstToLower(error.message ? error.message : "Unknown error")}<br/>See details in console log</div>
         </div>
     }
 }
@@ -311,8 +311,57 @@ export function lazyComponent(importFactory) {
     }
 }
 
-export function Nbsp({}) {
-    return '\u00A0';
+export function ActionLink({children, onClick}: { children: any, onClick: () => void }) {
+    return (<div className="action-link" onClick={() => {
+        onClick()
+    }}><span>{children}</span></div>)
+}
+
+import {dark} from 'react-syntax-highlighter/dist/esm/styles/hljs';
+
+const SyntaxHighlighterAsync = lazyComponent(() => import('react-syntax-highlighter'));
+
+type ICodeSnippetProps = {
+    children: ReactNode,
+    language: string,
+    extra?: ReactNode,
+    size?: 'large' | 'small',
+    toolbarPosition?: 'top' | 'bottom'
+};
+
+export function CodeSnippet(props: ICodeSnippetProps) {
+
+    let toolBarPos = props.toolbarPosition ? props.toolbarPosition : "bottom";
+
+    let copy = () => {
+        copyToClipboard(props.children);
+        message.info("Code copied to clipboard")
+    }
+
+    let toolbar = <Row className={["code-snippet-toolbar", "code-snippet-toolbar-" + toolBarPos].join(" ")}>
+        <Col span={16}>
+            {props.extra}
+        </Col>
+        <Col span={8}>
+            <Align horizontal="right">
+                {toolBarPos === 'bottom' ?
+                    <ActionLink onClick={copy}>Copy To Clipboard</ActionLink> :
+                    <a onClick={copy}><CopyOutlined/></a>}
+
+            </Align>
+        </Col>
+    </Row>;
+    return <div className={["code-snippet-wrapper-" + toolBarPos, "code-snippet-wrapper", props.size === 'large' ? 'code-snippet-large' : 'code-snippet-small'].join(" ")}>
+        {toolBarPos === 'top' ? toolbar : null}
+        <SyntaxHighlighterAsync style={dark} language={props.language}>{props.children}</SyntaxHighlighterAsync>
+        {toolBarPos === 'bottom' ? toolbar : null}
+
+    </div>
+}
+
+
+export function CodeInline({children}) {
+    return <span className="code-snippet-inline">{children}</span>
 }
 
 

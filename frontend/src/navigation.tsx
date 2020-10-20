@@ -7,6 +7,7 @@ import ComponentTest from "./lib/components/componentTest";
 import SignupForm from "./lib/components/SignupForm/SignupForm";
 import LoginForm from "./lib/components/LoginForm/LoginForm";
 import StatusPage from "./lib/components/StatusPage/StatusPage";
+import {DownloadConfig} from "./lib/components/DownloadConfig/DownloadConfig";
 
 
 export class Page {
@@ -17,6 +18,14 @@ export class Page {
 
     public getPrefixedPath(): string[] {
         return this.path.map(el => el.startsWith("/") ? el : "/" + el)
+    }
+
+    get id() {
+        let firstPath = this.path.find(p => p && p.length > 0);
+        if (!firstPath) {
+            firstPath = "root";
+        }
+        return firstPath.replace("/", '');
     }
 
     public getComponent(params: Record<any, string>): ReactNode {
@@ -50,6 +59,7 @@ export const PRIVATE_PAGES: Page[] = [
     new Page("Test Component", "/test", () => (<ComponentTest />), "Component Test"),
     new Page("EventNative | dashboard", ["/dashboard", ""], () => (<StatusPage />), "Status"),
     new Page("EventNative | edit destinations", "/destinations", () => (<DestinationsList />), "Edit destinations"),
+    new Page("EventNative | download config", "/cfg_download", () => (<DownloadConfig />), "Download EventNative configuration"),
     new Page("EventNative | edit API keys", "/api_keys", () => (<ApiKeys />), "API Keys"),
     new Page("EventNative | edit custom domains", "/domains", () => (<CustomDomains />), "Custom domains")
 ];

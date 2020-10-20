@@ -14,7 +14,7 @@ import {
     UnlockOutlined,
     NotificationOutlined,
     CloudOutlined,
-    ApiOutlined
+    ApiOutlined, DownloadOutlined
 } from "@ant-design/icons/lib";
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
 import {CenteredSpin, GlobalError, handleError, Preloader} from "./lib/components/components";
@@ -111,11 +111,12 @@ export default class App extends React.Component<AppProperties, AppState> {
     }
 
     public wrapInternalPage(route: Page): ReactNode {
+        let component = route.getComponent({});
         return (
-            <div className="internal-page-wrapper">
+            <div className={["internal-page-wrapper", "page-" + route.id + "-wrapper"].join(" ")}>
                 <h1 className="internal-page-header">{route.pageHeader}</h1>
                 <div className="internal-page-content-wrapper">
-                    {route.getComponent({})}
+                    {component}
                 </div>
             </div>
         );
@@ -185,6 +186,9 @@ export default class App extends React.Component<AppProperties, AppState> {
                 </Menu.Item>
                 <Menu.Item key="domains" icon={<CloudOutlined/>}>
                     <NavLink to="/domains" activeClassName="selected">Custom Domains</NavLink>
+                </Menu.Item>
+                <Menu.Item key="cfg_download" icon={<DownloadOutlined />}>
+                    <NavLink to="/cfg_download" activeClassName="selected">Download EN Config</NavLink>
                 </Menu.Item>
             </Menu>
         </Switch>;

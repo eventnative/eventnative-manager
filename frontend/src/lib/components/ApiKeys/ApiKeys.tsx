@@ -3,7 +3,7 @@ import {Button, Col, Input, message, Modal, Row, Select, Space, Switch, Table, T
 import ApplicationServices from "../../services/ApplicationServices";
 import {CodeFilled, DeleteFilled, PlusOutlined, RollbackOutlined, SaveOutlined} from "@ant-design/icons/lib";
 import './ApiKeys.less'
-import {Align, CenteredError, CenteredSpin, handleError, LabelWithTooltip, lazyComponent, LoadableComponent} from "../components";
+import {ActionLink, Align, CenteredError, CenteredSpin, CodeInline, CodeSnippet, handleError, LabelWithTooltip, lazyComponent, LoadableComponent} from "../components";
 import {copyToClipboard, randomId} from "../../commons/utils";
 import TagsInput from "../TagsInput/TagsInput";
 import {EVENTNATIVE_HOST, getCurlDocumentation, getEmpeddedJS, getNPMDocumentation} from "../../commons/api-documentation";
@@ -223,11 +223,6 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
     }
 }
 
-function ActionLink({children, onClick}: { children: any, onClick: () => void }) {
-    return (<div className="copy-to-clipboard-button" onClick={() => {
-        onClick()
-    }}><span>{children}</span></div>)
-}
 
 function KeyDocumentation({token}: { token: Token }) {
     const [gaEnabled, setGAEnabled] = useState(false);
@@ -303,27 +298,4 @@ function KeyDocumentation({token}: { token: Token }) {
             </CodeSnippet>
         </Tabs.TabPane>
     </Tabs>
-}
-
-function CodeInline({children}) {
-    return <span className="code-snippet-inline">{children}</span>
-}
-
-const SyntaxHighlighterAsync = lazyComponent(() => import('react-syntax-highlighter'));
-
-function CodeSnippet(props: { children: ReactNode, language: string, extra?: ReactNode }) {
-    return <div className="code-snippet-wrapper">
-        <SyntaxHighlighterAsync language={props.language}>{props.children}</SyntaxHighlighterAsync>
-        <Row><Col span={16}>
-            {props.extra}
-        </Col><Col span={8}>
-            <Align horizontal="right">
-                <ActionLink onClick={() => {
-                    copyToClipboard(props.children);
-                    message.info("Code copied to clipboard")
-                }}>Copy To Clipboard</ActionLink>
-            </Align>
-        </Col></Row>
-
-    </div>
 }

@@ -1,5 +1,5 @@
 import {Project, User} from "./model";
-import axios, {AxiosRequestConfig, AxiosResponse, Method} from 'axios';
+import axios, {AxiosRequestConfig, AxiosResponse, AxiosTransformer, Method} from 'axios';
 import {PostgresConfig} from "./destinations";
 import * as uuid from 'uuid';
 import AnalyticsService from "./analytics";
@@ -213,7 +213,20 @@ export function setDebugInfo(field: string, obj: any, purify = true) {
  * Backend API client. Authorization is handled by implementation
  */
 export interface BackendApiClient {
+    /**
+     * For end-points that returns JSON. In that case response will
+     * be deserialized
+     * @param url url
+     * @param data data
+     */
     post(url, data: any): Promise<any>
+
+    /**
+     * Same as post, but returns raw body
+     */
+    postRaw(url, data: any): Promise<string>
+
+    getRaw(url): Promise<string>
 
     get(url): Promise<any>
 }
@@ -230,6 +243,13 @@ class APIError extends Error {
     }
 }
 
+export interface Transformer<T> {
+    (data: any, headers?: any): T;
+}
+
+const JSON: Transformer<any> = undefined;
+const AS_IS: Transformer<string> = (response) => response ? response.toString() : null;
+
 export class JWTBackendClient implements BackendApiClient {
     private tokenAccessor: () => string;
     private baseUrl: string;
@@ -240,12 +260,13 @@ export class JWTBackendClient implements BackendApiClient {
         this.tokenAccessor = tokenAccessor;
     }
 
-    private exec(method: Method, url: string, payload?: any): Promise<any> {
+    private exec(method: Method, transform: AxiosTransformer, url: string, payload?: any): Promise<any> {
         let fullUrl = concatenateURLs(this.baseUrl, url);
         const token = this.tokenAccessor();
         let request: AxiosRequestConfig = {
             method: method,
             url: fullUrl,
+            transformResponse: transform,
             headers: {
                 "X-Client-Auth": token
             }
@@ -280,12 +301,20 @@ export class JWTBackendClient implements BackendApiClient {
     }
 
     get(url: string): Promise<any> {
-        return this.exec('get', url);
+        return this.exec('get', JSON, url);
     }
 
 
     post(url: string, data: any): Promise<any> {
-        return this.exec('post', url, data ? data : {});
+        return this.exec('post', JSON, url, data ? data : {});
+    }
+
+    postRaw(url, data: any): Promise<string> {
+        return this.exec('post', AS_IS, url, data ? data : {});
+    }
+
+    getRaw(url): Promise<string> {
+        return this.exec('get', AS_IS, url);
     }
 }
 
