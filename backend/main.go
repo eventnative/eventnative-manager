@@ -231,7 +231,8 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 		}
 		apiV1.GET("/eventnative/configuration", middleware.ClientAuth(configurationHandler.Handler, authService))
 
-		apiV1.POST("/ssl", middleware.ServerAuth(handlers.NewCustomDomainHandler(sslUpdateExecutor).Handler, serverToken))
+		apiV1.POST("/ssl", middleware.ClientAuth(handlers.NewCustomDomainHandler(sslUpdateExecutor).PerProjectHandler, authService))
+		apiV1.POST("/ssl/all", middleware.ServerAuth(handlers.NewCustomDomainHandler(sslUpdateExecutor).AllHandler, serverToken))
 
 		destinationsHandler := handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
 		destinationsRoute := apiV1.Group("/destinations")
