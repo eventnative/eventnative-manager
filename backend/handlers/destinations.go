@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ksensehq/enhosted/destinations"
 	"github.com/ksensehq/enhosted/entities"
+	"github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/enhosted/storages"
 	enadapters "github.com/ksensehq/eventnative/adapters"
 	endestinations "github.com/ksensehq/eventnative/destinations"
@@ -140,7 +141,7 @@ func (dh *DestinationsHandler) TestHandler(c *gin.Context) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		c.JSON(http.StatusOK, enmiddleware.OkResponse{Status: "Connection established"})
+		c.JSON(http.StatusOK, middleware.OkResponse{Status: "Connection established"})
 		return
 	}
 

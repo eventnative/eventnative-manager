@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
+	middleware2 "github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/enhosted/ssl"
 	"github.com/ksensehq/eventnative/middleware"
 	"net/http"
@@ -25,7 +26,7 @@ func (h *CustomDomainHandler) Handler(c *gin.Context) {
 	if projectId != "" {
 		if async {
 			go h.updateExecutor.RunForProject(projectId)
-			c.JSON(http.StatusOK, middleware.OkResponse{Status: "scheduled ssl update"})
+			c.JSON(http.StatusOK, middleware2.OkResponse{Status: "scheduled ssl update"})
 			return
 		} else {
 			err := h.updateExecutor.RunForProject(projectId)
@@ -33,12 +34,12 @@ func (h *CustomDomainHandler) Handler(c *gin.Context) {
 				c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: err.Error()})
 				return
 			}
-			c.JSON(http.StatusOK, middleware.OkResponse{Status: "ok"})
+			c.JSON(http.StatusOK, middleware2.OkResponse{Status: "ok"})
 		}
 	} else {
 		if async {
 			go h.updateExecutor.Run()
-			c.JSON(http.StatusOK, middleware.OkResponse{Status: "scheduled ssl update"})
+			c.JSON(http.StatusOK, middleware2.OkResponse{Status: "scheduled ssl update"})
 			return
 		} else {
 			err := h.updateExecutor.Run()
@@ -46,7 +47,7 @@ func (h *CustomDomainHandler) Handler(c *gin.Context) {
 				c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: err.Error()})
 				return
 			}
-			c.JSON(http.StatusOK, middleware.OkResponse{Status: "ok"})
+			c.JSON(http.StatusOK, middleware2.OkResponse{Status: "ok"})
 		}
 	}
 

@@ -11,7 +11,7 @@ require (
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-acme/lego v2.7.2+incompatible
 	github.com/hashicorp/go-multierror v1.1.0
-	github.com/ksensehq/eventnative v1.8.0
+	github.com/ksensehq/eventnative v1.12.1-0.20201021032210-3817306c716d
 	github.com/lib/pq v1.8.0
 	github.com/prometheus/common v0.4.0
 	github.com/spf13/viper v1.7.1
@@ -19,6 +19,7 @@ require (
 	google.golang.org/api v0.17.0
 	google.golang.org/grpc v1.27.0
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 )
 
 replace google.golang.org/api v0.17.0 => google.golang.org/api v0.15.1

@@ -108,7 +108,7 @@ func mapRedshift(destinationId string, rsDestinations *entities.Destination, def
 		}
 	}
 
-	return &enstorages.DestinationConfig{
+	config := enstorages.DestinationConfig{
 		Type: enstorages.RedshiftType,
 		Mode: rsFormData.Mode,
 		DataLayout: &enstorages.DataLayout{
@@ -123,5 +123,6 @@ func mapRedshift(destinationId string, rsDestinations *entities.Destination, def
 			Password: rsFormData.Password,
 		},
 		S3: s3,
-	}, nil
+	}
+	return &config, nil
 }

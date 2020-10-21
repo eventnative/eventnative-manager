@@ -225,7 +225,11 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 		apiV1.GET("/apikeys", middleware.ServerAuth(middleware.IfModifiedSince(handlers.NewApiKeysHandler(storage).GetHandler, storage.GetApiKeysLastUpdated), serverToken))
 		apiV1.GET("/statistics", middleware.ClientAuth(statisticsHandler.GetHandler, authService))
 
-		apiV1.GET("/eventnative/configuration", middleware.ClientAuth(handlers.NewConfigurationHandler(storage).Handler, authService))
+		configurationHandler, err := handlers.NewConfigurationHandler(storage, defaultS3)
+		if err != nil {
+			logging.Fatal("Failed to create configuration handler", err)
+		}
+		apiV1.GET("/eventnative/configuration", middleware.ClientAuth(configurationHandler.Handler, authService))
 
 		apiV1.POST("/ssl", middleware.ServerAuth(handlers.NewCustomDomainHandler(sslUpdateExecutor).Handler, serverToken))
 
