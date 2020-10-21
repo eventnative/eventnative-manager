@@ -69,7 +69,11 @@ function getClientEnvironment(publicUrl) {
         return env;
       },
       {
+        //Those variables are used by EventNative set up. See ApplicationServices.ts (class ApplicationConfiguration)
         BACKEND_API_BASE: process.env.BACKEND_API_BASE || null,
+        APP_ENV: process.env.NODE_ENV || 'development', //alias of NODE_ENV
+
+
         // Useful for determining whether we’re running in production mode.
         // Most importantly, it switches React into the correct mode.
         NODE_ENV: process.env.NODE_ENV || 'development',
@@ -94,7 +98,7 @@ function getClientEnvironment(publicUrl) {
       env[key] = JSON.stringify(raw[key]);
       return env;
     }, {
-		APP_ENV: JSON.stringify(process.env.ENV)
+
 	}),
   };
 

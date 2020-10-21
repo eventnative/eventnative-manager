@@ -33,7 +33,7 @@ export class ApplicationConfiguration {
         if (process.env.APP_ENV) {
             this._appEnvironment = process.env.APP_ENV.toLowerCase();
         } else {
-            this._appEnvironment = 'dev';
+            this._appEnvironment = 'development';
         }
         console.log(`App initialized. Backend: ${this._backendApiBase}. Env: ${this._appEnvironment}`);
     }
@@ -87,8 +87,6 @@ export default class ApplicationServices {
     get analyticsService(): AnalyticsService {
         return this._analyticsService;
     }
-
-    static _instance = null;
 
     static get(): ApplicationServices {
         if (window['_en_instance'] === undefined) {

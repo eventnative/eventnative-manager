@@ -410,11 +410,6 @@ export class EstimatedProgressBar extends React.Component<IEstimatedProgressBarP
         return <Progress type="circle" percent={this.state.progressPercents}/>
     }
 }
-export type IEstimatedProgressBarModalProps<T> = {
-    callback: () => Promise<T>
-}
-
-
 
 export type IWithProgressProps<T> = {
     estimatedMs: number,
