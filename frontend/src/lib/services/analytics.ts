@@ -1,7 +1,9 @@
 import {ApplicationConfiguration} from "./ApplicationServices";
 import {User} from "./model";
+import {H} from 'highlight.run'
 import {eventN} from '@ksense/eventnative'
 import LogRocket from 'logrocket';
+
 const AnalyticsJS = require('./analyticsjs-wrapper.js').default;
 import posthog from 'posthog-js';
 
@@ -23,11 +25,13 @@ export default class AnalyticsService {
             return;
         }
         LogRocket.init('6gfkmj/ksense');
-        posthog.init('72gPORhrnFw9os9uBF_IHSEohx9fObmIAyFyhHq_1mA',{api_host:'https://ph-ksense.herokuapp.com'});
+        H.init(33);
+        posthog.init('72gPORhrnFw9os9uBF_IHSEohx9fObmIAyFyhHq_1mA', {api_host: 'https://ph-ksense.herokuapp.com'});
         this.user = user;
         LogRocket.identify(user.uid, {
             email: user.email,
         });
+        H.identify(user.email, {id: user.uid})
         AnalyticsJS.init("jEB5Eas68Pz2zmwNIm2QSlxFE7PGsndX");
         AnalyticsJS.get().identify(user.uid, {
             email: user.email
@@ -65,6 +69,8 @@ export default class AnalyticsService {
 }
 
 declare global {
-    interface Window { analytics: any; }
+    interface Window {
+        analytics: any;
+    }
 }
 
