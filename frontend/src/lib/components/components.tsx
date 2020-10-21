@@ -2,12 +2,12 @@
  * Library of small components that are usefull for different purposes
  */
 
-import React, {ReactNode} from "react";
+import React, {ReactNode, useState} from "react";
 import './components.less'
-import {Card, Col, message, Row, Spin, Tooltip} from "antd";
+import {Card, Col, message, Modal, Progress, Row, Spin, Tooltip} from "antd";
 import {CaretDownFilled, CaretRightFilled, CaretUpFilled, CopyOutlined, QuestionCircleOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "../services/ApplicationServices";
-import {copyToClipboard, numberFormat, withDefaults} from "../commons/utils";
+import {copyToClipboard, numberFormat, sleep, withDefaults} from "../commons/utils";
 
 const plumber = require("../../icons/plumber.png").default;
 
@@ -363,5 +363,84 @@ export function CodeSnippet(props: ICodeSnippetProps) {
 export function CodeInline({children}) {
     return <span className="code-snippet-inline">{children}</span>
 }
+
+export type IEstimatedProgressBarProps = { estimatedMs: number, updateIntervalMs?: number };
+
+type IEstimatedProgressBarState = { progressPercents: number};
+export class EstimatedProgressBar extends React.Component<IEstimatedProgressBarProps, IEstimatedProgressBarState> {
+    private readonly updateIntervalMs: any;
+
+    constructor(props: IEstimatedProgressBarProps) {
+        super(props);
+        this.updateIntervalMs = props.updateIntervalMs ? props.updateIntervalMs : 200;
+        this.state = {progressPercents: 0}
+    }
+
+    private cancel: NodeJS.Timeout;
+
+    componentDidMount() {
+        let cycleCounter = 0;
+        this.cancel = setInterval(() => {
+            let past = cycleCounter * this.updateIntervalMs;
+            cycleCounter++;
+            if (past >= this.props.estimatedMs) {
+                this.setState({progressPercents: 100});
+            } else {
+                this.setState({progressPercents: Math.round(past / this.props.estimatedMs * 100)})
+            }
+        }, this.updateIntervalMs);
+    }
+
+    componentWillUnmount() {
+        if (this.cancel) {
+            clearInterval(this.cancel)
+        }
+    }
+
+    render() {
+        return <Progress type="circle" percent={this.state.progressPercents}/>
+    }
+}
+export type IEstimatedProgressBarModalProps<T> = {
+    callback: () => Promise<T>
+}
+
+
+
+export type IWithProgressProps<T> = {
+    estimatedMs: number,
+    callback: () => Promise<T>
+};
+
+export async function withProgressBar<T>(props: IWithProgressProps<T>) {
+    let modal = Modal.info({
+        className: "estimated-progress-bar",
+        icon: null,
+        title: null,
+        content: <Align horizontal="center">
+            <h2>Please, wait...</h2>
+            <EstimatedProgressBar estimatedMs={props.estimatedMs} />
+        </Align>,
+        okText: "Cancel",
+    });
+    try {
+        await props.callback()
+        modal.destroy();
+        message.info("Completed successfully!")
+    } catch (e) {
+        modal.update({
+            className: "estimated-progress-bar",
+            icon: null,
+            content: <Align horizontal="center">
+                <h2 className="estimated-progress-bar-op-failed">Operation failed :(</h2>
+                <h3>{e.message ? e.message : "Unknown error"}</h3>
+            </Align>,
+            okText: "Close",
+        });
+    }
+}
+
+
+
 
 
