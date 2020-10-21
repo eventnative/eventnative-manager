@@ -62,7 +62,7 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 	}
 	respDestinations := make(map[string]*enstorages.DestinationConfig)
 	for _, destination := range projectDestinations {
-		id := projectId + destination.Id
+		id := projectId + "." + destination.Id
 		config, err := destinations.MapConfig(id, destination, ch.defaultS3)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Filed to build destinations response"})

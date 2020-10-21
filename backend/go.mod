@@ -19,7 +19,6 @@ require (
 	google.golang.org/api v0.17.0
 	google.golang.org/grpc v1.27.0
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 )
 
 replace google.golang.org/api v0.17.0 => google.golang.org/api v0.15.1
