@@ -147,7 +147,9 @@ func filterExistingCNames(domains *entities.CustomDomains, enCName string) []str
 
 		if checkDomain(domain.Name, enCName) {
 			resultDomains = append(resultDomains, domain.Name)
-			domain.Status = cnameOkStatus
+			if domain.Status != okStatus {
+				domain.Status = cnameOkStatus
+			}
 		} else {
 			domain.Status = cnameFailedStatus
 		}
