@@ -1,12 +1,12 @@
 import * as React from 'react'
 import {useState} from 'react'
-import _ from 'lodash'
+import cloneDeep from 'lodash/cloneDeep';
 
 import {Button, Input, message, Modal, Radio, Select, Table} from "antd";
 import MAPPING_NAMES, {FieldMappings, Mapping} from "../../services/mappings";
 import {Align, handleError, LabelWithTooltip} from "../components";
 import './MappingEditor.less'
-import {DeleteFilled, PlusOutlined} from "@ant-design/icons/lib";
+import {DeleteFilled, PlusOutlined} from "@ant-design/icons";
 
 
 type IMappingEditorProps = {
@@ -16,7 +16,7 @@ type IMappingEditorProps = {
 };
 
 export function MappingEditor({entity, onChange, closeDialog}: IMappingEditorProps) {
-    entity = _.cloneDeep(entity);
+    entity = cloneDeep(entity);
     let [saving, setSaving] = useState(false);
     let [keepUnknownFields, setKeepUnknownFields] = useState(entity.keepUnmappedFields)
     let [currentMappings, setCurrentMappings] = useState(entity.mappings);

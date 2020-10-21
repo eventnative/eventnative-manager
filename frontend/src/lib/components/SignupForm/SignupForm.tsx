@@ -1,16 +1,16 @@
 import * as React from 'react'
 import {Button, Card, Checkbox, Col, Form, Grid, Input, message, Row} from "antd";
 import './SignupForm.less'
-import {BankOutlined, LockOutlined, UserOutlined, MailOutlined} from "@ant-design/icons/lib";
+import {BankOutlined, LockOutlined, UserOutlined, MailOutlined} from "@ant-design/icons";
 import {NavLink} from 'react-router-dom';
 import {navigateAndReload, reloadPage} from "../../commons/utils";
 import ApplicationServices from "../../services/ApplicationServices";
 import {handleError} from "../components";
 
-const logo = require('../../../icons/logo.svg').default;
+const logo = require('../../../icons/logo.svg');
 
-const googleLogo = require('../../../icons/google.svg').default;
-const githubLogo = require('../../../icons/github.svg').default;
+const googleLogo = require('../../../icons/google.svg');
+const githubLogo = require('../../../icons/github.svg');
 
 type State = {
     loading?: boolean,

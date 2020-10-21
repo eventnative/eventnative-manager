@@ -1,21 +1,20 @@
 import * as React from 'react'
 
-import {NavLink, Route, Switch, DefaultRoute, Redirect} from 'react-router-dom';
+import {NavLink, Route, Switch, Redirect} from 'react-router-dom';
 import {Button, Col, Dropdown, Form, Input, Layout, Menu, message, Modal, Row, Select} from "antd";
-import {AreaChartOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, PartitionOutlined, SlidersOutlined} from "@ant-design/icons";
-import './App.less';
 import {
-    KeyOutlined,
-    LockOutlined,
-    ExclamationCircleOutlined,
-    UsergroupAddOutlined,
+	AreaChartOutlined, 
+	LogoutOutlined, 
+	SlidersOutlined,
+	ExclamationCircleOutlined,
     UserOutlined,
-    UnlockTwoTone,
     UnlockOutlined,
     NotificationOutlined,
     CloudOutlined,
-    ApiOutlined, DownloadOutlined
-} from "@ant-design/icons/lib";
+	DownloadOutlined,
+} from "@ant-design/icons";
+
+import './App.less';
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
 import {CenteredSpin, GlobalError, handleError, Preloader} from "./lib/components/components";
 import {reloadPage} from "./lib/commons/utils";
@@ -24,7 +23,7 @@ import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
 import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
 import {ReactNode, useState} from "react";
 
-const logo = require('./icons/logo.svg').default;
+import logo from './icons/logo.svg';
 
 enum AppLifecycle {
     LOADING, //Application is loading

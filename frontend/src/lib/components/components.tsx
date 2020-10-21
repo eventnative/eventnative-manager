@@ -2,14 +2,14 @@
  * Library of small components that are usefull for different purposes
  */
 
-import React, {ReactNode, useState} from "react";
+import React, {ReactNode} from "react";
 import './components.less'
-import {Card, Col, message, Modal, Progress, Row, Spin, Tooltip} from "antd";
-import {CaretDownFilled, CaretRightFilled, CaretUpFilled, CopyOutlined, QuestionCircleOutlined} from "@ant-design/icons/lib";
+import {Card, Col, message, Row, Spin, Tooltip} from "antd";
+import {CaretDownFilled, CaretRightFilled, CaretUpFilled, CopyOutlined, QuestionCircleOutlined} from "@ant-design/icons";
 import ApplicationServices from "../services/ApplicationServices";
-import {copyToClipboard, numberFormat, sleep, withDefaults} from "../commons/utils";
+import {copyToClipboard, numberFormat, withDefaults} from "../commons/utils";
 
-const plumber = require("../../icons/plumber.png").default;
+const plumber = require("../../icons/plumber.png");
 
 type IPreloaderProps = {
     text?: string
@@ -317,13 +317,21 @@ export function ActionLink({children, onClick}: { children: any, onClick: () => 
     }}><span>{children}</span></div>)
 }
 
-import {dark} from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import dark from 'react-syntax-highlighter/dist/esm/styles/hljs/dark';
+import js from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
+import yaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
+import bash from 'react-syntax-highlighter/dist/esm/languages/hljs/bash';
 
-const SyntaxHighlighterAsync = lazyComponent(() => import('react-syntax-highlighter'));
+SyntaxHighlighter.registerLanguage('javascript', js);
+SyntaxHighlighter.registerLanguage('yaml', yaml);
+SyntaxHighlighter.registerLanguage('bash', bash);
+
+const SyntaxHighlighterAsync = SyntaxHighlighter;//lazyComponent(() => import('react-syntax-highlighter'));
 
 type ICodeSnippetProps = {
     children: ReactNode,
-    language: string,
+    language: 'javascript' | 'bash' | 'yaml',
     extra?: ReactNode,
     size?: 'large' | 'small',
     toolbarPosition?: 'top' | 'bottom'
@@ -350,7 +358,8 @@ export function CodeSnippet(props: ICodeSnippetProps) {
 
             </Align>
         </Col>
-    </Row>;
+	</Row>;
+
     return <div className={["code-snippet-wrapper-" + toolBarPos, "code-snippet-wrapper", props.size === 'large' ? 'code-snippet-large' : 'code-snippet-small'].join(" ")}>
         {toolBarPos === 'top' ? toolbar : null}
         <SyntaxHighlighterAsync style={dark} language={props.language}>{props.children}</SyntaxHighlighterAsync>
@@ -363,84 +372,5 @@ export function CodeSnippet(props: ICodeSnippetProps) {
 export function CodeInline({children}) {
     return <span className="code-snippet-inline">{children}</span>
 }
-
-export type IEstimatedProgressBarProps = { estimatedMs: number, updateIntervalMs?: number };
-
-type IEstimatedProgressBarState = { progressPercents: number};
-export class EstimatedProgressBar extends React.Component<IEstimatedProgressBarProps, IEstimatedProgressBarState> {
-    private readonly updateIntervalMs: any;
-
-    constructor(props: IEstimatedProgressBarProps) {
-        super(props);
-        this.updateIntervalMs = props.updateIntervalMs ? props.updateIntervalMs : 200;
-        this.state = {progressPercents: 0}
-    }
-
-    private cancel: NodeJS.Timeout;
-
-    componentDidMount() {
-        let cycleCounter = 0;
-        this.cancel = setInterval(() => {
-            let past = cycleCounter * this.updateIntervalMs;
-            cycleCounter++;
-            if (past >= this.props.estimatedMs) {
-                this.setState({progressPercents: 100});
-            } else {
-                this.setState({progressPercents: Math.round(past / this.props.estimatedMs * 100)})
-            }
-        }, this.updateIntervalMs);
-    }
-
-    componentWillUnmount() {
-        if (this.cancel) {
-            clearInterval(this.cancel)
-        }
-    }
-
-    render() {
-        return <Progress type="circle" percent={this.state.progressPercents}/>
-    }
-}
-export type IEstimatedProgressBarModalProps<T> = {
-    callback: () => Promise<T>
-}
-
-
-
-export type IWithProgressProps<T> = {
-    estimatedMs: number,
-    callback: () => Promise<T>
-};
-
-export async function withProgressBar<T>(props: IWithProgressProps<T>) {
-    let modal = Modal.info({
-        className: "estimated-progress-bar",
-        icon: null,
-        title: null,
-        content: <Align horizontal="center">
-            <h2>Please, wait...</h2>
-            <EstimatedProgressBar estimatedMs={props.estimatedMs} />
-        </Align>,
-        okText: "Cancel",
-    });
-    try {
-        await props.callback()
-        modal.destroy();
-        message.info("Completed successfully!")
-    } catch (e) {
-        modal.update({
-            className: "estimated-progress-bar",
-            icon: null,
-            content: <Align horizontal="center">
-                <h2 className="estimated-progress-bar-op-failed">Operation failed :(</h2>
-                <h3>{e.message ? e.message : "Unknown error"}</h3>
-            </Align>,
-            okText: "Close",
-        });
-    }
-}
-
-
-
 
 

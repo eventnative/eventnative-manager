@@ -1,7 +1,7 @@
 import React, {ReactElement, ReactNode, useEffect, useState} from 'react';
 import {Button, Col, Input, message, Modal, Row, Select, Space, Switch, Table, Tabs, Tooltip} from "antd";
 import ApplicationServices from "../../services/ApplicationServices";
-import {CodeFilled, DeleteFilled, PlusOutlined, RollbackOutlined, SaveOutlined} from "@ant-design/icons/lib";
+import {CodeFilled, DeleteFilled, PlusOutlined, RollbackOutlined, SaveOutlined} from "@ant-design/icons";
 import './ApiKeys.less'
 import {ActionLink, Align, CenteredError, CenteredSpin, CodeInline, CodeSnippet, handleError, LabelWithTooltip, lazyComponent, LoadableComponent} from "../components";
 import {copyToClipboard, randomId} from "../../commons/utils";

@@ -7,5 +7,5 @@ ReactDOM.render(
     <HashRouter>
         <App/>
     </HashRouter>,
-    document.getElementById('reactApplicationRoot')
+    document.getElementById('root')
 );

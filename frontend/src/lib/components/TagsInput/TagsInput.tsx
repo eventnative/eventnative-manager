@@ -1,6 +1,6 @@
 import React, {ReactElement, ReactNode} from 'react';
 import {Input, Tag, Tooltip} from "antd";
-import {PlusOutlined} from "@ant-design/icons/lib";
+import {PlusOutlined} from "@ant-design/icons";
 
 type ITagsInputProps = {
     value?: any[]

@@ -38,7 +38,7 @@ function newInstanceInternal(initialInstance: any, json: any, classes: Record<st
         return json;
     } else if (typeof json == 'object') {
         if (Array.isArray(json)) {
-            return (json as []).map(element => newInstanceInternal(null, element, classes));
+            return (json as any[]).map(element => newInstanceInternal(null, element, classes));
         } else {
             let instance;
             if (json[TYPE_PROPERTY] !== undefined) {
@@ -79,7 +79,7 @@ const Marshal: IMarshal = {
             return object;
         } else if (typeof object == 'object') {
             if (Array.isArray(object)) {
-                return (object as []).map((element) => Marshal.toPureJson(element))
+                return (object as any[]).map((element) => Marshal.toPureJson(element))
             } else {
                 let result = {};
                 if (object.constructor.name !== 'Object') {

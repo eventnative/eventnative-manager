@@ -134,16 +134,6 @@ export function withDefaults<T>(obj: T, defaults: Partial<T>): T {
 }
 
 
-export function sleep(ms, retVal?: any | Error): Promise<void> {
-    return new Promise((resolve, reject) => setTimeout(() => {
-        if (retVal instanceof Error) {
-            reject(retVal);
-        } else {
-            resolve(retVal)
-        }
-    }, ms));
-}
-
 export function copyToClipboard(value) {
     const el = document.createElement('textarea');
     el.value = value;
