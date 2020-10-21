@@ -9,21 +9,15 @@ import (
 	"github.com/ksensehq/eventnative/middleware"
 	enstorages "github.com/ksensehq/eventnative/storages"
 	"net/http"
-	"text/template"
 )
 
 type ConfigHandler struct {
-	fb             *storages.Firebase
-	configTemplate *template.Template
-	defaultS3      *enadapters.S3Config
+	fb        *storages.Firebase
+	defaultS3 *enadapters.S3Config
 }
 
 func NewConfigurationHandler(fb *storages.Firebase, s3 *enadapters.S3Config) (*ConfigHandler, error) {
-	configurationTemplate, err := template.ParseFiles("/Users/arr/IdeaProjects/eventnative-hosted/backend/templates/config_template.yml")
-	if err != nil {
-		return nil, err
-	}
-	return &ConfigHandler{fb: fb, configTemplate: configurationTemplate, defaultS3: s3}, err
+	return &ConfigHandler{fb: fb, defaultS3: s3}, nil
 }
 
 type Response struct {
