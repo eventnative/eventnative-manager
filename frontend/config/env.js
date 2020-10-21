@@ -69,6 +69,7 @@ function getClientEnvironment(publicUrl) {
         return env;
       },
       {
+        BACKEND_API_BASE: process.env.BACKEND_API_BASE || null,
         // Useful for determining whether we’re running in production mode.
         // Most importantly, it switches React into the correct mode.
         NODE_ENV: process.env.NODE_ENV || 'development',

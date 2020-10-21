@@ -80,17 +80,16 @@ export default class App extends React.Component<AppProperties, AppState> {
     }
 
     public render() {
-        let route = new Route(window.location.hash);
         switch (this.state.lifecycle) {
             case AppLifecycle.REQUIRES_LOGIN:
                 return (<Switch>
                     {PUBLIC_PAGES.map(route => {
-                        return (<Route key={route.getPrefixedPath()}
+                        return (<Route //key={route.getPrefixedPath()}
                                        path={route.getPrefixedPath()}
                                        exact
                                        render={(routeProps) => {
                                            this.services.analyticsService.onPageLoad({
-                                               pagePath: routeProps.location
+                                               pagePath: routeProps.location.key
                                            })
                                            document.title = route.pageTitle;
                                            return route.getComponent({});
@@ -124,12 +123,12 @@ export default class App extends React.Component<AppProperties, AppState> {
     appLayout() {
         let routes = PRIVATE_PAGES.map(route => {
             if (!this.state.showOnboardingForm) {
-                return (<Route key={route.getPrefixedPath()}
+                return (<Route //key={route.getPrefixedPath()}
                                path={route.getPrefixedPath()}
                                exact={true}
                                render={(routeProps) => {
                                    this.services.analyticsService.onPageLoad({
-                                       pagePath: routeProps.location
+                                       pagePath: routeProps.location.hash
                                    });
                                    document.title = route.pageTitle;
                                    return this.wrapInternalPage(route);

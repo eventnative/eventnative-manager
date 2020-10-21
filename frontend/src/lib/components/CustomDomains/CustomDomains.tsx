@@ -2,15 +2,17 @@ import * as React from "react";
 import ApplicationServices from "../../services/ApplicationServices";
 import {Button, Form, Input, message, Modal, Table, Tag} from "antd";
 import {CheckOutlined, ClockCircleOutlined, CloudOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RightCircleOutlined} from "@ant-design/icons";
-import {LoadableComponent} from "../components";
+import {LoadableComponent, withProgressBar} from "../components";
 import './CustomDomains.less'
 import {Domain} from "../../services/model";
+import {sleep} from "../../commons/utils";
 
 const CNAME = "hosting.eventnative.com"
 
 type State = {
     enterNameVisible: boolean
-    domains: Domain[]
+    domains: Domain[],
+    certificateExpiration: Date
 }
 
 export class CustomDomains extends LoadableComponent<any, State> {
@@ -26,13 +28,23 @@ export class CustomDomains extends LoadableComponent<any, State> {
     protected async load() {
         let result = await this.services.storageService.get("custom_domains", this.services.activeProject.id);
         return {
+            certificateExpiration: result._certificateExpiration && result._certificateExpiration.length > 0 ?
+                new Date(Date.parse(result._certificateExpiration)): null,
             domains: result ? result.domains : [],
             enterNameVisible: false
         }
     }
 
 
-
+    protected async forceVerification() {
+        await withProgressBar({
+            estimatedMs: 30_000,
+            callback: async () => {
+                await this.services.backendApiClient.post(`/ssl?projectId=${this.services.activeProject.id}&async=${false}`, {});
+                await this.reload();
+            }
+        });
+    }
 
     renderReady() {
         const columns = [
@@ -54,14 +66,41 @@ export class CustomDomains extends LoadableComponent<any, State> {
                 dataIndex: 'status',
                 key: 'status',
                 render: (status) => {
-                    let icon = status == "verified" ? (<CheckOutlined/>) : (<ClockCircleOutlined />);
-                    let tag = <Tag icon={icon} color={status == "verified" ? "green" : undefined} key={status}>
-                        {status.toUpperCase()}
+                    let displayStatus;
+                    let icon;
+                    let color;
+                    if (status == "ok") {
+                        icon = <CheckOutlined/>;
+                        displayStatus = "VERIFIED";
+                        color = "green";
+                    } else if (status == "cname_failed") {
+                        icon = <ExclamationCircleOutlined/>;
+                        displayStatus = "FAILED";
+                        color = "red";
+                    } else {
+                        icon = <ClockCircleOutlined/>;
+                        displayStatus = "PENDING";
+                        color = undefined;
+                    }
+                    let tag = <Tag icon={icon} color={color} key={status}>
+                        {displayStatus}
                     </Tag>;
-                    let description = status == "verified" ? undefined : (<div className="custom-domain-verified-comments">
-                        We will check that CNANE is set up correctly and SSL certificate is issued. Due to nature
-                        of DNS protocol, it can take up to 48 hours. <a onClick={() => {}}>Force verification</a>
-                    </div>)
+                    let description = undefined;
+                    if (status == "ok" && this.state.certificateExpiration) {
+                        description = status == "verified" ? undefined : (<div className="custom-domain-verified-comments">
+                            SSL certificate expires at <b>{this.state.certificateExpiration.toDateString()}</b>
+                        </div>)
+                    } else if (status == "cname_failed") {
+                        description = (<div className="custom-domain-verified-comments">
+                            We're failed to validate CNAME record. Please, check your DNS settings and wait or
+                            request <a onClick={() => this.forceVerification()}>force verification</a>. Please note,
+                            due to nature of DNS protocol changes might take up to 24 hours to populate accross internet
+                        </div>)
+                    } else if (status == "cname_ok") {
+                        description = (<div className="custom-domain-verified-comments">
+                            CNAME is verified. Issuing SSL certificate
+                        </div>)
+                    }
                     return description ? (<>{tag}{description}</>) : tag;
                 }
             },
@@ -111,6 +150,7 @@ export class CustomDomains extends LoadableComponent<any, State> {
                 this.reload(async () => {
                     let newDomains: Domain[] = [...this.state.domains, {name: text, status: "pending"}];
                     await this.services.storageService.save("custom_domains", {domains: newDomains}, this.services.activeProject.id);
+                    await this.services.backendApiClient.post(`/api/v1/ssl?projectId=${this.services.activeProject.id}&async=${true}`, {});
                     message.success("New domain added!");
                     return {
                         domains: newDomains
