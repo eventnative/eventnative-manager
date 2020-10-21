@@ -12,6 +12,8 @@ import (
 )
 
 const maxDaysBeforeExpiration = 30
+const cnameFailedStatus = "cname_failed"
+const cnameOkStatus = "cname_ok"
 const okStatus = "ok"
 
 type UpdateExecutor struct {
@@ -64,14 +66,13 @@ func (e *UpdateExecutor) RunForProject(projectId string) error {
 }
 
 func (e *UpdateExecutor) processProjectDomains(projectId string, domains *entities.CustomDomains) error {
-	domainNames := extractDomainNames(domains)
-	validDomains := filterExistingCNames(domainNames, e.enCName)
+	validDomains := filterExistingCNames(domains, e.enCName)
 	updateRequired, err := updateRequired(domains, validDomains)
 	if err != nil {
 		return err
 	}
 	if !updateRequired {
-		return nil
+		return e.sslService.UpdateCustomDomains(projectId, domains)
 	}
 
 	certificate, privateKey, err := e.sslService.ExecuteHttp01Challenge(validDomains)
@@ -140,29 +141,32 @@ func contains(domains []string, name string) bool {
 	return false
 }
 
-func extractDomainNames(domains *entities.CustomDomains) []string {
-	var result []string
-	if domains == nil || domains.Domains == nil {
-		return result
-	}
-	for _, domain := range domains.Domains {
-		result = append(result, domain.Name)
-	}
-	return result
-}
-
-func filterExistingCNames(domains []string, enCName string) []string {
-	isNotDigit := func(c rune) bool { return c < '0' || c > '9' }
+func filterExistingCNames(domains *entities.CustomDomains, enCName string) []string {
 	resultDomains := make([]string, 0)
-	for _, domain := range domains {
-		onlyNumbers := strings.IndexFunc(domain, isNotDigit) == -1
-		if !onlyNumbers {
-			if cname, err := net.LookupCNAME(domain); err == nil {
-				if strings.TrimRight(cname, ".") == enCName {
-					resultDomains = append(resultDomains, domain)
-				}
-			}
+	for _, domain := range domains.Domains {
+
+		if checkDomain(domain.Name, enCName) {
+			resultDomains = append(resultDomains, domain.Name)
+			domain.Status = cnameOkStatus
+		} else {
+			domain.Status = cnameFailedStatus
 		}
 	}
 	return resultDomains
+}
+
+func checkDomain(domain string, validCName string) bool {
+	isNotDigit := func(c rune) bool { return c < '0' || c > '9' }
+	onlyNumbers := strings.IndexFunc(domain, isNotDigit) == -1
+	if onlyNumbers {
+		return false
+	}
+	if cname, err := net.LookupCNAME(domain); err == nil {
+		if strings.TrimRight(cname, ".") == validCName {
+			return true
+		}
+	} else {
+		logging.Infof("Failed to check domain %s: %s", domain, err.Error())
+	}
+	return false
 }
