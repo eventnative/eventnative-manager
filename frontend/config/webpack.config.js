@@ -538,7 +538,7 @@ module.exports = function(webpackEnv) {
 		// }),
 		new FaviconsWebpackPlugin({
             logo: './src/icons/logo.svg',
-            publicPath: '.'
+            publicPath: '/'
         }),
       // Generates an `index.html` file with the <script> injected.
       new HtmlWebpackPlugin(
