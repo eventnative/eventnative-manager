@@ -150,7 +150,7 @@ export class CustomDomains extends LoadableComponent<any, State> {
                 this.reload(async () => {
                     let newDomains: Domain[] = [...this.state.domains, {name: text, status: "pending"}];
                     await this.services.storageService.save("custom_domains", {domains: newDomains}, this.services.activeProject.id);
-                    await this.services.backendApiClient.post(`/api/v1/ssl?projectId=${this.services.activeProject.id}&async=${true}`, {});
+                    await this.services.backendApiClient.post(`/ssl?projectId=${this.services.activeProject.id}&async=${true}`, {});
                     message.success("New domain added!");
                     return {
                         domains: newDomains
