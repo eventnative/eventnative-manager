@@ -27,7 +27,17 @@
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="ProjectRunConfigurationManager">
-    <configuration default="false" name="Frontend" type="js.build_tools.npm">
+    <configuration default="false" name="Build Frontent" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/frontend/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="build" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration default="false" name="Debug Frontent" type="js.build_tools.npm">
       <package-json value="$PROJECT_DIR$/frontend/package.json" />
       <command value="run" />
       <scripts>
@@ -36,7 +46,6 @@
       <node-interpreter value="project" />
       <envs>
         <env name="BACKEND_API_BASE" value="https://app.eventnative.com" />
-        <env name="env" value="PROD" />
       </envs>
       <method v="2" />
     </configuration>
