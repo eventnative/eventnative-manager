@@ -1,21 +1,20 @@
 import * as React from 'react'
 
-import {NavLink, Route, Switch, DefaultRoute, Redirect} from 'react-router-dom';
+import {NavLink, Route, Switch, Redirect} from 'react-router-dom';
 import {Button, Col, Dropdown, Form, Input, Layout, Menu, message, Modal, Row, Select} from "antd";
-import {AreaChartOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, PartitionOutlined, SlidersOutlined} from "@ant-design/icons";
-import './App.less';
 import {
-    KeyOutlined,
-    LockOutlined,
-    ExclamationCircleOutlined,
-    UsergroupAddOutlined,
+	AreaChartOutlined, 
+	LogoutOutlined, 
+	SlidersOutlined,
+	ExclamationCircleOutlined,
     UserOutlined,
-    UnlockTwoTone,
     UnlockOutlined,
     NotificationOutlined,
     CloudOutlined,
-    ApiOutlined, DownloadOutlined
-} from "@ant-design/icons/lib";
+	DownloadOutlined,
+} from "@ant-design/icons";
+
+import './App.less';
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
 import {CenteredSpin, GlobalError, handleError, Preloader} from "./lib/components/components";
 import {reloadPage} from "./lib/commons/utils";
@@ -24,7 +23,7 @@ import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
 import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
 import {ReactNode, useState} from "react";
 
-const logo = require('./icons/logo.svg').default;
+import logo from './icons/logo.svg';
 
 enum AppLifecycle {
     LOADING, //Application is loading
@@ -81,17 +80,16 @@ export default class App extends React.Component<AppProperties, AppState> {
     }
 
     public render() {
-        let route = new Route(window.location.hash);
         switch (this.state.lifecycle) {
             case AppLifecycle.REQUIRES_LOGIN:
                 return (<Switch>
                     {PUBLIC_PAGES.map(route => {
-                        return (<Route key={route.getPrefixedPath()}
+                        return (<Route //key={route.getPrefixedPath()}
                                        path={route.getPrefixedPath()}
                                        exact
                                        render={(routeProps) => {
                                            this.services.analyticsService.onPageLoad({
-                                               pagePath: routeProps.location
+                                               pagePath: routeProps.location.key
                                            })
                                            document.title = route.pageTitle;
                                            return route.getComponent({});
@@ -125,12 +123,12 @@ export default class App extends React.Component<AppProperties, AppState> {
     appLayout() {
         let routes = PRIVATE_PAGES.map(route => {
             if (!this.state.showOnboardingForm) {
-                return (<Route key={route.getPrefixedPath()}
+                return (<Route //key={route.getPrefixedPath()}
                                path={route.getPrefixedPath()}
                                exact={true}
                                render={(routeProps) => {
                                    this.services.analyticsService.onPageLoad({
-                                       pagePath: routeProps.location
+                                       pagePath: routeProps.location.hash
                                    });
                                    document.title = route.pageTitle;
                                    return this.wrapInternalPage(route);

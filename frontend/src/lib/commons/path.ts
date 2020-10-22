@@ -4,7 +4,7 @@
  *
  * Arrays are nit supported
  */
-export class Route {
+export class RoutePath {
     private readonly _path: string;
     private readonly _params: Record<string, any>
 

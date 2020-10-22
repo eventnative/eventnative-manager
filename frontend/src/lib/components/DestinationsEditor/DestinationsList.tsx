@@ -32,7 +32,7 @@ import {
     EditOutlined,
     ExclamationCircleOutlined, EyeInvisibleOutlined, EyeTwoTone,
     PlusOutlined
-} from "@ant-design/icons/lib";
+} from "@ant-design/icons";
 import './DestinationEditor.less'
 import {handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
@@ -142,7 +142,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
 
     private static getIconSrc(destinationType: string): any {
         try {
-            return require('../../../icons/destinations/' + destinationType + '.svg').default;
+            return require('../../../icons/destinations/' + destinationType + '.svg');
         } catch (e) {
             console.log("Icon for " + destinationType + " is not found")
             return null

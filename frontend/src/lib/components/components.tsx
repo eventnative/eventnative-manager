@@ -4,12 +4,12 @@
 
 import React, {ReactNode, useState} from "react";
 import './components.less'
-import {Card, Col, message, Modal, Progress, Row, Spin, Tooltip} from "antd";
+import {Card, Col, message, Progress, Modal, Row, Spin, Tooltip} from "antd";
 import {CaretDownFilled, CaretRightFilled, CaretUpFilled, CopyOutlined, QuestionCircleOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "../services/ApplicationServices";
 import {copyToClipboard, numberFormat, sleep, withDefaults} from "../commons/utils";
 
-const plumber = require("../../icons/plumber.png").default;
+const plumber = require("../../icons/plumber.png");
 
 type IPreloaderProps = {
     text?: string
@@ -317,13 +317,21 @@ export function ActionLink({children, onClick}: { children: any, onClick: () => 
     }}><span>{children}</span></div>)
 }
 
-import {dark} from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import dark from 'react-syntax-highlighter/dist/esm/styles/hljs/dark';
+import js from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
+import yaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
+import bash from 'react-syntax-highlighter/dist/esm/languages/hljs/bash';
 
-const SyntaxHighlighterAsync = lazyComponent(() => import('react-syntax-highlighter'));
+SyntaxHighlighter.registerLanguage('javascript', js);
+SyntaxHighlighter.registerLanguage('yaml', yaml);
+SyntaxHighlighter.registerLanguage('bash', bash);
+
+const SyntaxHighlighterAsync = SyntaxHighlighter;//lazyComponent(() => import('react-syntax-highlighter'));
 
 type ICodeSnippetProps = {
     children: ReactNode,
-    language: string,
+    language: 'javascript' | 'bash' | 'yaml',
     extra?: ReactNode,
     size?: 'large' | 'small',
     toolbarPosition?: 'top' | 'bottom'
@@ -350,7 +358,8 @@ export function CodeSnippet(props: ICodeSnippetProps) {
 
             </Align>
         </Col>
-    </Row>;
+	</Row>;
+
     return <div className={["code-snippet-wrapper-" + toolBarPos, "code-snippet-wrapper", props.size === 'large' ? 'code-snippet-large' : 'code-snippet-small'].join(" ")}>
         {toolBarPos === 'top' ? toolbar : null}
         <SyntaxHighlighterAsync style={dark} language={props.language}>{props.children}</SyntaxHighlighterAsync>
@@ -401,11 +410,6 @@ export class EstimatedProgressBar extends React.Component<IEstimatedProgressBarP
         return <Progress type="circle" percent={this.state.progressPercents}/>
     }
 }
-export type IEstimatedProgressBarModalProps<T> = {
-    callback: () => Promise<T>
-}
-
-
 
 export type IWithProgressProps<T> = {
     estimatedMs: number,
@@ -435,7 +439,7 @@ export async function withProgressBar<T>(props: IWithProgressProps<T>) {
                 <h2 className="estimated-progress-bar-op-failed">Operation failed :(</h2>
                 <h3>{e.message ? e.message : "Unknown error"}</h3>
             </Align>,
-            okText: "Close",
+            okText: "Close"
         });
     }
 }

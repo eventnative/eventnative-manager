@@ -3,10 +3,12 @@ import {lazyComponent, LoadableComponent, StatCard} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {Card, Col, Row} from "antd";
 import './StatusPage.less'
-const Chart = lazyComponent(() => import( /* webChunkName: "bizchartsChart" */ "bizcharts/es/components/Chart"));
-const Axis = lazyComponent(() => import("bizcharts/es/components/Axis"));
+
 import {numberFormat} from "../../commons/utils";
-const Line = lazyComponent(() => import("bizcharts/es/geometry/Line"));
+
+const Chart = lazyComponent(() => import( /* webChunkName: "bizchartsChart" */ "bizcharts/lib/components/Chart"));
+const Axis = lazyComponent(() => import("bizcharts/lib/components/Axis"));
+const Line = lazyComponent(() => import("bizcharts/lib/geometry/Line"));
 
 type State = {
     designationsCount?: number

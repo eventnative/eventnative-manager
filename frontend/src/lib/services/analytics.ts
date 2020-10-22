@@ -21,7 +21,7 @@ export default class AnalyticsService {
     }
 
     public onUserKnown(user: User) {
-        if (!user || this.appConfig.appEnvironment === 'dev') {
+        if (!user || this.appConfig.appEnvironment === 'development') {
             return;
         }
         LogRocket.init('6gfkmj/ksense');
@@ -45,7 +45,7 @@ export default class AnalyticsService {
     }
 
     public onPageLoad({pagePath}: { pagePath: string }) {
-        if (this.appConfig.appEnvironment === 'dev') {
+        if (this.appConfig.appEnvironment === 'development') {
             return
         }
         eventN.track('app_page', {
@@ -62,7 +62,7 @@ export default class AnalyticsService {
     }
 
     public onError(error: any) {
-        if (this.appConfig.appEnvironment === 'dev') {
+        if (this.appConfig.appEnvironment === 'development') {
             return
         }
     }

@@ -1,8 +1,8 @@
 import * as React from "react";
 import ApplicationServices from "../../services/ApplicationServices";
 import {Button, Form, Input, message, Modal, Table, Tag} from "antd";
-import {CheckOutlined, ClockCircleOutlined, CloudOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RightCircleOutlined, SmallDashOutlined, StopOutlined} from "@ant-design/icons/lib";
-import {Align, EstimatedProgressBar, LoadableComponent, withProgressBar} from "../components";
+import {CheckOutlined, ClockCircleOutlined, CloudOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RightCircleOutlined} from "@ant-design/icons";
+import {LoadableComponent, withProgressBar} from "../components";
 import './CustomDomains.less'
 import {Domain} from "../../services/model";
 import {sleep} from "../../commons/utils";

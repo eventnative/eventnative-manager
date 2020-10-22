@@ -2,7 +2,7 @@ import React, {ReactElement, ReactNode, useEffect, useState} from 'react';
 import {CodeSnippet, LoadableComponent} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import './DownloadConfig.less'
-import {CloudDownloadOutlined} from "@ant-design/icons/lib";
+import {CloudDownloadOutlined} from "@ant-design/icons";
 
 
 type State = {
