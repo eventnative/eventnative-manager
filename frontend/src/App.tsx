@@ -123,7 +123,7 @@ export default class App extends React.Component<AppProperties, AppState> {
     appLayout() {
         let routes = PRIVATE_PAGES.map(route => {
             if (!this.state.showOnboardingForm) {
-                return (<Route //key={route.getPrefixedPath()}
+                return (<Route key={route.id}
                                path={route.getPrefixedPath()}
                                exact={true}
                                render={(routeProps) => {

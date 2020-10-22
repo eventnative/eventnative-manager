@@ -4,6 +4,7 @@ import {PostgresConfig} from "./destinations";
 import * as uuid from 'uuid';
 import AnalyticsService from "./analytics";
 import {firebaseInit, FirebaseServerStorage, FirebaseUserService} from "./firebase";
+import {message} from "antd";
 
 
 export class ApplicationConfiguration {
@@ -235,18 +236,37 @@ class APIError extends Error {
 
 
     constructor(response: AxiosResponse, request: AxiosRequestConfig) {
-        super(response.data['message'] === undefined ? `Error ${response.status} at ${request.url}` : response.data['message']);
+        super(getErrorMessage(response, request));
         this._httpStatus = response.status;
         this._response = response.data;
     }
+}
+
+function getErrorMessage(response: AxiosResponse, request: AxiosRequestConfig): string {
+    let errorResponse = parseErrorResponseBody(response);
+    if (errorResponse && errorResponse.message) {
+        return `${errorResponse.message} (#${response.status})`;
+    } else {
+        return `Error ${response.status} at ${request.url}`;
+    }
+}
+
+function parseErrorResponseBody(response: AxiosResponse) {
+    let strResponse = response.data.toString();
+    try {
+        return JSON.parse(strResponse);
+    } catch (e) {
+        return null;
+    }
+
 }
 
 export interface Transformer<T> {
     (data: any, headers?: any): T;
 }
 
-const JSON: Transformer<any> = undefined;
-const AS_IS: Transformer<string> = (response) => response ? response.toString() : null;
+const JSON_FORMAT: Transformer<any> = undefined;
+const AS_IS_FORMAT: Transformer<string> = (response) => response ? response.toString() : null;
 
 export class JWTBackendClient implements BackendApiClient {
     private tokenAccessor: () => string;
@@ -299,20 +319,20 @@ export class JWTBackendClient implements BackendApiClient {
     }
 
     get(url: string): Promise<any> {
-        return this.exec('get', JSON, url);
+        return this.exec('get', JSON_FORMAT, url);
     }
 
 
     post(url: string, data: any): Promise<any> {
-        return this.exec('post', JSON, url, data ? data : {});
+        return this.exec('post', JSON_FORMAT, url, data ? data : {});
     }
 
     postRaw(url, data: any): Promise<string> {
-        return this.exec('post', AS_IS, url, data ? data : {});
+        return this.exec('post', AS_IS_FORMAT, url, data ? data : {});
     }
 
     getRaw(url): Promise<string> {
-        return this.exec('get', AS_IS, url);
+        return this.exec('get', AS_IS_FORMAT, url);
     }
 }
 

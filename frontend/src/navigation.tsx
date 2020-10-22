@@ -20,7 +20,7 @@ export class Page {
         return this.path.map(el => el.startsWith("/") ? el : "/" + el)
     }
 
-    get id() {
+    public get id() {
         let firstPath = this.path.find(p => p && p.length > 0);
         if (!firstPath) {
             firstPath = "root";
