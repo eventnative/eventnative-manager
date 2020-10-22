@@ -1,12 +1,13 @@
 package ssl
 
 import (
+	"fmt"
 	"github.com/ksensehq/enhosted/entities"
 	"github.com/ksensehq/enhosted/files"
 	entime "github.com/ksensehq/enhosted/time"
 	"github.com/ksensehq/eventnative/logging"
 	"io/ioutil"
-	"net"
+	"os/exec"
 	"strings"
 	"time"
 )
@@ -163,12 +164,11 @@ func checkDomain(domain string, validCName string) bool {
 	if onlyNumbers {
 		return false
 	}
-	if cname, err := net.LookupCNAME(domain); err == nil {
-		if strings.TrimRight(cname, ".") == validCName {
-			return true
-		}
-	} else {
+	out, err := exec.Command("nslookup", domain).Output()
+	if err != nil {
 		logging.Infof("Failed to check domain %s: %s", domain, err.Error())
+		return false
 	}
-	return false
+	nsLookupOutput := fmt.Sprintf("%s", out)
+	return strings.Contains(nsLookupOutput, "canonical name = "+validCName)
 }
