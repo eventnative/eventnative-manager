@@ -193,7 +193,7 @@ function EnterNameModal({onClose, onReady}: {
                     if (value.length == 0) {
                         Promise.reject("Domain name can't be empty");
                     }
-                    if (!/^[a-zA-Z0-9\\.]{2,}$/.test(value)) {
+                    if (!/^[a-zA-Z0-9\\.-]{2,}$/.test(value)) {
                         return Promise.reject('Invalid domain value');
                     }
                     return Promise.resolve();
