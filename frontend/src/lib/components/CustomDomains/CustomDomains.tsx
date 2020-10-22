@@ -30,7 +30,7 @@ export class CustomDomains extends LoadableComponent<any, State> {
         return {
             certificateExpiration: result._certificateExpiration && result._certificateExpiration.length > 0 ?
                 new Date(Date.parse(result._certificateExpiration)): null,
-            domains: result ? result.domains : [],
+            domains: result?.domains || [],
             enterNameVisible: false
         }
     }
@@ -99,6 +99,11 @@ export class CustomDomains extends LoadableComponent<any, State> {
                     } else if (status == "cname_ok") {
                         description = (<div className="custom-domain-verified-comments">
                             CNAME is verified. Issuing SSL certificate
+                        </div>)
+                    } else {
+                        description = (<div className="custom-domain-verified-comments">
+                            Your domain are being validated. Please note, validation can take up to 24 hours due to nature
+                            of DNS protocol. Also you can  request <a onClick={() => this.forceVerification()}>force verification</a>.
                         </div>)
                     }
                     return description ? (<>{tag}{description}</>) : tag;
