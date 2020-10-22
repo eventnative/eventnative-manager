@@ -7,7 +7,7 @@ import './CustomDomains.less'
 import {Domain} from "../../services/model";
 import {sleep} from "../../commons/utils";
 
-const CNAME = "hosting.eventnative.com"
+const CNAME = "hosting.jitsu.com"
 
 type State = {
     enterNameVisible: boolean
