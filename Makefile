@@ -15,18 +15,22 @@ all: clean assemble
 assemble: backend frontend
 	mkdir -p ./build/dist/web
 	cp enhosted ./build/dist/
-	cp dist/* ./build/dist/web/
+	cp frontend/build/* ./build/dist/web/
 
 backend:
 	cd ./backend; go mod tidy; $(TARGET_ENV) go build -o ../$(APPLICATION)
 
 frontend:
-	cd ./frontend; npm install; yarn build --output-path ../dist
+	cd ./frontend; yarn install; yarn build
 
+clean: clean-backend clean-frontend
 
-clean:
+clean-backend:
 	go clean
 	rm -f $(APPLICATION)
 	rm -rf dist
-	rm -rf ./frontend/node_modules
 	rm -rf ./build
+
+clean-frontend:
+	rm -rf ./frontend/build
+	
