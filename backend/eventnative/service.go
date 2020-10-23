@@ -82,21 +82,7 @@ func (s *Service) GetEvents(apiKeys []string, limit int) ([]enevents.Fact, error
 }
 
 func (s *Service) TestDestination(reqB []byte) (int, []byte, error) {
-	request, err := http.NewRequest(http.MethodPost, s.balancerApiUrl+"/destinations/test", bytes.NewBuffer(reqB))
-	if err != nil {
-		return 0, nil, err
-	}
-
-	request.Header.Add(adminTokenName, s.adminToken)
-	resp, err := s.client.Do(request)
-	if err != nil {
-		return 0, nil, err
-	}
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	return resp.StatusCode, body, nil
+	return s.sendReq(http.MethodPost, s.balancerApiUrl+"/destinations/test", bytes.NewBuffer(reqB))
 }
 
 func (s *Service) startClusterMonitor() {
