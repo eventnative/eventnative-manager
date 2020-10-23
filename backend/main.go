@@ -8,6 +8,7 @@ import (
 	"github.com/ksensehq/enhosted/appconfig"
 	"github.com/ksensehq/enhosted/authorization"
 	"github.com/ksensehq/enhosted/destinations"
+	"github.com/ksensehq/enhosted/eventnative"
 	"github.com/ksensehq/enhosted/handlers"
 	"github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/enhosted/ssh"
@@ -176,7 +177,10 @@ func main() {
 	// using cron job now to avoid multiple servers simultaneous execution
 	// sslUpdateExecutor.Schedule(time.Duration(updatePeriodMin) * time.Minute)
 
-	router := SetupRouter(staticFilesPath, eventnativeBaseUrl, eventnativeAdminToken, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage, sslUpdateExecutor)
+	enService := eventnative.NewService(eventnativeBaseUrl, eventnativeAdminToken)
+	appconfig.Instance.ScheduleClosing(enService)
+
+	router := SetupRouter(staticFilesPath, enService, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage, sslUpdateExecutor)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
 		Handler:           middleware.Cors(router),
@@ -204,7 +208,7 @@ func readConfiguration(configFilePath string) {
 	}
 }
 
-func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, eventnativeAdminToken string,
+func SetupRouter(staticContentDirectory string, enService *eventnative.Service,
 	storage *storages.Firebase, authService *authorization.Service, defaultS3 *enadapters.S3Config,
 	statisticsPostgres *enstorages.DestinationConfig, statisticsStorage statistics.Storage,
 	sslUpdateExecutor *ssl.UpdateExecutor) *gin.Engine {
@@ -234,10 +238,12 @@ func SetupRouter(staticContentDirectory string, eventnativeBaseUrl string, event
 		apiV1.POST("/ssl", middleware.ClientAuth(handlers.NewCustomDomainHandler(sslUpdateExecutor).PerProjectHandler, authService))
 		apiV1.POST("/ssl/all", middleware.ServerAuth(handlers.NewCustomDomainHandler(sslUpdateExecutor).AllHandler, serverToken))
 
-		destinationsHandler := handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres, eventnativeBaseUrl, eventnativeAdminToken)
+		destinationsHandler := handlers.NewDestinationsHandler(storage, defaultS3, statisticsPostgres, enService)
 		destinationsRoute := apiV1.Group("/destinations")
 		destinationsRoute.GET("/", middleware.ServerAuth(middleware.IfModifiedSince(destinationsHandler.GetHandler, storage.GetDestinationsLastUpdated), serverToken))
 		destinationsRoute.POST("/test", middleware.ClientAuth(destinationsHandler.TestHandler, authService))
+
+		apiV1.GET("/events", middleware.ClientAuth(handlers.NewEventsHandler(storage, enService).GetHandler, authService))
 	}
 	router.Use(static.Serve("/", static.LocalFile(staticContentDirectory, false)))
 	return router
