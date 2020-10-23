@@ -75,7 +75,7 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 	}
 
 	// building yaml response
-	server := Server{ApiKeys: keys, Name: &yaml.Node{Kind: yaml.ScalarNode, Value: random.String(5), LineComment: "rename server if other name is desired"}}
+	server := Server{ApiKeys: keys, Name: &yaml.Node{Kind: yaml.ScalarNode, Value: random.String(5), LineComment: "rename server if another name is desired"}}
 	config := Config{Server: server, Destinations: mappedDestinations}
 	marshal, err := yaml.Marshal(&config)
 	configYaml := yaml.Node{}
