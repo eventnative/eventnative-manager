@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/ksensehq/enhosted/destinations"
 	"github.com/ksensehq/enhosted/entities"
+	"github.com/ksensehq/enhosted/eventnative"
 	"github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/enhosted/storages"
 	enadapters "github.com/ksensehq/eventnative/adapters"
@@ -14,9 +14,7 @@ import (
 	"github.com/ksensehq/eventnative/logging"
 	enmiddleware "github.com/ksensehq/eventnative/middleware"
 	enstorages "github.com/ksensehq/eventnative/storages"
-	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -29,20 +27,16 @@ type DestinationsHandler struct {
 	defaultS3          *enadapters.S3Config
 	statisticsPostgres *enstorages.DestinationConfig
 
-	httpClient            *http.Client
-	eventnativeBaseUrl    string
-	eventnativeAdminToken string
+	enService *eventnative.Service
 }
 
 func NewDestinationsHandler(storage *storages.Firebase, defaultS3 *enadapters.S3Config, statisticsPostgres *enstorages.DestinationConfig,
-	eventnativeUrl, eventnativeAdminToken string) *DestinationsHandler {
+	enService *eventnative.Service) *DestinationsHandler {
 	return &DestinationsHandler{
-		storage:               storage,
-		defaultS3:             defaultS3,
-		statisticsPostgres:    statisticsPostgres,
-		httpClient:            &http.Client{Timeout: 1 * time.Minute},
-		eventnativeBaseUrl:    strings.TrimRight(eventnativeUrl, "/"),
-		eventnativeAdminToken: eventnativeAdminToken,
+		storage:            storage,
+		defaultS3:          defaultS3,
+		statisticsPostgres: statisticsPostgres,
+		enService:          enService,
 	}
 }
 
@@ -127,29 +121,21 @@ func (dh *DestinationsHandler) TestHandler(c *gin.Context) {
 		return
 	}
 
-	request, err := http.NewRequest("POST", dh.eventnativeBaseUrl+"/destinations/test", bytes.NewBuffer(b))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: err.Error(), Error: err})
-		return
-	}
-	request.Header.Add("X-Admin-Token", dh.eventnativeAdminToken)
-	resp, err := dh.httpClient.Do(request)
+	code, content, err := dh.enService.TestDestination(b)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to get response from eventnative: " + err.Error(), Error: err})
 		return
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusOK {
+	if code == http.StatusOK {
 		c.JSON(http.StatusOK, middleware.OkResponse{Status: "Connection established"})
 		return
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
 	c.Header("Content-Type", jsonContentType)
-	c.Writer.WriteHeader(resp.StatusCode)
+	c.Writer.WriteHeader(code)
 
-	_, err = c.Writer.Write(body)
+	_, err = c.Writer.Write(content)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to write response", Error: err})
 	}
