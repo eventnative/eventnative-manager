@@ -2,7 +2,8 @@ package entities
 
 //Destination entity is stored in main storage (Firebase)
 type Destination struct {
-	Id       string      `firestore:"_uid" json:"_uid"`
+	Id       string      `firestore:"_id" json:"_id"`
+	Uid      string      `firestore:"_uid" json:"_uid"`
 	Type     string      `firestore:"_type"  json:"_type"`
 	Data     interface{} `firestore:"_formData" json:"_formData"`
 	OnlyKeys []string    `firestore:"_onlyKeys" json:"_onlyKeys"`

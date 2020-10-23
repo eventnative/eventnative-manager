@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/ksensehq/enhosted/authorization"
 	middleware2 "github.com/ksensehq/enhosted/middleware"
 	"github.com/ksensehq/enhosted/ssl"
 	"github.com/ksensehq/eventnative/middleware"
@@ -19,8 +20,7 @@ func NewCustomDomainHandler(executor *ssl.UpdateExecutor) *CustomDomainHandler {
 
 func (h *CustomDomainHandler) PerProjectHandler(c *gin.Context) {
 	projectId := c.Query("projectId")
-	userProjectId, exists := c.Get("_project_id")
-	if !exists || userProjectId != projectId {
+	if !authorization.HasAccessToProject(c, projectId) {
 		c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Message: "You are not authorized to request data for project " + projectId})
 		return
 	}

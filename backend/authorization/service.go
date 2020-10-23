@@ -6,6 +6,7 @@ import (
 	"firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
 )
@@ -57,4 +58,12 @@ func (s *Service) Close() error {
 	}
 
 	return nil
+}
+
+func HasAccessToProject(c *gin.Context, requestedProjectId string) bool {
+	userProjectId, exists := c.Get("_project_id")
+	if !exists || userProjectId != requestedProjectId {
+		return false
+	}
+	return true
 }

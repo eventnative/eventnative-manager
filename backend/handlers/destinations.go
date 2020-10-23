@@ -81,10 +81,10 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 		}
 
 		for _, destination := range destinationsEntity.Destinations {
-			destinationId := projectId + "." + destination.Id
+			destinationId := projectId + "." + destination.Uid
 			enDestinationConfig, err := destinations.MapConfig(destinationId, destination, dh.defaultS3)
 			if err != nil {
-				logging.Errorf("Error mapping destination config for destination type: %s id: %s projectId: %s err: %v", destination.Type, destination.Id, projectId, err)
+				logging.Errorf("Error mapping destination config for destination type: %s id: %s projectId: %s err: %v", destination.Type, destination.Uid, projectId, err)
 				continue
 			}
 
