@@ -253,8 +253,14 @@ function getErrorMessage(response: AxiosResponse, request: AxiosRequestConfig): 
 
 function parseErrorResponseBody(response: AxiosResponse) {
     let strResponse = response.data.toString();
+    if (response.data === null || response.data === undefined) {
+        return null;
+    }
+    if (typeof response.data === 'object') {
+        return response.data;
+    }
     try {
-        return JSON.parse(strResponse);
+        return response.data ? JSON.parse(response.data.toString()) : null;
     } catch (e) {
         return null;
     }
@@ -306,6 +312,7 @@ export class JWTBackendClient implements BackendApiClient {
                 }
             }).catch((error) => {
                 if (error.response) {
+                    console.log("Error with response", error.response)
                     reject(new APIError(error.response, request));
                 } else {
                     let baseMessage = "Request at " + fullUrl + " failed";

@@ -45,7 +45,7 @@
       </scripts>
       <node-interpreter value="project" />
       <envs>
-        <env name="BACKEND_API_BASE" value="https://app.eventnative.com" />
+        <env name="BACKEND_API_BASE" value="https://app.jitsu.com" />
       </envs>
       <method v="2" />
     </configuration>

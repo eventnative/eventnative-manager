@@ -7,7 +7,7 @@ import './components.less'
 import {Card, Col, message, Progress, Modal, Row, Spin, Tooltip} from "antd";
 import {CaretDownFilled, CaretRightFilled, CaretUpFilled, CopyOutlined, QuestionCircleOutlined} from "@ant-design/icons/lib";
 import ApplicationServices from "../services/ApplicationServices";
-import {copyToClipboard, numberFormat, sleep, withDefaults} from "../commons/utils";
+import {copyToClipboard, firstToLower, numberFormat, sleep, withDefaults} from "../commons/utils";
 
 const plumber = require("../../icons/plumber.png");
 
@@ -262,12 +262,6 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
 
 
     private static error(error: Error): ReactNode {
-        function firstToLower(string: string) {
-            if (string.length > 0) {
-                return string.charAt(0).toLowerCase() + string.slice(1);
-            }
-            return string;
-        }
 
         return <div className="common-error-wrapper">
             <div className="common-error-details"><b>Error occurred</b>: {firstToLower(error.message ? error.message : "Unknown error")}<br/>See details in console log</div>

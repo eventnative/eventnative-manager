@@ -48,11 +48,19 @@ export abstract class DestinationConfig {
     protected readonly _type: string
     protected readonly _onlyKeys = [];
     protected _formData: any = {};
+    protected _connectionTestOk: boolean = true;
+    protected _connectionErrorMessage: string = null;
+
 
     constructor(type: string, id: string) {
         this._id = id;
         this._type = type;
         this.fillInitialValues(this._formData);
+    }
+
+    public setConnectionTestResult(connectionErrorMessage: string) {
+        this._connectionTestOk = !connectionErrorMessage;
+        this._connectionErrorMessage = connectionErrorMessage;
     }
 
     public update(formValues: any): void {

@@ -39,6 +39,17 @@ export function navigateAndReload(url) {
 }
 
 /**
+ * First letter of string to lower ("Hello world!" -> "hello world").
+ * Useful for nice messages display
+ */
+export function firstToLower(string: string) {
+    if (string.length > 0) {
+        return string.charAt(0).toLowerCase() + string.slice(1);
+    }
+    return string;
+}
+
+/**
  * Fully reloads current page
  */
 export function reloadPage() {

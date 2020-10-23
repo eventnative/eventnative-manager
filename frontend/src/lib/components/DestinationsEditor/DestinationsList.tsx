@@ -36,7 +36,7 @@ import {
 import './DestinationEditor.less'
 import {handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
-import {IndexedList} from "../../commons/utils";
+import {firstToLower, IndexedList} from "../../commons/utils";
 import Marshal from "../../commons/marshalling";
 import {Option} from "antd/es/mentions";
 import {FieldMappings, Mapping} from "../../services/mappings";
@@ -119,7 +119,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
             }
         };
         return (<List.Item key={config.id} actions={[
-            <Button icon={<ColumnWidthOutlined />} key="edit" shape="round" onClick={onMappings}>Mappings</Button>,
+            <Button icon={<ColumnWidthOutlined/>} key="edit" shape="round" onClick={onMappings}>Mappings</Button>,
             <Button icon={<EditOutlined/>} key="edit" shape="round" onClick={onEdit}>Edit</Button>,
             <Button icon={<DeleteOutlined/>} key="delete" shape="round" onClick={onClick}>Delete</Button>
         ]} className="destination-list-item">
@@ -170,7 +170,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
                 return this.saveCurrentDestinations();
             }} closeDialog={() => {
                 this.setState({activeMapping: null, activeEditorConfig: null});
-            }} />)
+            }}/>)
         } else if (this.state.activeEditorConfig) {
             componentList.push((<DestinationsEditorModal
                 key="active-modal"
@@ -181,29 +181,42 @@ export class DestinationsList extends LoadableComponent<any, State> {
                     await this.services.backendApiClient.post('/destinations/test', Marshal.toPureJson(this.state.activeEditorConfig))
                     return values
                 }}
-                onSave={(formValues) => {
+                onSave={(formValues, connectionTestResult) => {
                     this.state.activeEditorConfig.update(formValues);
+                    this.state.activeEditorConfig.setConnectionTestResult(connectionTestResult);
                     this.state.activeEditorConfig.trim();
                     this.state.destinations.addOrUpdate(this.state.activeEditorConfig);
-                    this.saveCurrentDestinations();
+                    if (this.saveCurrentDestinations()) {
+                        if (connectionTestResult) {
+                            message.warn(
+                                `Destination has been saved, but test has failed with '${firstToLower(connectionTestResult)}'. Data will not be piped to this destination`,
+                                10)
+                        } else {
+                            message.success("Destination has been saved")
+                        }
+                    }
+
                 }}
             />))
         }
         return <>{componentList}</>;
     }
 
-    private saveCurrentDestinations() {
+    private async saveCurrentDestinations(): boolean {
         let payload = {destinations: this.state.destinations.toArray()};
-        this.services.storageService.save("destinations", payload, this.services.activeProject.id).then(() => {
-            this.setState({
-                destinations: this.state.destinations,
-                activeEditorConfig: null,
-                activeMapping: null
-            });
-            message.info("Destination configuration has been saved!")
-        }).catch((error) => {
-            handleError(error, 'Save failed :(');
-        })
+        try {
+            await this.services.storageService.save("destinations", payload, this.services.activeProject.id);
+        } catch (e) {
+            message.error("Interval error, destination has not been saved!", 10)
+            return false;
+        }
+
+        this.setState({
+            destinations: this.state.destinations,
+            activeEditorConfig: null,
+            activeMapping: null
+        });
+        return true;
     }
 
     private addButton() {
@@ -313,7 +326,10 @@ abstract class DestinationDialog<T extends DestinationConfig> extends React.Comp
 type IDestinationEditorModalProps = {
     config: DestinationConfig
     onCancel: () => void
-    onSave: (values: any) => void
+    /**
+     * @param connectionTestResult null if connection has been tested sucesfully, or error message test failed
+     */
+    onSave: (values: any, connectionTestResult: string) => void
     testConnection: (values: any) => Promise<any>
 
 }
@@ -354,7 +370,7 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
                     setConnectionTesting(false);
                 }
             }}>Test connection</Button>
-            <Button onClick={onCancel}>Close</Button>,
+            <Button onClick={onCancel}>Close</Button>
             <Button type="primary" loading={saving} onClick={async () => {
                 setSaving(true);
                 let values;
@@ -365,9 +381,10 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
                     //no need for special handling, error will be displayed within the field
                     return;
                 }
+                let connectionError = null;
                 try {
-                    await testConnection(values);
-                    onSave(values);
+                    connectionError = await testConnectionResult(async () => await testConnection(values));
+                    onSave(values, connectionError);
                 } catch (error) {
                     handleError(error, "Failed to connect to destination. " + error.message);
                 } finally {
@@ -380,7 +397,19 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
         form: form
     })
     }</Modal>);
+}
 
+/**
+ * @return null if connection is ok, and error string if not
+ */
+async function testConnectionResult(tester: () => Promise<any>): Promise<string> {
+    try {
+        await tester();
+        return null;
+    } catch (e) {
+        console.warn("Connection test failed", e)
+        return e.message || "Failed to connect"
+    }
 }
 
 class ClickHouseDialog extends DestinationDialog<PostgresConfig> {
