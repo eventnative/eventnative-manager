@@ -6,8 +6,9 @@ import {Button, Input, message, Modal, Radio, Select, Table} from "antd";
 import MAPPING_NAMES, {FieldMappings, Mapping} from "../../services/mappings";
 import {Align, handleError, LabelWithTooltip} from "../components";
 import './MappingEditor.less'
-import {DeleteFilled, PlusOutlined} from "@ant-design/icons";
 
+import DeleteFilled from "@ant-design/icons/lib/icons/DeleteFilled";
+import PlusOutlined from "@ant-design/icons/lib/icons/PlusOutlined";
 
 type IMappingEditorProps = {
     entity: FieldMappings,

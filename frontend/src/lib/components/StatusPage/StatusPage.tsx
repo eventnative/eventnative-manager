@@ -1,14 +1,13 @@
-import React from 'react';
-import {lazyComponent, LoadableComponent, StatCard} from "../components";
+import React, {useState} from 'react';
+import {LoadableComponent, StatCard} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {Card, Col, Row} from "antd";
 import './StatusPage.less'
 
-import {numberFormat} from "../../commons/utils";
+import {ChartContainer, ChartRow, Charts, LineChart, YAxis, Resizable} from "react-timeseries-charts";
+import styler from "react-timeseries-charts/lib/js/styler"
 
-const Chart = lazyComponent(() => import( /* webChunkName: "bizchartsChart" */ "bizcharts/lib/components/Chart"));
-const Axis = lazyComponent(() => import("bizcharts/lib/components/Axis"));
-const Line = lazyComponent(() => import("bizcharts/lib/geometry/Line"));
+import {TimeSeries} from "pondjs";
 
 type State = {
     designationsCount?: number
@@ -99,10 +98,10 @@ export default class StatusPage extends LoadableComponent<{}, State> {
                         <StatCard value={this.state.designationsCount} title="Total destinations" bordered={false}/>
                     </Col>
                     <Col span={8}>
-                        <StatCard value={this.state.eventsLast24} valuePrev={this.state.events48to24} title="Events today" bordered={false}/>
+                        <StatCard value={this.state.eventsLast24} valuePrev={this.state.events48to24} title="Events last day ()" bordered={false}/>
                     </Col>
                     <Col span={8}>
-                        <StatCard value={this.state.eventsLastFullHour} valuePrev={this.state.eventsPrevHour} title="Events this hour" bordered={false}/>
+                        <StatCard value={this.state.eventsLastFullHour} valuePrev={this.state.eventsPrevHour} title="Events last hour ()" bordered={false}/>
                     </Col>
                 </Row>
             </div>
@@ -110,12 +109,12 @@ export default class StatusPage extends LoadableComponent<{}, State> {
                 <Row gutter={16}>
                     <Col span={12}>
                         <Card title="Events last 30 days" bordered={false}>
-                            {this.chart(this.state.dailyEvents, "day")}
+                            <Chart data={this.state.dailyEvents} granularity={"day"} />
                         </Card>
                     </Col>
                     <Col span={12}>
                         <Card title="Events last 24 hours" bordered={false}>
-                            {this.chart(this.state.hourlyEvents, "hour")}
+                            <Chart data={this.state.hourlyEvents} granularity={"hour"} />
                         </Card>
                     </Col>
                 </Row>
@@ -139,26 +138,7 @@ export default class StatusPage extends LoadableComponent<{}, State> {
         return str.length > 1 ? str : ("0" + str);
     }
 
-    chart(data: DatePoint[], granularity: "day" | "hour") {
 
-
-        let dataProcessed = data.map(element => {
-            return {
-                date: this.format(element.date, granularity),
-                events: element.events
-            }
-        })
-
-        return <Chart
-            autoFit
-            height={250}
-            data={dataProcessed}>
-            <Axis name="events" label={{formatter: (val) => numberFormat(val)}}/>
-            <Line position="date*events"/>
-        </Chart>
-
-
-    }
 
     async load() {
         let now = new Date();
@@ -201,5 +181,74 @@ export default class StatusPage extends LoadableComponent<{}, State> {
             day = '0' + day;
 
         return [year, month, day].join('-');
+    }
+}
+
+
+function Chart({data, granularity}: {data: DatePoint[], granularity: "hour" | "day"}) {
+    let [mouseover, setMouseover] = useState({x: null, y: null})
+    const style = styler([
+        {key: "events", color: "steelblue", width: 2},
+    ]);
+    if (data.length <= 1) {
+        return <div className="status-page-empty-chart">
+            <h3>No Data</h3><p>There're too few events to display on a chart</p>
+        </div>
+    }
+    const timeseries = new TimeSeries({
+        name: "Events per " + granularity,
+        columns: ["time", "events"],
+        utc: true,
+        points: data.map(point => [point.date, point.events])
+    });
+    let vals = data.map(point => point.events);
+    return <Resizable><ChartContainer
+        timeRange={timeseries.timerange()}
+        width={600}
+        onMouseMove={(x, y) => setMouseover({x, y})}
+        timeAxisStyle={{
+            ticks: {
+                stroke: "#AAA",
+                opacity: 0.25,
+                "stroke-dasharray": "1,1"
+            }
+        }}
+        showGrid={true}
+        onTrackerChanged={(tracker) => {
+            if (!tracker) {
+                setMouseover({x: null, y: null});
+            }
+        }}
+    >
+        <ChartRow height="300">
+            <YAxis id="events" label={null} min={Math.min(...vals)} max={Math.max(...vals)} width="60" type="linear" format=",.0f"/>
+            <Charts>
+                <LineChart
+                    axis="events"
+                    series={timeseries}
+                    columns={["events"]}
+                    breakLine={false}
+                    style={style}
+                    interpolation="curveBasis"
+                />
+                <CrossHairs x={mouseover.x} y={mouseover.y} />
+            </Charts>
+        </ChartRow>
+    </ChartContainer></Resizable>
+}
+
+class CrossHairs extends React.Component<any, {}> {
+    render() {
+        const { x, y } = this.props;
+        if (x !== undefined && x !== null && y !== undefined && y !== null && x >=0 && y >= 0) {
+            return (
+                <g>
+                    <line style={{pointerEvents: "none", stroke: "#ccc"}} x1={0} y1={y} x2={this.props.width} y2={y} />
+                    <line style={{pointerEvents: "none", stroke: "#ccc"}} x1={x} y1={0} x2={x} y2={this.props.height} />
+                </g>
+            );
+        } else {
+            return <g />;
+        }
     }
 }

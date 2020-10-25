@@ -1,6 +1,10 @@
 import * as React from 'react'
 import {Button, Card, Col, Form, Input, message, Modal, Row} from "antd";
-import {LockOutlined, UserOutlined, MailOutlined} from "@ant-design/icons";
+
+import LockOutlined from "@ant-design/icons/lib/icons/LockOutlined";
+import UserOutlined from "@ant-design/icons/lib/icons/UserOutlined";
+import MailOutlined from "@ant-design/icons/lib/icons/MailOutlined";
+
 
 const logo = require('../../../icons/logo.svg');
 const googleLogo = require('../../../icons/google.svg');

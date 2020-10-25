@@ -1,7 +1,10 @@
 import * as React from 'react'
 import {Project, SuggestedUserInfo, User} from "../../services/model";
-import {Button, Checkbox, Col, Form, Input, message, Modal, Switch} from "antd";
-import {BankOutlined, LockOutlined, UserOutlined} from "@ant-design/icons";
+import {Button, Form, Input, Modal, Switch} from "antd";
+
+import BankOutlined from "@ant-design/icons/lib/icons/BankOutlined";
+import UserOutlined from "@ant-design/icons/lib/icons/UserOutlined";
+
 import {useState} from "react";
 import ApplicationServices from "../../services/ApplicationServices";
 import * as Utils from "../../commons/utils";

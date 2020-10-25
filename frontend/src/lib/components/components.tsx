@@ -5,7 +5,12 @@
 import React, {ReactNode, useState} from "react";
 import './components.less'
 import {Card, Col, message, Progress, Modal, Row, Spin, Tooltip} from "antd";
-import {CaretDownFilled, CaretRightFilled, CaretUpFilled, CopyOutlined, QuestionCircleOutlined} from "@ant-design/icons/lib";
+import CaretDownFilled from "@ant-design/icons/lib/icons/CaretDownFilled";
+import CaretRightFilled from "@ant-design/icons/lib/icons/CaretRightFilled";
+import CaretUpFilled from "@ant-design/icons/lib/icons/CaretUpFilled";
+import CopyOutlined from "@ant-design/icons/lib/icons/CopyOutlined";
+import QuestionCircleOutlined from "@ant-design/icons/lib/icons/QuestionCircleOutlined";
+
 import ApplicationServices from "../services/ApplicationServices";
 import {copyToClipboard, firstToLower, numberFormat, sleep, withDefaults} from "../commons/utils";
 

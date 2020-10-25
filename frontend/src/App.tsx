@@ -2,17 +2,17 @@ import * as React from 'react'
 
 import {NavLink, Route, Switch, Redirect} from 'react-router-dom';
 import {Button, Col, Dropdown, Form, Input, Layout, Menu, message, Modal, Row, Select} from "antd";
-import {
-	AreaChartOutlined, 
-	LogoutOutlined, 
-	SlidersOutlined,
-	ExclamationCircleOutlined,
-    UserOutlined,
-    UnlockOutlined,
-    NotificationOutlined,
-    CloudOutlined,
-	DownloadOutlined,
-} from "@ant-design/icons";
+
+import LogoutOutlined from "@ant-design/icons/lib/icons/LogoutOutlined";
+import CloudOutlined from "@ant-design/icons/lib/icons/CloudOutlined";
+import AreaChartOutlined from "@ant-design/icons/lib/icons/AreaChartOutlined";
+import SlidersOutlined from "@ant-design/icons/lib/icons/SlidersOutlined";
+import ExclamationCircleOutlined from "@ant-design/icons/lib/icons/ExclamationCircleOutlined";
+import UserOutlined from "@ant-design/icons/lib/icons/UserOutlined";
+import UnlockOutlined from "@ant-design/icons/lib/icons/UnlockOutlined";
+import DownloadOutlined from "@ant-design/icons/lib/icons/DownloadOutlined";
+import NotificationOutlined from "@ant-design/icons/lib/icons/CloudOutlined";
+
 
 import './App.less';
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";

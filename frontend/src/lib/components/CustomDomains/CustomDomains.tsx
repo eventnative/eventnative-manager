@@ -1,7 +1,17 @@
 import * as React from "react";
 import ApplicationServices from "../../services/ApplicationServices";
 import {Button, Form, Input, message, Modal, Table, Tag} from "antd";
-import {CheckOutlined, ClockCircleOutlined, CloudOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, RightCircleOutlined} from "@ant-design/icons";
+
+
+import CheckOutlined from "@ant-design/icons/lib/icons/CheckOutlined";
+import ClockCircleOutlined from "@ant-design/icons/lib/icons/ClockCircleOutlined";
+import CloudOutlined from "@ant-design/icons/lib/icons/CloudOutlined";
+import DeleteOutlined from "@ant-design/icons/lib/icons/DeleteOutlined";
+import ExclamationCircleOutlined from "@ant-design/icons/lib/icons/ExclamationCircleOutlined";
+import RightCircleOutlined from "@ant-design/icons/lib/icons/RightCircleOutlined";
+import PlusOutlined from "@ant-design/icons/lib/icons/PlusOutlined";
+
+
 import {LoadableComponent, withProgressBar} from "../components";
 import './CustomDomains.less'
 import {Domain} from "../../services/model";

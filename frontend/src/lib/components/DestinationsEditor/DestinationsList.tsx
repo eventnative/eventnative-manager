@@ -25,14 +25,16 @@ import {
     Select,
     Switch
 } from "antd";
-import {
-    ColumnWidthOutlined,
-    DatabaseOutlined,
-    DeleteOutlined,
-    EditOutlined,
-    ExclamationCircleOutlined, EyeInvisibleOutlined, EyeTwoTone,
-    PlusOutlined
-} from "@ant-design/icons";
+
+import ColumnWidthOutlined from "@ant-design/icons/lib/icons/ColumnWidthOutlined";
+import DatabaseOutlined from "@ant-design/icons/lib/icons/DatabaseOutlined";
+import DeleteOutlined from "@ant-design/icons/lib/icons/DeleteOutlined";
+import EditOutlined from "@ant-design/icons/lib/icons/EditOutlined";
+import ExclamationCircleOutlined from "@ant-design/icons/lib/icons/ExclamationCircleOutlined";
+import EyeInvisibleOutlined from "@ant-design/icons/lib/icons/EyeInvisibleOutlined";
+import EyeTwoTone from "@ant-design/icons/lib/icons/EyeTwoTone";
+import PlusOutlined from "@ant-design/icons/lib/icons/PlusOutlined";
+
 import './DestinationEditor.less'
 import {handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
@@ -167,7 +169,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
         if (this.state.activeMapping) {
             componentList.push(<MappingEditor key="mapping-editor" entity={this.state.activeMapping} onChange={async (newMapping) => {
                 this.state.activeEditorConfig.mappings = newMapping;
-                return this.saveCurrentDestinations();
+                await this.saveCurrentDestinations();
             }} closeDialog={() => {
                 this.setState({activeMapping: null, activeEditorConfig: null});
             }}/>)
@@ -202,7 +204,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
         return <>{componentList}</>;
     }
 
-    private async saveCurrentDestinations(): boolean {
+    private async saveCurrentDestinations(): Promise<boolean> {
         let payload = {destinations: this.state.destinations.toArray()};
         try {
             await this.services.storageService.save("destinations", payload, this.services.activeProject.id);

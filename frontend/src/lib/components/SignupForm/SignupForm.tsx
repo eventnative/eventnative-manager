@@ -1,7 +1,10 @@
 import * as React from 'react'
 import {Button, Card, Checkbox, Col, Form, Grid, Input, message, Row} from "antd";
 import './SignupForm.less'
-import {BankOutlined, LockOutlined, UserOutlined, MailOutlined} from "@ant-design/icons";
+
+import LockOutlined from "@ant-design/icons/lib/icons/LockOutlined";
+import MailOutlined from "@ant-design/icons/lib/icons/MailOutlined";
+
 import {NavLink} from 'react-router-dom';
 import {navigateAndReload, reloadPage} from "../../commons/utils";
 import ApplicationServices from "../../services/ApplicationServices";
