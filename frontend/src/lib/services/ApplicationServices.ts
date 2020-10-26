@@ -7,9 +7,12 @@ import {firebaseInit, FirebaseServerStorage, FirebaseUserService} from "./fireba
 import {message} from "antd";
 
 
+type RoutingType = "hash" | "url";
+
 export class ApplicationConfiguration {
     private readonly _firebaseConfig: any;
     private readonly _backendApiBase: string;
+    private readonly _routerType: RoutingType = "hash";
     /**
      * One of the following: dev, prod
      */
@@ -36,9 +39,16 @@ export class ApplicationConfiguration {
         } else {
             this._appEnvironment = 'development';
         }
+        if (process.env.ROUTING_TYPE) {
+            this._routerType = process.env.ROUTING_TYPE as RoutingType;
+        }
         console.log(`App initialized. Backend: ${this._backendApiBase}. Env: ${this._appEnvironment}`);
     }
 
+
+    get routerType(): "hash" | "url" {
+        return this._routerType;
+    }
 
     get firebaseConfig(): any {
         return this._firebaseConfig;
@@ -138,6 +148,11 @@ export default class ApplicationServices {
                 origins: []
             }
         }
+    }
+
+
+    get applicationConfiguration(): ApplicationConfiguration {
+        return this._applicationConfiguration;
     }
 }
 

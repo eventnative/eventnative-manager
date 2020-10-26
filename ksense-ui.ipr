@@ -30,7 +30,7 @@
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="ProjectRunConfigurationManager">
-    <configuration default="false" name="Build Frontent" type="js.build_tools.npm">
+    <configuration default="false" name="Build Frontend" type="js.build_tools.npm">
       <package-json value="$PROJECT_DIR$/frontend/package.json" />
       <command value="run" />
       <scripts>
@@ -40,7 +40,7 @@
       <envs />
       <method v="2" />
     </configuration>
-    <configuration default="false" name="Debug Frontent" type="js.build_tools.npm">
+    <configuration default="false" name="Debug Frontend" type="js.build_tools.npm">
       <package-json value="$PROJECT_DIR$/frontend/package.json" />
       <command value="run" />
       <scripts>
