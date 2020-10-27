@@ -1,6 +1,7 @@
 # Go parameters
 export PATH := $(shell go env GOPATH)/bin:$(PATH)
 export APPLICATION=enhosted
+export ROUTING_TYPE=url
 
 ifdef linux
   export TARGET_ENV=GOOS=linux GOARCH=amd64
