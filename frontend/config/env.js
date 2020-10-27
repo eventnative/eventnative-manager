@@ -72,6 +72,7 @@ function getClientEnvironment(publicUrl) {
         //Those variables are used by EventNative set up. See ApplicationServices.ts (class ApplicationConfiguration)
         BACKEND_API_BASE: process.env.BACKEND_API_BASE || null,
         APP_ENV: process.env.NODE_ENV || 'development', //alias of NODE_ENV
+        ROUTING_TYPE: process.env.ROUTING_TYPE || 'hash', //alias of NODE_ENV
 
 
         // Useful for determining whether we’re running in production mode.
