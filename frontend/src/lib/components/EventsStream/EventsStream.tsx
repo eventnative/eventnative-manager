@@ -1,12 +1,13 @@
 import {Align, CodeSnippet, LoadableComponent} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
-import {isNullOrUndef, withDefaultVal} from "../../commons/utils";
+import {withDefaultVal} from "../../commons/utils";
 import {Button, Collapse} from "antd";
 import {NavLink} from "react-router-dom";
 import React from "react";
 import moment, {Moment} from "moment";
-import {CaretRightOutlined} from "@ant-design/icons/lib";
+import CaretRightOutlined from "@ant-design/icons/lib/icons/CaretDownFilled";
 import './EventsSteam.less'
+import {WithExtraHeaderComponentHook} from "../../../navigation";
 
 type Event = {
     time: Moment
@@ -17,13 +18,13 @@ type State = {
     events?: Event[]
 }
 
-export default class EventsStream extends LoadableComponent<{}, State> {
+export default class EventsStream extends LoadableComponent<WithExtraHeaderComponentHook, State> {
     private readonly services: ApplicationServices;
     private timeInUTC: boolean;
 
     constructor(props: any, context: any) {
         super(props, context);
-        this.timeInUTC = withDefaultVal(this.props.timeInUTC, true);
+        this.timeInUTC = withDefaultVal(undefined, true);
         this.services = ApplicationServices.get();
         this.state = {}
     }
@@ -33,7 +34,7 @@ export default class EventsStream extends LoadableComponent<{}, State> {
     async componentDidMount(): Promise<void> {
         await super.componentDidMount();
         this.props.setExtraHeaderComponent(<>
-            <Button type="primary"><NavLink to="/dashboard" activeClassName="selected">View Status Dashboard</NavLink></Button>
+            <Button type="primary"><NavLink to="/dashboard">View Status Dashboard</NavLink></Button>
         </>);
     }
 
@@ -54,7 +55,7 @@ export default class EventsStream extends LoadableComponent<{}, State> {
 
     protected renderReady(): React.ReactNode {
         if (!this.state.events || this.state.events.length == 0) {
-            return <Align horizontal="center" className="events-stream-no-data">No Data</Align>
+            return <Align horizontal="center">No Data</Align>
         }
         return <Collapse className="events-stream-events"
             bordered={false}

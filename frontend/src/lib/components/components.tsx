@@ -345,6 +345,7 @@ const SyntaxHighlighterAsync = SyntaxHighlighter;//lazyComponent(() => import('r
 type ICodeSnippetProps = {
     children: ReactNode,
     language: 'javascript' | 'bash' | 'yaml' | 'json',
+    className?: string
     extra?: ReactNode,
     size?: 'large' | 'small',
     toolbarPosition?: 'top' | 'bottom'
@@ -373,7 +374,11 @@ export function CodeSnippet(props: ICodeSnippetProps) {
         </Col>
 	</Row>;
 
-    return <div className={["code-snippet-wrapper-" + toolBarPos, "code-snippet-wrapper", props.size === 'large' ? 'code-snippet-large' : 'code-snippet-small'].join(" ")}>
+    let classes = ["code-snippet-wrapper-" + toolBarPos, "code-snippet-wrapper", props.size === 'large' ? 'code-snippet-large' : 'code-snippet-small'];
+    if (props.className) {
+        classes.push(props.className);
+    }
+    return <div className={classes.join(" ")}>
         {toolBarPos === 'top' ? toolbar : null}
         <SyntaxHighlighterAsync style={dark} language={props.language}>{props.children}</SyntaxHighlighterAsync>
         {toolBarPos === 'bottom' ? toolbar : null}
