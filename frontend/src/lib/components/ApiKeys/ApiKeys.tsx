@@ -91,7 +91,7 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
                         </Space>
                     </span>
                 },
-                title: (<LabelWithTooltip documentation={(<>Client API Key. Should be used with <a href="https://docs.eventnative.dev/javascript-reference">JS client</a>.</>)}>Client
+                title: (<LabelWithTooltip documentation={(<>Client API Key. Should be used with <a href="https://docs.eventnative.org/javascript-reference">JS client</a>.</>)}>Client
                     Secret</LabelWithTooltip>)
             },
             {
@@ -112,7 +112,7 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
                         </Space>
                     </span>
                 },
-                title: (<LabelWithTooltip documentation={(<>Server API Key. Should be used with <a href="https://docs.eventnative.dev/api">backend API calls</a>.</>)}>Server Secret</LabelWithTooltip>)
+                title: (<LabelWithTooltip documentation={(<>Server API Key. Should be used with <a href="https://docs.eventnative.org/api">backend API calls</a>.</>)}>Server Secret</LabelWithTooltip>)
             },
             {
                 className: "api-keys-column-origins", dataIndex: 'origins', key: 'origins', render: (text, row, index) => {
@@ -260,12 +260,12 @@ function KeyDocumentation({token}: { token: Token }) {
     let exampleSwitches = <div className="api-keys-doc-embed-switches">
         <Space><LabelWithTooltip documentation={
             <>Check if you want to intercept events from Google Analytics
-                (<a href="https://docs.eventnative.dev/javascript-reference">Read more</a>)
+                (<a href="https://docs.eventnative.org/javascript-reference">Read more</a>)
             </>}>Intercept GA events</LabelWithTooltip>
             <Switch size="small" checked={gaEnabled} onChange={() => setGAEnabled(!gaEnabled)}/>
             <LabelWithTooltip documentation={
                 <>Check if you want to intercept events from Segment
-                    (<a href="https://docs.eventnative.dev/javascript-reference">Read more</a>)
+                    (<a href="https://docs.eventnative.org/javascript-reference">Read more</a>)
                 </>}>Intercept Segment events</LabelWithTooltip>
             <Switch size="small" checked={segment} onChange={() => setSegmentEnabled(!segment)}/></Space>
     </div>
@@ -279,7 +279,7 @@ function KeyDocumentation({token}: { token: Token }) {
         <Tabs.TabPane tab="Embed JavaScript" key="1">
             <p className="api-keys-documentation-tab-description">Easiest way to start tracking events within your web app is to
                 add following snippet to <CodeInline>&lt;head&gt;</CodeInline>
-                section of your html file. <a href="https://docs.eventnative.dev/javascript-reference">Read more</a> about JavaScript integration
+                section of your html file. <a href="https://docs.eventnative.org/javascript-reference">Read more</a> about JavaScript integration
                 on our documentation website
             </p>
             <CodeSnippet language="javascript"
@@ -290,8 +290,8 @@ function KeyDocumentation({token}: { token: Token }) {
         <Tabs.TabPane tab="Use NPM/YARN" key="2">
             <p className="api-keys-documentation-tab-description">
                 Use <CodeInline>npm install --save @ksense/eventnative</CodeInline> or <CodeInline>yarn add @ksense/eventnative</CodeInline>.
-                Read more <a href="https://docs.eventnative.dev/javascript-reference/direct-tracking">about configuration properties</a> and <a
-                href="https://docs.eventnative.dev/javascript-reference/direct-tracking">tracking api</a>
+                Read more <a href="https://docs.eventnative.org/javascript-reference/direct-tracking">about configuration properties</a> and <a
+                href="https://docs.eventnative.org/javascript-reference/direct-tracking">tracking api</a>
             </p>
             <CodeSnippet language="javascript">
                 {getNPMDocumentation(token.jsAuth, selectedDomain)}

@@ -28,7 +28,7 @@ export function MappingEditor({entity, onChange, closeDialog}: IMappingEditorPro
         {
             width: "35%",
             title: <LabelWithTooltip documentation={
-                <>Source field as JSON Pointer. <a href="https://docs.eventnative.dev/configuration/schema-and-mappings#step-3-mapping">Read more about mappings</a></>
+                <>Source field as JSON Pointer. <a href="https://docs.eventnative.org/configuration/schema-and-mappings#step-3-mapping">Read more about mappings</a></>
             }>Source</LabelWithTooltip>,
             render: (val, mapping: Mapping, index) => {
                 if (mapping == null) {
@@ -60,7 +60,7 @@ export function MappingEditor({entity, onChange, closeDialog}: IMappingEditorPro
         {
             width: "35%",
             title: <LabelWithTooltip documentation={
-                <>Destination field as JSON Pointer. <a href="https://docs.eventnative.dev/configuration/schema-and-mappings#step-3-mapping">Read more about mappings</a></>
+                <>Destination field as JSON Pointer. <a href="https://docs.eventnative.org/configuration/schema-and-mappings#step-3-mapping">Read more about mappings</a></>
             }>Destination</LabelWithTooltip>,
             render: (val, mapping: Mapping, index) => {
                 if (mapping == null || mapping.action == 'erase') {
