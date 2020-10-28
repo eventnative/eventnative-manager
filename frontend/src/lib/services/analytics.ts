@@ -16,7 +16,7 @@ export default class AnalyticsService {
 
         eventN.init({
             key: "daaac3a7-a7e4-475f-80dd-43a2985680c5",
-            tracking_host: "https://track.ksense.io"
+            tracking_host: "https://t.jitsu.com"
         });
     }
 

@@ -1,4 +1,4 @@
-export const EVENTNATIVE_HOST = "track.ksense.io";
+export const EVENTNATIVE_HOST = "t.jitsu.com";
 
 function formatCode(code: string) {
     let lines: string[] = code.split("\n");
