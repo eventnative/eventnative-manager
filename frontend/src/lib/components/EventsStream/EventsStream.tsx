@@ -69,7 +69,7 @@ export default class EventsStream extends LoadableComponent<{}, State> {
         </Collapse>
     }
 
-    protected async load(): Promise<{}> {
+    protected async load(): Promise<State> {
         let events: Event[] = (await this.services.backendApiClient.get(`events?project_id=${this.services.activeProject.id}&limit=100`))['events'].map(rawEvent => {
             return {time: moment(rawEvent['_timestamp']), data: rawEvent}
         });
@@ -81,7 +81,7 @@ export default class EventsStream extends LoadableComponent<{}, State> {
             }
             return 0;
         })
-        this.setState({events});
+        return {events};
     }
 
 

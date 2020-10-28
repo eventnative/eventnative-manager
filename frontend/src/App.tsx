@@ -98,7 +98,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                             }}
                         />)
                     })}
-                    <Redirect key="rootRedirect" to="/"/>
+                    <Redirect key="rootRedirect" to="/" />
                 </Switch>);
             case AppLifecycle.APP:
                 return this.appLayout();
@@ -152,7 +152,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                 return (<CenteredSpin/>)
             }
         });
-        routes.push(<Redirect key="dashboardRedirect" to="/dashboard"/>);
+        routes.push(<Redirect key="dashboardRedirect" to="/dashboard" />);
         let extraForms = null;
         if (this.state.showOnboardingForm) {
             extraForms = <OnboardingForm user={this.state.user} onCompleted={async () => {

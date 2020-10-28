@@ -63,7 +63,7 @@ export const PUBLIC_PAGES: Page[] = [
 
 export const PRIVATE_PAGES: Page[] = [
     new Page("Test Component", "/test", (props) => (<ComponentTest {...props} />), "Component Test"),
-    new Page("EventNative | recent events", ["/events_stream", ""], (props) => (<EventsStream {...props} />), "Recent events"),
+    new Page("EventNative | recent events", "/events_stream", (props) => (<EventsStream {...props} />), "Recent events"),
     new Page("EventNative | dashboard", ["/dashboard", ""], (props) => (<StatusPage {...props} />), "Status"),
     new Page("EventNative | edit destinations", "/destinations", (props) => (<DestinationsList {...props} />), "Edit destinations"),
     new Page("EventNative | download config", "/cfg_download", (props) => (<DownloadConfig {...props} />), "Download EventNative configuration"),
