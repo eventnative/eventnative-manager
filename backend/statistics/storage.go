@@ -28,14 +28,14 @@ type Storage interface {
 }
 
 func NewStorage(pgConfig *enstorages.DestinationConfig, promConfig *PrometheusConfig, oldKeysByProject map[string][]string) (Storage, error) {
-	if pgConfig != nil {
-		logging.Info("Statistics storage: postgres")
-		return NewPostgres(pgConfig.DataSource, oldKeysByProject)
-	}
-
 	if promConfig != nil {
 		logging.Info("Statistics storage: prometheus")
 		return NewPrometheus(promConfig)
+	}
+
+	if pgConfig != nil {
+		logging.Info("Statistics storage: postgres")
+		return NewPostgres(pgConfig.DataSource, oldKeysByProject)
 	}
 
 	return nil, errors.New("Statistics storage configuration wasn't found")
