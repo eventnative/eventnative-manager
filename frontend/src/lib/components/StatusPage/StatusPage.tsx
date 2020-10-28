@@ -1,32 +1,66 @@
 import React, {useState} from 'react';
 import {LoadableComponent, StatCard} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
-import {Card, Col, Row} from "antd";
+import {Button, Card, Col, Form, Radio, Row} from "antd";
 import './StatusPage.less'
 
 import {ChartContainer, ChartRow, Charts, LineChart, YAxis, Resizable} from "react-timeseries-charts";
 import styler from "react-timeseries-charts/lib/js/styler"
 
 import {TimeSeries} from "pondjs";
+import moment, {Moment} from "moment";
+import {isNullOrUndef, withDefaultVal} from "../../commons/utils";
+import {WithExtraHeaderComponentHook} from "../../../navigation";
+import {Option} from "antd/es/mentions";
+import {NavLink} from "react-router-dom";
+
+/**
+ * Information about events per current period and prev
+ * period
+ */
+class EventsComparison  {
+    current: number
+    currentExtrapolated: number //if current isn't representing a full period (example, we're in the middle
+    //of the hour), this value will contain extrapolated value. Currently not calculated, reserver for future use
+    previous: number
+    lastPeriod: Moment
+
+
+
+    constructor(series: DatePoint[], granularity: Granularity) {
+        if (series == null || series.length == 0) {
+            this.current = this.previous = 0;
+            this.lastPeriod = null;
+        } else {
+            this.current = series[series.length - 1].events;
+            this.lastPeriod = series[series.length - 1].date
+            this.previous = series.length > 1 ? series[series.length - 2].events : null;
+        }
+    }
+}
+
+type Granularity = "day" | "hour" | "total";
+
 
 type State = {
     designationsCount?: number
     hourlyEvents?: DatePoint[]
     dailyEvents?: DatePoint[]
-    eventsLast24?: number,
-    events48to24?: number,
-    eventsLastFullHour?: number,
-    eventsPrevHour?: number
+    hourlyComparison?: EventsComparison
+    dailyComparison?: EventsComparison
+}
 
+interface Props extends WithExtraHeaderComponentHook {
+    timeInUTC?: boolean
 }
 
 type DatePoint = {
-    date: Date
+    date: Moment
     events: number
 }
 
 interface StatService {
-    get(from: Date, to: Date, granularity: "day" | "hour" | "total"): Promise<DatePoint[]>
+    get(from: Date, to: Date, granularity: Granularity): Promise<DatePoint[]>
 }
 
 function addSeconds(date: Date, seconds: number): Date {
@@ -35,7 +69,7 @@ function addSeconds(date: Date, seconds: number): Date {
     return res;
 }
 
-function roundDown(date: Date, granularity: "day" | "hour"): Date {
+function roundDown(date: Date, granularity: Granularity): Date {
     let res = new Date(date);
     res.setMinutes(0, 0, 0);
     if (granularity == "day") {
@@ -44,7 +78,8 @@ function roundDown(date: Date, granularity: "day" | "hour"): Date {
     return res;
 }
 
-function roundUp(date: Date, granularity: "day" | "hour"): Date {
+
+function roundUp(date: Date, granularity: Granularity): Date {
     let res = new Date(date);
     res.setMinutes(59, 23, 999);
     if (granularity == "day") {
@@ -55,15 +90,17 @@ function roundUp(date: Date, granularity: "day" | "hour"): Date {
 
 class StatServiceImpl implements StatService {
     private readonly service: ApplicationServices
+    private readonly timeInUTC: boolean;
 
-    constructor(service: ApplicationServices) {
+    constructor(service: ApplicationServices, timeInUTC: boolean) {
         this.service = service
+        this.timeInUTC = timeInUTC;
     }
 
-    async get(from: Date, to: Date, granularity: "day" | "hour" | "total"): Promise<DatePoint[]> {
+    async get(from: Date, to: Date, granularity: Granularity): Promise<DatePoint[]> {
         let data = (await this.service.backendApiClient.get(`/statistics?project_id=${this.service.activeProject.id}&from=${from.toISOString()}&to=${to.toISOString()}&granularity=${granularity}`))['data'];
-        let dates = data.map((el) => {
-            return {date: new Date(Date.parse(el.key)), events: el.events}
+        let dates: DatePoint[] = data.map((el) => {
+            return {date: this.timeInUTC ? moment(el.key).utc() : moment(el.key), events: el.events}
         });
         dates.sort((e1, e2) => {
             if (e1.date > e2.date) {
@@ -78,30 +115,48 @@ class StatServiceImpl implements StatService {
 }
 
 
-export default class StatusPage extends LoadableComponent<{}, State> {
+export default class StatusPage extends LoadableComponent<Props, State> {
     private readonly services: ApplicationServices;
     private stats: StatService;
+    private timeInUTC: boolean;
 
-    constructor(props: {}, context: any) {
+    constructor(props: Props, context: any) {
         super(props, context);
+        this.timeInUTC = withDefaultVal(this.props.timeInUTC, true);
         this.services = ApplicationServices.get();
-        this.stats = new StatServiceImpl(this.services);
+        this.stats = new StatServiceImpl(this.services, this.timeInUTC);
         this.state = {}
     }
 
+    getCardTitle(name: string, comparison: EventsComparison, format: string) {
+        return isNullOrUndef(comparison.lastPeriod) ? name : `${name} (${comparison.lastPeriod.format(format)})`
+    }
+
+
+    async componentDidMount(): Promise<void> {
+        await super.componentDidMount();
+        this.props.setExtraHeaderComponent(<>
+            <Button type="primary"><NavLink to="/events_stream" activeClassName="selected">View Events Stream</NavLink></Button>
+        </>);
+    }
+
+
 
     renderReady() {
-        return <><h3>{this.services.userService.getUser().name}, welcome to EventNative!</h3>
+        let utcPostfix = this.timeInUTC ? " [UTC]" : "";
+        return <>
             <div className="status-page-cards-row">
                 <Row gutter={16}>
                     <Col span={8}>
                         <StatCard value={this.state.designationsCount} title="Total destinations" bordered={false}/>
                     </Col>
                     <Col span={8}>
-                        <StatCard value={this.state.eventsLast24} valuePrev={this.state.events48to24} title="Events last day ()" bordered={false}/>
+                        <StatCard value={this.state.dailyComparison.current} valuePrev={this.state.dailyComparison.previous}
+                                  title={this.getCardTitle("Last day", this.state.dailyComparison, "MMMM Do YYYY")} bordered={false}/>
                     </Col>
                     <Col span={8}>
-                        <StatCard value={this.state.eventsLastFullHour} valuePrev={this.state.eventsPrevHour} title="Events last hour ()" bordered={false}/>
+                        <StatCard value={this.state.hourlyComparison.current} valuePrev={this.state.hourlyComparison.previous}
+                                  title={this.getCardTitle("Last hour", this.state.hourlyComparison, `HH:mm${utcPostfix}`)} bordered={false}/>
                     </Col>
                 </Row>
             </div>
@@ -140,7 +195,7 @@ export default class StatusPage extends LoadableComponent<{}, State> {
 
 
 
-    async load() {
+    async load(): Promise<State> {
         let now = new Date();
         let [
             hourlyEvents,
@@ -152,6 +207,7 @@ export default class StatusPage extends LoadableComponent<{}, State> {
             this.getNumberOfDestinations()
         ]);
 
+
         let eventsLast24 = dailyEvents.length > 0 ? dailyEvents[dailyEvents.length - 1].events : 0;
         let events48to24 = dailyEvents.length > 1 ? dailyEvents[dailyEvents.length - 2].events : 0;
 
@@ -159,7 +215,8 @@ export default class StatusPage extends LoadableComponent<{}, State> {
         let eventsPrevHour = hourlyEvents.length > 1 ? hourlyEvents[hourlyEvents.length - 2].events : 0;
         return {
             designationsCount, hourlyEvents, dailyEvents,
-            eventsLast24, events48to24, eventsLastFullHour, eventsPrevHour
+            hourlyComparison: new EventsComparison(hourlyEvents, "hour"),
+            dailyComparison: new EventsComparison(dailyEvents, "day")
         };
     }
 

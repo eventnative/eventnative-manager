@@ -8,10 +8,16 @@ import SignupForm from "./lib/components/SignupForm/SignupForm";
 import LoginForm from "./lib/components/LoginForm/LoginForm";
 import StatusPage from "./lib/components/StatusPage/StatusPage";
 import {DownloadConfig} from "./lib/components/DownloadConfig/DownloadConfig";
+import EventsStream from "./lib/components/EventsStream/EventsStream";
 
+export type ComponentHeaderHook = (el: ReactElement) => void
+
+export interface WithExtraHeaderComponentHook {
+    setExtraHeaderComponent: ComponentHeaderHook
+}
 
 export class Page {
-    componentFactory: (params: Record<any, string>) => ReactElement
+    componentFactory: (props: any) => ReactElement
     pageTitle: string
     path: string[]
     pageHeader: React.ReactNode;
@@ -28,12 +34,12 @@ export class Page {
         return firstPath.replace("/", '');
     }
 
-    public getComponent(params: Record<any, string>): ReactNode {
-        return this.componentFactory(params);
+    public getComponent(props?: any): ReactNode {
+        return this.componentFactory(props || {});
     }
 
 
-    constructor(pageTitle: string, path: string[] | string, component: (params: Record<any, string>) => ReactElement, pageHeader?: ReactNode) {
+    constructor(pageTitle: string, path: string[] | string, component: (props: any) => ReactElement, pageHeader?: ReactNode) {
         this.componentFactory = component;
         this.pageTitle = pageTitle;
         this.pageHeader = pageHeader;
@@ -56,10 +62,11 @@ export const PUBLIC_PAGES: Page[] = [
 ];
 
 export const PRIVATE_PAGES: Page[] = [
-    new Page("Test Component", "/test", () => (<ComponentTest />), "Component Test"),
-    new Page("EventNative | dashboard", ["/dashboard", ""], () => (<StatusPage />), "Status"),
-    new Page("EventNative | edit destinations", "/destinations", () => (<DestinationsList />), "Edit destinations"),
-    new Page("EventNative | download config", "/cfg_download", () => (<DownloadConfig />), "Download EventNative configuration"),
-    new Page("EventNative | edit API keys", "/api_keys", () => (<ApiKeys />), "API Keys"),
-    new Page("EventNative | edit custom domains", "/domains", () => (<CustomDomains />), "Custom domains")
+    new Page("Test Component", "/test", (props) => (<ComponentTest {...props} />), "Component Test"),
+    new Page("EventNative | recent events", ["/events_stream", ""], (props) => (<EventsStream {...props} />), "Recent events"),
+    new Page("EventNative | dashboard", ["/dashboard", ""], (props) => (<StatusPage {...props} />), "Status"),
+    new Page("EventNative | edit destinations", "/destinations", (props) => (<DestinationsList {...props} />), "Edit destinations"),
+    new Page("EventNative | download config", "/cfg_download", (props) => (<DownloadConfig {...props} />), "Download EventNative configuration"),
+    new Page("EventNative | edit API keys", "/api_keys", (props) => (<ApiKeys {...props} />), "API Keys"),
+    new Page("EventNative | edit custom domains", "/domains", (props) => (<CustomDomains {...props} />), "Custom domains")
 ];

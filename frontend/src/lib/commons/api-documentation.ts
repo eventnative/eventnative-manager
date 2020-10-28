@@ -62,15 +62,14 @@ export function getNPMDocumentation(key: string, host: string) {
     });
     //track page views
     eventN.track('app_page');
-    
     `)
 }
 
 export function getCurlDocumentation(key: string, host: string) {
-    return `
+    return formatCode(`
     curl -X POST -H "Content-Type: application/json" -H 'X-Auth-Token: ${key}' \\
-     --data-binary '{"test_str_field": "str", "test_int_field": 42}' '${host}/api/v1/s2s/event'
-    `;
+     --data-binary '{"test_str_field": "str", "test_int_field": 42}' 'https://${host}/api/v1/s2s/event'
+    `);
 
 }
 

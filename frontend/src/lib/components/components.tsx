@@ -12,7 +12,7 @@ import CopyOutlined from "@ant-design/icons/lib/icons/CopyOutlined";
 import QuestionCircleOutlined from "@ant-design/icons/lib/icons/QuestionCircleOutlined";
 
 import ApplicationServices from "../services/ApplicationServices";
-import {copyToClipboard, firstToLower, numberFormat, sleep, withDefaults} from "../commons/utils";
+import {copyToClipboard, firstToLower, isNullOrUndef, numberFormat, sleep, withDefaults} from "../commons/utils";
 
 const plumber = require("../../icons/plumber.png");
 
@@ -83,6 +83,10 @@ function formatPercent(num: number) {
 
 }
 
+function valuePresent(val) {
+    return val !== null && val !== undefined;
+}
+
 export function StatCard({value, ...otherProps}) {
     let formatter = otherProps['format'] ? otherProps['format'] : numberFormat({});
 
@@ -91,25 +95,31 @@ export function StatCard({value, ...otherProps}) {
     let percent;
     let valuePrev = otherProps['valuePrev'];
     delete otherProps['valuePrev'] //stop propagating prop to DOM
-    if (valuePrev !== undefined) {
+    if (!isNullOrUndef(valuePrev)) {
         if (valuePrev < value) {
             extraClassName = "stat-card-growth stat-card-comparison"
             icon = <CaretUpFilled/>
-            percent = valuePrev == 0 ? "∞" : formatPercent(value / valuePrev - 1)
+            percent = valuePrev == 0 ? "" : (formatPercent(value / valuePrev - 1) + "%")
         } else if (valuePrev > value) {
             extraClassName = "stat-card-decline stat-card-comparison"
             icon = <CaretDownFilled/>
-            percent = value == 0 ? "∞" : formatPercent(valuePrev / value - 1)
+            percent = value == 0 ? "" : (formatPercent(valuePrev / value - 1) + "%")
+        } else if (valuePrev == 0 && value === 0) {
+            percent = "";
         } else {
             extraClassName = "stat-card-flat stat-card-comparison"
             icon = <CaretRightFilled/>
             percent = "0"
         }
+        if (percent === '') {
+            icon = null;
+        }
     }
+    let title = isNullOrUndef(valuePrev) ? null : <>Value for previous period: <b>{formatter(valuePrev)}</b></>
     let extra = <>
-        <Tooltip trigger={["click", "hover"]} title={(<>Value for previous period: <b>{formatter(valuePrev)}</b></>)}>
+        <Tooltip trigger={["click", "hover"]} title={title}>
             <div className={extraClassName}>
-                {icon}{percent}%
+                {icon}{percent}
             </div>
         </Tooltip>
     </>;
@@ -188,6 +198,9 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
     }
 
     async componentDidMount() {
+        if (this.props['setExtraHeaderComponent']) {
+            this.props['setExtraHeaderComponent'](null)
+        }
         try {
             let newState = await this.load();
             this.setState({...newState, __lifecycle: ComponentLifecycle.LOADED});
@@ -219,7 +232,6 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
                 return LoadableComponent.error(e);
             }
         }
-
     }
 
     /**
@@ -319,10 +331,12 @@ export function ActionLink({children, onClick}: { children: any, onClick: () => 
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import dark from 'react-syntax-highlighter/dist/esm/styles/hljs/dark';
 import js from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
+import json from 'react-syntax-highlighter/dist/esm/languages/hljs/json';
 import yaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
 import bash from 'react-syntax-highlighter/dist/esm/languages/hljs/bash';
 
 SyntaxHighlighter.registerLanguage('javascript', js);
+SyntaxHighlighter.registerLanguage('json', json);
 SyntaxHighlighter.registerLanguage('yaml', yaml);
 SyntaxHighlighter.registerLanguage('bash', bash);
 
@@ -330,7 +344,7 @@ const SyntaxHighlighterAsync = SyntaxHighlighter;//lazyComponent(() => import('r
 
 type ICodeSnippetProps = {
     children: ReactNode,
-    language: 'javascript' | 'bash' | 'yaml',
+    language: 'javascript' | 'bash' | 'yaml' | 'json',
     extra?: ReactNode,
     size?: 'large' | 'small',
     toolbarPosition?: 'top' | 'bottom'

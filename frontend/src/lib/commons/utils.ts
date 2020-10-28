@@ -28,6 +28,15 @@ export function alert(...object) {
     }
 }
 
+export function isNullOrUndef(val) {
+    return val === null || val === undefined;
+}
+
+export function withDefaultVal<T>(val: T, defaultVal: T): T {
+    return isNullOrUndef(val) ? defaultVal : val;
+}
+
+
 /**
  * Navigates to a page and reloads it (if URL is prefixed by hash). Url is relative
  */

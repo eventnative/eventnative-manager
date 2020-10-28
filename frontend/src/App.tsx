@@ -16,7 +16,7 @@ import NotificationOutlined from "@ant-design/icons/lib/icons/CloudOutlined";
 
 import './App.less';
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
-import {CenteredSpin, GlobalError, handleError, Preloader} from "./lib/components/components";
+import {Align, CenteredSpin, GlobalError, handleError, Preloader} from "./lib/components/components";
 import {reloadPage} from "./lib/commons/utils";
 import {User} from "./lib/services/model";
 import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
@@ -37,6 +37,7 @@ type AppState = {
     lifecycle: AppLifecycle
     loginErrorMessage?: string
     globalErrorDetails?: string
+    extraControls?: React.ReactNode
     user?: User
 }
 
@@ -51,7 +52,8 @@ export default class App extends React.Component<AppProperties, AppState> {
         this.services = ApplicationServices.get();
         this.state = {
             lifecycle: AppLifecycle.LOADING,
-            showOnboardingForm: false
+            showOnboardingForm: false,
+            extraControls: null
         }
 
     }
@@ -85,15 +87,15 @@ export default class App extends React.Component<AppProperties, AppState> {
                 return (<Switch>
                     {PUBLIC_PAGES.map(route => {
                         return (<Route //key={route.getPrefixedPath()}
-                                       path={route.getPrefixedPath()}
-                                       exact
-                                       render={(routeProps) => {
-                                           this.services.analyticsService.onPageLoad({
-                                               pagePath: routeProps.location.key
-                                           })
-                                           document.title = route.pageTitle;
-                                           return route.getComponent({});
-                                       }}
+                            path={route.getPrefixedPath()}
+                            exact
+                            render={(routeProps) => {
+                                this.services.analyticsService.onPageLoad({
+                                    pagePath: routeProps.location.key
+                                })
+                                document.title = route.pageTitle;
+                                return route.getComponent({});
+                            }}
                         />)
                     })}
                     <Redirect key="rootRedirect" to="/"/>
@@ -108,11 +110,24 @@ export default class App extends React.Component<AppProperties, AppState> {
         }
     }
 
-    public wrapInternalPage(route: Page): ReactNode {
-        let component = route.getComponent({});
+    public wrapInternalPage(route: Page, props: any): ReactNode {
+        let component = route.getComponent({
+            ...props, setExtraHeaderComponent: (node) => {
+                this.setState({extraControls: node});
+            }
+        });
         return (
             <div className={["internal-page-wrapper", "page-" + route.id + "-wrapper"].join(" ")}>
-                <h1 className="internal-page-header">{route.pageHeader}</h1>
+                <Row className="internal-page-header-container">
+                    <Col span={16}>
+                        <h1 className="internal-page-header">{route.pageHeader}</h1>
+                    </Col>
+                    <Col span={8}>
+                        <Align horizontal="right">
+                            {this.state.extraControls}
+                        </Align>
+                    </Col>
+                </Row>
                 <div className="internal-page-content-wrapper">
                     {component}
                 </div>
@@ -131,7 +146,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                                        pagePath: routeProps.location.hash
                                    });
                                    document.title = route.pageTitle;
-                                   return this.wrapInternalPage(route);
+                                   return this.wrapInternalPage(route, {});
                                }}/>);
             } else {
                 return (<CenteredSpin/>)
@@ -185,7 +200,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                 <Menu.Item key="domains" icon={<CloudOutlined/>}>
                     <NavLink to="/domains" activeClassName="selected">Custom Domains</NavLink>
                 </Menu.Item>
-                <Menu.Item key="cfg_download" icon={<DownloadOutlined />}>
+                <Menu.Item key="cfg_download" icon={<DownloadOutlined/>}>
                     <NavLink to="/cfg_download" activeClassName="selected">Download EN Config</NavLink>
                 </Menu.Item>
             </Menu>
