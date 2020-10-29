@@ -58,12 +58,11 @@ func (eh *EventsHandler) GetHandler(c *gin.Context) {
 
 	apiKeysObjects, err := eh.storage.GetApiKeysByProjectId(projectId)
 	if err != nil {
-		if err != storages.ErrNoFound {
-			logging.Errorf("Error getting api keys for [%s] project. All destinations will be skipped: %v", projectId, err)
-			c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Error getting api keys for project " + projectId})
-			return
-		}
-
+		logging.Errorf("Error getting api keys for [%s] project. All destinations will be skipped: %v", projectId, err)
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Error getting api keys for project " + projectId})
+		return
+	}
+	if len(apiKeysObjects) == 0 {
 		c.JSON(http.StatusOK, enhandlers.CachedEventsResponse{Events: []enevents.Fact{}})
 		return
 	}

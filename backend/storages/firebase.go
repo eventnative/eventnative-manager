@@ -139,7 +139,7 @@ func (fb *Firebase) GetDestinationsByProjectId(projectId string) ([]*entities.De
 	doc, err := fb.client.Collection(destinationsCollection).Doc(projectId).Get(fb.ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
-			return nil, ErrNoFound
+			return make([]*entities.Destination, 0), nil
 		} else {
 			return nil, fmt.Errorf("error getting destinations by projectId [%s]: %v", projectId, err)
 		}
@@ -212,7 +212,7 @@ func (fb *Firebase) GetApiKeysByProjectId(projectId string) ([]*entities.ApiKey,
 	doc, err := fb.client.Collection(apiKeysCollection).Doc(projectId).Get(fb.ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
-			return nil, ErrNoFound
+			return make([]*entities.ApiKey, 0), nil
 		} else {
 			return nil, fmt.Errorf("Error getting api keys by projectId [%s]: %v", projectId, err)
 		}

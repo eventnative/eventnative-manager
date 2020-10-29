@@ -58,10 +58,7 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 		//if only tokens empty - put all tokens by project
 		keys, err := dh.storage.GetApiKeysByProjectId(projectId)
 		if err != nil {
-			if err != storages.ErrNoFound {
-				logging.Errorf("Error getting api keys for [%s] project. All destinations will be skipped: %v", projectId, err)
-			}
-
+			logging.Errorf("Error getting api keys for [%s] project. All destinations will be skipped: %v", projectId, err)
 			continue
 		}
 
