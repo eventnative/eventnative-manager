@@ -31,22 +31,56 @@ body {
 .app-logo-wrapper {
   display: flex;
   align-items: center;
-  img.app-logo {
-    height: 40px;
-    width: 40px;
-    margin-left: 10px;
-  }
-  .app-logo-text {
-    font-family: 'Rubik', sans-serif;;
-    font-weight: 300;
-    font-size: 20px;
-    margin-left: 5px;
-    color: black;
+  .app-logo {
+    padding-left: 22px;
+    width: 140px !important;
+    padding-top: 10px;
+    margin-bottom: 13px;
+
   }
 }
 
 .side-bar {
   border: 0 !important;
+  .ant-menu-item-selected {
+    border-right: 0 !important;
+    background-color: white !important;
+    border-top-left-radius: 16px;
+    border-bottom-left-radius: 16px;
+    a {
+      font-weight: bold !important;
+    }
+  }
+  .ant-layout-sider-children {
+    background-color: rgb(225, 238, 245);
+  }
+
+  .ant-menu {
+    background-color: rgb(225, 238, 245) !important;
+  }
+
+  .ant-menu-item {
+    margin-left: 12px;
+    padding-left: 12px !important;
+    border-top-left-radius: 16px !important;
+    border-bottom-left-radius: 16px !important;
+  }
+
+  .ant-menu-item::after {
+    border-right: 0 !important;
+  }
+
+  .ant-menu-item-active {
+    background-color: transparent !important;
+    border-top-left-radius: 16px !important;
+    border-bottom-left-radius: 16px !important;
+  }
+
+  .ant-menu-item-selected.ant-menu-item-active {
+    background-color: white !important;
+    border-top-left-radius: 16px !important;
+    border-bottom-left-radius: 16px !important;
+  }
 }
 
 .sidebar-menu {
@@ -54,9 +88,8 @@ body {
 
 }
 
-.user-menu {
-  text-align: right;
-  padding-right: 10px;
+.user-drop-down-button {
+  margin-left: 10px;
 }
 
 .trigger {
@@ -78,7 +111,10 @@ body {
 }
 
 .internal-page-wrapper {
-  padding: 20px 40px;
+  padding-top: 14px;
+  padding-right: 40px;
+  padding-left: 40px;
+  padding-bottom: 20px;
 }
 
 .internal-page-header-container {
@@ -90,10 +126,9 @@ body {
   }
 
 }
-
 .internal-page-header {
-  font-size: 24px;
-  padding-bottom: 0;
+  padding-bottom: 0px !important;
+  font-size: 180%;
 }
 
 .ant-table-content table,
@@ -122,4 +157,6 @@ body {
 .ant-table-tbody > tr:last-child > td, .ant-table-tbody > tr:last-child {
   border-bottom: 0 !important;
 }
+
+
 

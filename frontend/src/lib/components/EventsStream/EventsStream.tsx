@@ -5,7 +5,7 @@ import {Button, Collapse} from "antd";
 import {NavLink} from "react-router-dom";
 import React from "react";
 import moment, {Moment} from "moment";
-import CaretRightOutlined from "@ant-design/icons/lib/icons/CaretDownFilled";
+import CaretRightOutlined from "@ant-design/icons/lib/icons/CaretRightOutlined";
 import './EventsSteam.less'
 import {WithExtraHeaderComponentHook} from "../../../navigation";
 
@@ -63,7 +63,9 @@ export default class EventsStream extends LoadableComponent<WithExtraHeaderCompo
         >
 
             {this.state.events.map((event: Event) => {
-                return <Collapse.Panel className="events-stream-panel" header={this.eventHeader(event)} key={Math.random()}>
+                return <Collapse.Panel className="events-stream-panel"
+                                       header={this.eventHeader(event)}
+                                       key={Math.random()}>
                     <p>{this.eventContent(event)}</p>
                 </Collapse.Panel>
             })}

@@ -34,8 +34,9 @@ export class DownloadConfig extends LoadableComponent<{}, State> {
     protected renderReady(): React.ReactNode {
         return <>
             <div className="download-config-documentation">
-                If you want to host your own instance of <a href="https://github.com/ksensehq/eventnative">EventNative</a>, you can use this configuration file.
-                It includes all your keys, destinations and other settings you created here. <a href="https://docs.eventnative.dev/deployment">EventNative can be deployed just in a few clicks!</a>
+                If you want to host your own instance of <a href="https://github.com/ksensehq/eventnative">EventNative</a> (Jitsu open-source core),
+                you can use this configuration file. It includes all your keys, destinations and other settings you created here.
+                <a href="https://docs.eventnative.dev/deployment">EventNative can be deployed just in a few clicks!</a>
             </div>
             <CodeSnippet
                 toolbarPosition='top' language="yaml" size="large"

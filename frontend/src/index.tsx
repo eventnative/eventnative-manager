@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {BrowserRouter, HashRouter} from 'react-router-dom';
+import {BrowserRouter, HashRouter, Route} from 'react-router-dom';
 import App from "./App";
 import ApplicationServices from "./lib/services/ApplicationServices";
 
@@ -13,7 +13,9 @@ if (cfg.routerType === "url" && window.location.pathname === '/' && window.locat
 
 let root = React.createElement(
     cfg.routerType === "hash" ? HashRouter : BrowserRouter,
-    {}, <App/>
+    {}, <Route render={(props) => {
+        return <App location={props.location.pathname}/>
+    } } />
 );
 ReactDOM.render(
     root,

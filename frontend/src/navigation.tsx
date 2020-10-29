@@ -57,16 +57,16 @@ function lazyPageFactory(importF): (params: Record<any, string>) => ReactElement
 }
 
 export const PUBLIC_PAGES: Page[] = [
-    new Page("EventNative | login", ["/", "/dashboard", "/login"], () => (<LoginForm/>)),
-    new Page("EventNative | register", ["/register"], () => (<SignupForm/>))
+    new Page("Jitsu | login", ["/", "/dashboard", "/login"], () => (<LoginForm/>)),
+    new Page("Jitsu | register", ["/register"], () => (<SignupForm/>))
 ];
 
 export const PRIVATE_PAGES: Page[] = [
     new Page("Test Component", "/test", (props) => (<ComponentTest {...props} />), "Component Test"),
-    new Page("EventNative | recent events", "/events_stream", (props) => (<EventsStream {...props} />), "Recent events"),
-    new Page("EventNative | dashboard", ["/dashboard", ""], (props) => (<StatusPage {...props} />), "Status"),
-    new Page("EventNative | edit destinations", "/destinations", (props) => (<DestinationsList {...props} />), "Edit destinations"),
-    new Page("EventNative | download config", "/cfg_download", (props) => (<DownloadConfig {...props} />), "Download EventNative configuration"),
-    new Page("EventNative | edit API keys", "/api_keys", (props) => (<ApiKeys {...props} />), "API Keys"),
-    new Page("EventNative | edit custom domains", "/domains", (props) => (<CustomDomains {...props} />), "Custom domains")
+    new Page("Jitsu | recent events", "/events_stream", (props) => (<EventsStream {...props} />), "Recent events"),
+    new Page("Jitsu | dashboard", ["/dashboard", ""], (props) => (<StatusPage {...props} />), "Status"),
+    new Page("Jitsu | edit destinations", "/destinations", (props) => (<DestinationsList {...props} />), "Edit destinations"),
+    new Page("Jitsu | download config", "/cfg_download", (props) => (<DownloadConfig {...props} />), "Download EventNative configuration"),
+    new Page("Jitsu | edit API keys", "/api_keys", (props) => (<ApiKeys {...props} />), "API Keys"),
+    new Page("Jitsu | edit custom domains", "/domains", (props) => (<CustomDomains {...props} />), "Custom domains")
 ];

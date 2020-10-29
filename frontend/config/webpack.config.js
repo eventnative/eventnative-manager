@@ -488,7 +488,7 @@ module.exports = function (webpackEnv) {
                 reportFilename: "./bundle-report.html"
             }),
             new FaviconsWebpackPlugin({
-                logo: './src/icons/logo.svg',
+                logo: './src/icons/favicon.svg',
                 publicPath: '/'
             }),
             // Generates an `index.html` file with the <script> injected.

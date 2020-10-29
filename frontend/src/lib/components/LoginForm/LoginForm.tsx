@@ -13,6 +13,7 @@ import './LoginForm.less'
 import ApplicationServices from "../../services/ApplicationServices";
 import {navigateAndReload, reloadPage} from "../../commons/utils";
 import {useState} from "react";
+import {NavLink} from "react-router-dom";
 
 type State = {
     loading: boolean
@@ -42,7 +43,8 @@ export default class LoginForm extends React.Component<Props, State> {
         // }
         let title = (
             <div className="login-form-header-container">
-                <img src={logo} alt="[logo]" className="login-form-logo"/> <span className="logon-form-title">Welcome Back!</span>
+                <img src={logo} alt="[logo]" className="login-form-logo"/>
+                <span className="logon-form-title">Welcome Back!</span>
             </div>
         );
         return (<>
@@ -115,7 +117,7 @@ export default class LoginForm extends React.Component<Props, State> {
                 <div className="login-form-signup">
                     <div>Don't have an account?</div>
                     <Button shape="round" className="login-form-signup-button" onClick={() => navigateAndReload("#/register")}>
-                        Sign Up!
+                        <NavLink to="/register">Sign Up!</NavLink>
                     </Button>
                 </div>
 

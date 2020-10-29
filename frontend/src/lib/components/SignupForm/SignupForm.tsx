@@ -8,7 +8,7 @@ import MailOutlined from "@ant-design/icons/lib/icons/MailOutlined";
 import {NavLink} from 'react-router-dom';
 import {navigateAndReload, reloadPage} from "../../commons/utils";
 import ApplicationServices from "../../services/ApplicationServices";
-import {handleError} from "../components";
+import {Align, handleError} from "../components";
 
 const logo = require('../../../icons/logo.svg');
 
@@ -72,7 +72,8 @@ export default class SignupForm extends React.Component<any, State> {
     render() {
         let title = (
             <div className="login-form-header-container">
-                <img src={logo} alt="[logo]" className="login-form-logo"/> <span className="logon-form-title">Join EventNative!</span>
+                <img src={logo} alt="[logo]" className="login-form-logo"/>
+                <div className="logon-form-title">Create an account</div>
             </div>
         );
         return (

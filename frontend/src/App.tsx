@@ -10,7 +10,7 @@ import SlidersOutlined from "@ant-design/icons/lib/icons/SlidersOutlined";
 import ExclamationCircleOutlined from "@ant-design/icons/lib/icons/ExclamationCircleOutlined";
 import UserOutlined from "@ant-design/icons/lib/icons/UserOutlined";
 import UnlockOutlined from "@ant-design/icons/lib/icons/UnlockOutlined";
-import DownloadOutlined from "@ant-design/icons/lib/icons/DownloadOutlined";
+import DownloadOutlined from "@ant-design/icons/lib/icons/NotificationOutlined";
 import NotificationOutlined from "@ant-design/icons/lib/icons/CloudOutlined";
 
 
@@ -41,7 +41,9 @@ type AppState = {
     user?: User
 }
 
-type AppProperties = {}
+type AppProperties = {
+    location: string
+}
 
 const LOGIN_TIMEOUT = 5000;
 export default class App extends React.Component<AppProperties, AppState> {
@@ -49,6 +51,7 @@ export default class App extends React.Component<AppProperties, AppState> {
 
     constructor(props: AppProperties, context: any) {
         super(props, context);
+        console.log("Location", props.location)
         this.services = ApplicationServices.get();
         this.state = {
             lifecycle: AppLifecycle.LOADING,
@@ -98,7 +101,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                             }}
                         />)
                     })}
-                    <Redirect key="rootRedirect" to="/" />
+                    <Redirect key="rootRedirect" to="/"/>
                 </Switch>);
             case AppLifecycle.APP:
                 return this.appLayout();
@@ -119,12 +122,15 @@ export default class App extends React.Component<AppProperties, AppState> {
         return (
             <div className={["internal-page-wrapper", "page-" + route.id + "-wrapper"].join(" ")}>
                 <Row className="internal-page-header-container">
-                    <Col span={16}>
+                    <Col span={12}>
                         <h1 className="internal-page-header">{route.pageHeader}</h1>
                     </Col>
-                    <Col span={8}>
+                    <Col span={12}>
                         <Align horizontal="right">
                             {this.state.extraControls}
+                            <Dropdown trigger={["click"]} overlay={this.getUserDropDownMenu()}>
+                                <Button className={"user-drop-down-button"} icon={<UserOutlined/>}>{this.state.user.name}</Button>
+                            </Dropdown>
                         </Align>
                     </Col>
                 </Row>
@@ -152,7 +158,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                 return (<CenteredSpin/>)
             }
         });
-        routes.push(<Redirect key="dashboardRedirect" to="/dashboard" />);
+        routes.push(<Redirect key="dashboardRedirect" to="/dashboard"/>);
         let extraForms = null;
         if (this.state.showOnboardingForm) {
             extraForms = <OnboardingForm user={this.state.user} onCompleted={async () => {
@@ -166,10 +172,12 @@ export default class App extends React.Component<AppProperties, AppState> {
         }
         return (
             <Layout className="app-layout-root">
-                {this.headerComponent()}
                 <Layout className="app-layout-header-and-content">
                     <Layout.Sider key="sider" className="side-bar" theme="light">
-                        {App.leftMenu()}
+                        <a className="app-logo-wrapper" href="https://eventnative.com">
+                            <img className="app-logo" src={logo} alt="[logo]"/>
+                        </a>
+                        {this.leftMenu()}
                     </Layout.Sider>
                     <Layout.Content key="content" className="app-layout-content">
                         <Switch>
@@ -182,40 +190,36 @@ export default class App extends React.Component<AppProperties, AppState> {
         );
     }
 
-    private static leftMenu() {
-        return <Switch>
-            <Menu mode="inline" defaultSelectedKeys={['1']} className="theme-blue-bg sidebar-menu">
-                <Menu.Item key="status" icon={<AreaChartOutlined/>}>
-                    <NavLink to="/dashboard" activeClassName="selected">Status</NavLink>
-                </Menu.Item>
-                <Menu.Item key="api_keys" icon={<UnlockOutlined/>}>
-                    <NavLink to="/api_keys" activeClassName="selected">Event API Keys</NavLink>
-                </Menu.Item>
-                {/*<Menu.Item key="sources" icon={<ApiOutlined/>}>*/}
-                {/*    <NavLink to="/sources" activeClassName="selected">Sources</NavLink>*/}
-                {/*</Menu.Item>*/}
-                <Menu.Item key="destinations" icon={<NotificationOutlined/>}>
-                    <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
-                </Menu.Item>
-                <Menu.Item key="domains" icon={<CloudOutlined/>}>
-                    <NavLink to="/domains" activeClassName="selected">Custom Domains</NavLink>
-                </Menu.Item>
-                <Menu.Item key="cfg_download" icon={<DownloadOutlined/>}>
-                    <NavLink to="/cfg_download" activeClassName="selected">Download EN Config</NavLink>
-                </Menu.Item>
-            </Menu>
-        </Switch>;
+    private leftMenu() {
+        let key = this.props.location === '/' || this.props.location === "" ? 'dashboard' : this.props.location;
+        if (key.charAt(0) === '/') {
+            key = key.substr(1);
+        }
+        return <Menu mode="inline" defaultSelectedKeys={[key]} className="theme-blue-bg sidebar-menu">
+            <Menu.Item key="dashboard" icon={<AreaChartOutlined/>}>
+                <NavLink to="/dashboard" activeClassName="selected">Status</NavLink>
+            </Menu.Item>
+            <Menu.Item key="api_keys" icon={<UnlockOutlined/>}>
+                <NavLink to="/api_keys" activeClassName="selected">Event API Keys</NavLink>
+            </Menu.Item>
+            {/*<Menu.Item key="sources" icon={<ApiOutlined/>}>*/}
+            {/*    <NavLink to="/sources" activeClassName="selected">Sources</NavLink>*/}
+            {/*</Menu.Item>*/}
+            <Menu.Item key="destinations" icon={<NotificationOutlined/>}>
+                <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
+            </Menu.Item>
+            <Menu.Item key="domains" icon={<CloudOutlined/>}>
+                <NavLink to="/domains" activeClassName="selected">Custom Domains</NavLink>
+            </Menu.Item>
+            <Menu.Item key="cfg_download" icon={<DownloadOutlined/>}>
+                <NavLink to="/cfg_download" activeClassName="selected">Download EN Config</NavLink>
+            </Menu.Item>
+        </Menu>;
     }
 
     private headerComponent() {
         return <Layout.Header className="app-layout-header">
             <Row>
-                <Col span={4}>
-                    <a className="app-logo-wrapper" href="https://eventnative.com">
-                        <img className="app-logo" src={logo} alt="[logo]"/>
-                        <span className="app-logo-text">EventNative</span>
-                    </a>
-                </Col>
                 <Col className="gutter-row" span={20}>
                     <div className="user-menu">
                         <Dropdown trigger={["click"]} overlay={this.getUserDropDownMenu()}>
