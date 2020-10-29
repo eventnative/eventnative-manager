@@ -356,7 +356,7 @@ export function CodeSnippet(props: ICodeSnippetProps) {
     let toolBarPos = props.toolbarPosition ? props.toolbarPosition : "bottom";
 
     let copy = () => {
-        copyToClipboard(props.children);
+        copyToClipboard(props.children, true);
         message.info("Code copied to clipboard")
     }
 

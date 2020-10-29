@@ -416,15 +416,15 @@ async function testConnectionResult(tester: () => Promise<any>): Promise<string>
 
 class ClickHouseDialog extends DestinationDialog<PostgresConfig> {
     items(): React.ReactNode {
-        let dsnDocs = (<>Comma separated list of data sources names (DSNs). See <a href='https://github.com/ClickHouse/clickhouse-go#dsn'>documentation</a></>);
-        let clusterDoc = (<>Cluster name. See <a href='https://github.com/ClickHouse/clickhouse-go#dsn'>documentation</a></>);
-        let databaseDoc = (<>Database name. See <a href='https://github.com/ClickHouse/clickhouse-go#dsn'>documentation</a></>);
+        let dsnDocs = (<>Comma separated list of data sources names (aka DSNs). See <a href='https://docs.eventnative.org/configuration-1/destination-configuration/clickhouse-destination#clickhouse)'>documentation</a></>);
+        let clusterDoc = (<>Cluster name. See <a href='https://docs.eventnative.org/configuration-1/destination-configuration/clickhouse-destination#clickhouse)'>documentation</a></>);
+        let databaseDoc = (<>Database name. See <a href='https://docs.eventnative.org/configuration-1/destination-configuration/clickhouse-destination#clickhouse)'>documentation</a></>);
 
         return (
             <>
                 <Row>
                     <Col span={16}>
-                        <Form.Item label={<LabelWithTooltip documentation={dsnDocs}>Datasources Names (DSNs)</LabelWithTooltip>} name="ch_dsns"
+                        <Form.Item label={<LabelWithTooltip documentation={dsnDocs}>Datasources</LabelWithTooltip>} name="ch_dsns"
                                    rules={[{required: true, message: 'Host is required'}]}
                                    labelCol={{span: 6}}
                                    wrapperCol={{span: 18}}><Input type="text"/></Form.Item>

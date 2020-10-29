@@ -242,7 +242,8 @@ function KeyDocumentation({token}: { token: Token }) {
     useEffect(() => {
         services.storageService.get("custom_domains", services.activeProject.id)
             .then(result => {
-                let newDomains = [...result.domains.map(domain => domain.name), EVENTNATIVE_HOST];
+                let customDomains = result && result.domains ? result.domains.map(domain => domain.name) : [];
+                let newDomains = [...customDomains, EVENTNATIVE_HOST];
                 setDomains(newDomains);
                 setSelectedDomain(newDomains[0]);
             })

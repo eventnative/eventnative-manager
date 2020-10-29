@@ -164,9 +164,10 @@ export function sleep(ms, retVal?: any | Error): Promise<void> {
     }, ms));
 }
 
-export function copyToClipboard(value) {
+export function copyToClipboard(value, unescapeNewLines?: boolean) {
     const el = document.createElement('textarea');
-    el.value = value;
+
+    el.value = unescapeNewLines ? value.replace('\\\n', '') : value;
     document.body.appendChild(el);
     el.select();
     document.execCommand('copy');

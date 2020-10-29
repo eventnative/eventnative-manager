@@ -10,8 +10,8 @@ import SlidersOutlined from "@ant-design/icons/lib/icons/SlidersOutlined";
 import ExclamationCircleOutlined from "@ant-design/icons/lib/icons/ExclamationCircleOutlined";
 import UserOutlined from "@ant-design/icons/lib/icons/UserOutlined";
 import UnlockOutlined from "@ant-design/icons/lib/icons/UnlockOutlined";
-import DownloadOutlined from "@ant-design/icons/lib/icons/NotificationOutlined";
-import NotificationOutlined from "@ant-design/icons/lib/icons/CloudOutlined";
+import DownloadOutlined from "@ant-design/icons/lib/icons/DownloadOutlined";
+import NotificationOutlined from "@ant-design/icons/lib/icons/NotificationOutlined";
 
 
 import './App.less';
