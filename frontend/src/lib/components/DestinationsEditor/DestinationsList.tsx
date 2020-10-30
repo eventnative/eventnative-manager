@@ -400,7 +400,7 @@ function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDe
                 try {
                     values = await form.validateFields()
                 } catch (error) {
-                    setSaving(true);
+                    setSaving(false);
                     //no need for special handling, error will be displayed within the field
                     return;
                 }

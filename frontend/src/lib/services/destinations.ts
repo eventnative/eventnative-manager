@@ -160,9 +160,10 @@ export class ClickHouseConfig extends DestinationConfig {
 
 
     describe(): ConnectionDescription {
+        let dsn = this.formData['ch_dsns'].split(",", -1);
         return {
             displayURL: `${this.formData['ch_dsns']}`,
-            commandLineConnect: null
+            commandLineConnect: `echo 'SELECT 1' | curl '${dsn[0]}' --data-binary @-`
         }
     }
 
@@ -213,7 +214,7 @@ export class RedshiftConfig extends DestinationConfig {
     describe(): ConnectionDescription {
         return {
             displayURL: `${this.formData['redshiftHost']}`,
-            commandLineConnect: null
+            commandLineConnect: `PGPASSWORD="${this.formData['redshiftPassword']}" psql -U ${this.formData['redshiftUser']} -d ${this.formData['redshiftDB']} -h ${this.formData['redshiftHost']} -p 5439 -c "SELECT 1"`
         }
     }
 }
