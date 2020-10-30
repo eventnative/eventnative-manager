@@ -43,6 +43,7 @@ import Marshal from "../../commons/marshalling";
 import {Option} from "antd/es/mentions";
 import {FieldMappings, Mapping} from "../../services/mappings";
 import {MappingEditor} from "./MappingEditor";
+import Icon from '@ant-design/icons';
 
 const AWS_ZONES = [
     "us-east-2",
@@ -249,8 +250,11 @@ export class DestinationsList extends LoadableComponent<any, State> {
     }
 
     addMenu() {
-        return (<Menu>
-            {destinationConfigTypes.map(type => <Menu.Item key={type.name} onClick={() => this.addDestination(type.type)}>Add {type.name}</Menu.Item>)}
+        return (<Menu className="destinations-list-add-menu">
+            {destinationConfigTypes.map(type => <Menu.Item
+                key={type.name}
+                icon={<Icon component={() => <img height={16} width={16} src={DestinationsList.getIconSrc(type.type)} className="destination-type-icon" alt="[destination]" />} />}
+                onClick={() => this.addDestination(type.type)}>Add {type.name}</Menu.Item>)}
         </Menu>);
     }
 

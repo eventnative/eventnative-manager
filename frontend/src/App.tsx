@@ -12,7 +12,6 @@ import UserOutlined from "@ant-design/icons/lib/icons/UserOutlined";
 import UnlockOutlined from "@ant-design/icons/lib/icons/UnlockOutlined";
 import DownloadOutlined from "@ant-design/icons/lib/icons/DownloadOutlined";
 import NotificationOutlined from "@ant-design/icons/lib/icons/NotificationOutlined";
-import ChatWidget from "@papercups-io/chat-widget";
 
 import './App.less';
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";

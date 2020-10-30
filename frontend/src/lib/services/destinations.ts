@@ -30,8 +30,9 @@ export class DestinationConfigFactory<T extends DestinationConfig> {
 export const destinationConfigTypes = [
     new DestinationConfigFactory("PostgresSQL", "postgres", (id) => new PostgresConfig(id)),
     new DestinationConfigFactory("ClickHouse", "clickhouse", (id) => new ClickHouseConfig(id)),
-    //new DestinationConfigFactory("BigQuery", "bigquery", (id) => new BQConfig(id)),
+    new DestinationConfigFactory("BigQuery", "bigquery", (id) => new BQConfig(id)),
     new DestinationConfigFactory("Redshift", "redshift", (id) => new RedshiftConfig(id)),
+    new DestinationConfigFactory("Snowflake", "snowflake", (id) => new SnowflakeConfig(id))
 ]
 
 export const destinationsByTypeId = destinationConfigTypes.reduce((map: Record<string, DestinationConfigFactory<any>>, obj) => {
@@ -125,6 +126,7 @@ export abstract class DestinationConfig {
         _formData['mode'] = "stream";
         _formData['tableName'] = 'events';
     }
+
 }
 
 
@@ -224,11 +226,9 @@ export class BQConfig extends DestinationConfig {
     constructor(id: string) {
         super("bigquery", id);
     }
-
-    toJson(): any {
-    }
-
     describe(): ConnectionDescription {
         return null;
     }
 }
+
+
