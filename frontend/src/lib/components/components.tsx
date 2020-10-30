@@ -251,6 +251,7 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
      * Also, fadein effect is disabled for reload
      */
     protected async reload(callback?: () => Promise<any | void>) {
+        console.log("Reload");
         if (!callback) {
             callback = async () => {
                 return this.load();
@@ -322,10 +323,13 @@ export function lazyComponent(importFactory) {
     }
 }
 
-export function ActionLink({children, onClick}: { children: any, onClick: () => void }) {
-    return (<div className="action-link" onClick={() => {
-        onClick()
-    }}><span>{children}</span></div>)
+export function ActionLink({children, onClick}: { children: any, onClick?: () => void }) {
+    let props = onClick? {
+        onClick: () => {
+            onClick()
+        }
+    } : {};
+    return (<div className="action-link" {...props}><span>{children}</span></div>)
 }
 
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';

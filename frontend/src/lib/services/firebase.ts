@@ -90,7 +90,8 @@ export class FirebaseUserService implements UserService {
         if (userInfo.exists) {
             return this.user = new User(user.uid, userToken, suggestedInfo, userInfo.data());
         } else {
-            return this.user = new User(user.uid, userToken, suggestedInfo)
+            this.user = new User(user.uid, userToken, suggestedInfo);
+            this.user.created = new Date();
         }
     }
     removeAuth(callback: () => void) {

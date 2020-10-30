@@ -7,7 +7,7 @@ import React from "react";
 import moment, {Moment} from "moment";
 import CaretRightOutlined from "@ant-design/icons/lib/icons/CaretRightOutlined";
 import './EventsSteam.less'
-import {WithExtraHeaderComponentHook} from "../../../navigation";
+import ReloadOutlined from "@ant-design/icons/lib/icons/ReloadOutlined";
 
 type Event = {
     time: Moment
@@ -18,7 +18,7 @@ type State = {
     events?: Event[]
 }
 
-export default class EventsStream extends LoadableComponent<WithExtraHeaderComponentHook, State> {
+export default class EventsStream extends LoadableComponent<{}, State> {
     private readonly services: ApplicationServices;
     private timeInUTC: boolean;
 
@@ -30,21 +30,17 @@ export default class EventsStream extends LoadableComponent<WithExtraHeaderCompo
     }
 
 
-
     async componentDidMount(): Promise<void> {
         await super.componentDidMount();
-        this.props.setExtraHeaderComponent(<>
-            <Button type="primary"><NavLink to="/dashboard">View Status Dashboard</NavLink></Button>
-        </>);
     }
 
     eventHeader(event: Event) {
-        return <>
+        return (<>
             <span className="events-stream-event-time">
                 {event.time.utc().format()}
             </span>
             <span className="events-stream-event-preview">{JSON.stringify(event.data)}</span>
-        </>
+        </>);
     }
 
     eventContent(event: Event) {
@@ -54,22 +50,31 @@ export default class EventsStream extends LoadableComponent<WithExtraHeaderCompo
     }
 
     protected renderReady(): React.ReactNode {
-        if (!this.state.events || this.state.events.length == 0) {
-            return <Align horizontal="center">No Data</Align>
-        }
-        return <Collapse className="events-stream-events"
-            bordered={false}
-            expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
-        >
+        let top = <div className="status-and-events-panel">
+            <NavLink to="/dahsboard" className="status-and-events-panel-main">Statistics</NavLink>
+            <Button className="status-and-events-panel-reload" icon={<ReloadOutlined/>} onClick={() => {
+                this.reload();
+            }}/>
+        </div>;
 
-            {this.state.events.map((event: Event) => {
-                return <Collapse.Panel className="events-stream-panel"
-                                       header={this.eventHeader(event)}
-                                       key={Math.random()}>
-                    <p>{this.eventContent(event)}</p>
-                </Collapse.Panel>
-            })}
-        </Collapse>
+        if (!this.state.events || this.state.events.length == 0) {
+            return <>{top}<Align horizontal="center">No Data</Align></>
+        }
+        return <>
+            {top}
+            <Collapse className="events-stream-events"
+                      bordered={false}
+                      expandIcon={({isActive}) => <CaretRightOutlined rotate={isActive ? 90 : 0}/>}
+            >
+
+                {this.state.events.map((event: Event) => {
+                    return <Collapse.Panel className="events-stream-panel"
+                                           header={this.eventHeader(event)}
+                                           key={Math.random()}>
+                        <p>{this.eventContent(event)}</p>
+                    </Collapse.Panel>
+                })}
+            </Collapse></>
     }
 
     protected async load(): Promise<State> {
@@ -86,8 +91,6 @@ export default class EventsStream extends LoadableComponent<WithExtraHeaderCompo
         })
         return {events};
     }
-
-
 
 
 }

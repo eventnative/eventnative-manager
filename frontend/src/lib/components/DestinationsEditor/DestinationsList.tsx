@@ -19,7 +19,7 @@ import {
     List,
     Menu,
     message,
-    Modal,
+    Modal, Popover,
     Radio,
     Row,
     Select,
@@ -36,9 +36,9 @@ import EyeTwoTone from "@ant-design/icons/lib/icons/EyeTwoTone";
 import PlusOutlined from "@ant-design/icons/lib/icons/PlusOutlined";
 
 import './DestinationEditor.less'
-import {handleError, LabelWithTooltip, LoadableComponent} from "../components";
+import {ActionLink, Align, CodeInline, handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
-import {firstToLower, IndexedList} from "../../commons/utils";
+import {copyToClipboard, firstToLower, IndexedList} from "../../commons/utils";
 import Marshal from "../../commons/marshalling";
 import {Option} from "antd/es/mentions";
 import {FieldMappings, Mapping} from "../../services/mappings";
@@ -120,6 +120,27 @@ export class DestinationsList extends LoadableComponent<any, State> {
                 });
             }
         };
+
+        let description = config.describe();
+        let descriptionComponent;
+        if (!description.commandLineConnect) {
+            descriptionComponent = description.displayURL;
+        } else {
+            let codeSnippet = <>
+                <h4><b>Use following command to connect to DB and run a test query:</b></h4>
+                <div><CodeInline>{description.commandLineConnect}</CodeInline></div>
+                <Align horizontal="right">
+                    <ActionLink onClick={() => {
+                        copyToClipboard(description.commandLineConnect);
+                        message.info("Command copied to clipboard", 2);
+                    }}>Copy command to clipboard</ActionLink>
+                </Align>
+            </>;
+            descriptionComponent = (<><Popover placement="top" content={codeSnippet} trigger="click">
+                <span className="destinations-list-show-connect-command">{description.displayURL}</span>
+            </Popover></>)
+        }
+
         return (<List.Item key={config.id} actions={[
             <Button icon={<ColumnWidthOutlined/>} key="edit" shape="round" onClick={onMappings}>Mappings</Button>,
             <Button icon={<EditOutlined/>} key="edit" shape="round" onClick={onEdit}>Edit</Button>,
@@ -128,7 +149,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
             <List.Item.Meta
                 avatar={<Avatar shape="square" src={DestinationsList.getIconSrc(config.type)}/>}
                 title={this.getTitle(config)}
-                description={config.describe()}
+                description={<>{descriptionComponent}<br />mode: {config.mode}</>}
             />
         </List.Item>)
     }
@@ -153,7 +174,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
 
     static getIcon(destinationType: string): any {
         let src = this.getIconSrc(destinationType);
-        return src ? (<img src={src} className="destination-type-icon"/>) : <DatabaseOutlined/>;
+        return src ? (<img src={src} className="destination-type-icon" alt="[destination]"/>) : <DatabaseOutlined/>;
     }
 
 
@@ -416,7 +437,8 @@ async function testConnectionResult(tester: () => Promise<any>): Promise<string>
 
 class ClickHouseDialog extends DestinationDialog<PostgresConfig> {
     items(): React.ReactNode {
-        let dsnDocs = (<>Comma separated list of data sources names (aka DSNs). See <a href='https://docs.eventnative.org/configuration-1/destination-configuration/clickhouse-destination#clickhouse)'>documentation</a></>);
+        let dsnDocs = (<>Comma separated list of data sources names (aka DSNs). See <a
+            href='https://docs.eventnative.org/configuration-1/destination-configuration/clickhouse-destination#clickhouse)'>documentation</a></>);
         let clusterDoc = (<>Cluster name. See <a href='https://docs.eventnative.org/configuration-1/destination-configuration/clickhouse-destination#clickhouse)'>documentation</a></>);
         let databaseDoc = (<>Database name. See <a href='https://docs.eventnative.org/configuration-1/destination-configuration/clickhouse-destination#clickhouse)'>documentation</a></>);
 

@@ -44,6 +44,7 @@ export class User {
     private readonly _suggestedInfo: SuggestedUserInfo;
     private _emailOptout: boolean = false;
     private _forcePasswordChange: boolean = false;
+    private _created: string; //creation date in ISO string
 
     constructor(uid: string, authToken: string, suggested: SuggestedUserInfo, data?: any) {
         if (data) {
@@ -79,6 +80,10 @@ export class User {
         this._uid = uid;
     }
 
+
+    set created(value: Date) {
+        this._created = value.toISOString();
+    }
 
     get authToken(): string {
         return this._authToken;

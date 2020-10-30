@@ -39,6 +39,10 @@ export const destinationsByTypeId = destinationConfigTypes.reduce((map: Record<s
     return map;
 }, {})
 
+export type ConnectionDescription = {
+    displayURL: string,
+    commandLineConnect: string
+}
 
 export abstract class DestinationConfig {
     private _mappings: FieldMappings = new FieldMappings([], true);
@@ -111,7 +115,11 @@ export abstract class DestinationConfig {
         this._mappings = value;
     }
 
-    abstract describe();
+    get mode(): string {
+        return this.formData['mode'];
+    }
+
+    abstract describe(): ConnectionDescription;
 
     protected fillInitialValues(_formData: any) {
         _formData['mode'] = "stream";
@@ -126,8 +134,11 @@ export class PostgresConfig extends DestinationConfig {
     }
 
 
-    describe() {
-        return `${this.formData['pguser']}:***@${this.formData['pghost']}:${this.formData['pgport']}/${this.formData['pgdatabase']}, ${this.formData['mode']}`
+    describe(): ConnectionDescription {
+        return {
+            displayURL: `${this.formData['pguser']}:***@${this.formData['pghost']}:${this.formData['pgport']}/${this.formData['pgdatabase']}`,
+            commandLineConnect: `PGPASSWORD="${this.formData['pgpassword']}" psql -U ${this.formData['pguser']} -d ${this.formData['pgdatabase']} -h ${this.formData['pghost']} -p ${this.formData['pgport']} -c "SELECT 1"`
+        }
     }
 
 
@@ -148,8 +159,11 @@ export class ClickHouseConfig extends DestinationConfig {
     }
 
 
-    describe() {
-        return `${this.formData['ch_dsns']}, ${this.formData['mode']}`
+    describe(): ConnectionDescription {
+        return {
+            displayURL: `${this.formData['ch_dsns']}`,
+            commandLineConnect: null
+        }
     }
 
 
@@ -177,7 +191,8 @@ export class SnowflakeConfig extends DestinationConfig {
         super.update(formValues);
     }
 
-    describe() {
+    describe(): ConnectionDescription {
+        return null;
     }
 }
 
@@ -195,8 +210,11 @@ export class RedshiftConfig extends DestinationConfig {
         _formData['redshiftSchema'] = 'public'
     }
 
-    describe() {
-        return `${this.formData['redshiftHost']}`
+    describe(): ConnectionDescription {
+        return {
+            displayURL: `${this.formData['redshiftHost']}`,
+            commandLineConnect: null
+        }
     }
 }
 
@@ -209,6 +227,7 @@ export class BQConfig extends DestinationConfig {
     toJson(): any {
     }
 
-    describe() {
+    describe(): ConnectionDescription {
+        return null;
     }
 }

@@ -10,9 +10,10 @@ import styler from "react-timeseries-charts/lib/js/styler"
 import {TimeSeries} from "pondjs";
 import moment, {Moment} from "moment";
 import {isNullOrUndef, withDefaultVal} from "../../commons/utils";
-import {WithExtraHeaderComponentHook} from "../../../navigation";
 import {Option} from "antd/es/mentions";
 import {NavLink} from "react-router-dom";
+import UnorderedListOutlined from "@ant-design/icons/lib/icons/UnorderedListOutlined";
+import ReloadOutlined from "@ant-design/icons/lib/icons/ReloadOutlined";
 
 /**
  * Information about events per current period and prev
@@ -50,7 +51,7 @@ type State = {
     dailyComparison?: EventsComparison
 }
 
-interface Props extends WithExtraHeaderComponentHook {
+interface Props {
     timeInUTC?: boolean
 }
 
@@ -135,9 +136,6 @@ export default class StatusPage extends LoadableComponent<Props, State> {
 
     async componentDidMount(): Promise<void> {
         await super.componentDidMount();
-        this.props.setExtraHeaderComponent(<>
-            <Button type="primary"><NavLink to="/events_stream" activeClassName="selected">View Events Stream</NavLink></Button>
-        </>);
     }
 
 
@@ -145,6 +143,12 @@ export default class StatusPage extends LoadableComponent<Props, State> {
     renderReady() {
         let utcPostfix = this.timeInUTC ? " [UTC]" : "";
         return <>
+            <div className="status-and-events-panel">
+                <NavLink to="/events_stream" className="status-and-events-panel-main">Recent Events</NavLink>
+                <Button className="status-and-events-panel-reload" icon={<ReloadOutlined />} onClick={() => {
+                    this.reload();
+                }} />
+            </div>
             <div className="status-page-cards-row">
                 <Row gutter={16}>
                     <Col span={8}>
@@ -207,12 +211,6 @@ export default class StatusPage extends LoadableComponent<Props, State> {
             this.getNumberOfDestinations()
         ]);
 
-
-        let eventsLast24 = dailyEvents.length > 0 ? dailyEvents[dailyEvents.length - 1].events : 0;
-        let events48to24 = dailyEvents.length > 1 ? dailyEvents[dailyEvents.length - 2].events : 0;
-
-        let eventsLastFullHour = hourlyEvents.length > 0 ? hourlyEvents[hourlyEvents.length - 1].events : 0;
-        let eventsPrevHour = hourlyEvents.length > 1 ? hourlyEvents[hourlyEvents.length - 2].events : 0;
         return {
             designationsCount, hourlyEvents, dailyEvents,
             hourlyComparison: new EventsComparison(hourlyEvents, "hour"),

@@ -10,11 +10,6 @@ import StatusPage from "./lib/components/StatusPage/StatusPage";
 import {DownloadConfig} from "./lib/components/DownloadConfig/DownloadConfig";
 import EventsStream from "./lib/components/EventsStream/EventsStream";
 
-export type ComponentHeaderHook = (el: ReactElement) => void
-
-export interface WithExtraHeaderComponentHook {
-    setExtraHeaderComponent: ComponentHeaderHook
-}
 
 export class Page {
     componentFactory: (props: any) => ReactElement
