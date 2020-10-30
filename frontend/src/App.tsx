@@ -71,8 +71,10 @@ export default class App extends React.Component<AppProperties, AppState> {
         }, LOGIN_TIMEOUT);
         this.services.userService.waitForUser().then((loginStatus) => {
             setDebugInfo('user', loginStatus.user);
-            this.services.analyticsService.onUserKnown(loginStatus.user)
-            PapercupsWrapper.init(loginStatus.user);
+            if (loginStatus.user) {
+                this.services.analyticsService.onUserKnown(loginStatus.user)
+                PapercupsWrapper.init(loginStatus.user);
+            }
             this.setState({
                 lifecycle: loginStatus.user ? AppLifecycle.APP : AppLifecycle.REQUIRES_LOGIN,
                 user: loginStatus.user,
