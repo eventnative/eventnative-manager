@@ -12,7 +12,7 @@ import UserOutlined from "@ant-design/icons/lib/icons/UserOutlined";
 import UnlockOutlined from "@ant-design/icons/lib/icons/UnlockOutlined";
 import DownloadOutlined from "@ant-design/icons/lib/icons/DownloadOutlined";
 import NotificationOutlined from "@ant-design/icons/lib/icons/NotificationOutlined";
-
+import ChatWidget from "@papercups-io/chat-widget";
 
 import './App.less';
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
@@ -24,6 +24,8 @@ import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
 import {ReactNode, useState} from "react";
 
 import logo from './icons/logo.svg';
+import PapercupsWrapper from "./lib/commons/papercups";
+import {WechatOutlined} from "@ant-design/icons/lib";
 
 enum AppLifecycle {
     LOADING, //Application is loading
@@ -71,6 +73,7 @@ export default class App extends React.Component<AppProperties, AppState> {
         this.services.userService.waitForUser().then((loginStatus) => {
             setDebugInfo('user', loginStatus.user);
             this.services.analyticsService.onUserKnown(loginStatus.user)
+            PapercupsWrapper.init(loginStatus.user);
             this.setState({
                 lifecycle: loginStatus.user ? AppLifecycle.APP : AppLifecycle.REQUIRES_LOGIN,
                 user: loginStatus.user,
@@ -173,11 +176,17 @@ export default class App extends React.Component<AppProperties, AppState> {
         return (
             <Layout className="app-layout-root">
                 <Layout className="app-layout-header-and-content">
-                    <Layout.Sider key="sider" className="side-bar" theme="light">
-                        <a className="app-logo-wrapper" href="https://eventnative.com">
-                            <img className="app-logo" src={logo} alt="[logo]"/>
-                        </a>
-                        {this.leftMenu()}
+                    <Layout.Sider key="sider" className="app-layout-side-bar" theme="light">
+                        <div className="app-layout-side-bar-top">
+                            <a className="app-logo-wrapper" href="https://jitsu.com">
+                                <img className="app-logo" src={logo} alt="[logo]"/>
+                            </a>
+                            {this.leftMenu()}
+                        </div>
+                        <div className="app-layout-side-bar-bottom">
+                            {/*<a className="app-layout-side-bar-bottom-item" onClick={() => {PapercupsWrapper.focus()}}><WechatOutlined /> Chat with us!</a>*/}
+
+                        </div>
                     </Layout.Sider>
                     <Layout.Content key="content" className="app-layout-content">
                         <Switch>
@@ -195,7 +204,7 @@ export default class App extends React.Component<AppProperties, AppState> {
         if (key.charAt(0) === '/') {
             key = key.substr(1);
         }
-        return <Menu mode="inline" defaultSelectedKeys={[key]} className="theme-blue-bg sidebar-menu">
+        return <Menu mode="inline" defaultSelectedKeys={[key]} className="app-layout-sidebar-menu">
             <Menu.Item key="dashboard" icon={<AreaChartOutlined/>}>
                 <NavLink to="/dashboard" activeClassName="selected">Status</NavLink>
             </Menu.Item>

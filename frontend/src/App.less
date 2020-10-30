@@ -40,7 +40,20 @@ body {
   }
 }
 
-.side-bar {
+.app-layout-side-bar {
+  .ant-layout-sider-children {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .app-layout-side-bar-bottom-item {
+    padding-left: 24px;
+    font-size: 120%;
+  }
+
+  .app-layout-side-bar-bottom {
+    padding-bottom:30px;
+  }
   border: 0 !important;
   .ant-menu-item-selected {
     border-right: 0 !important;
@@ -83,7 +96,7 @@ body {
   }
 }
 
-.sidebar-menu {
+.app-layout-sidebar-menu {
   border: 0 !important;
 
 }
