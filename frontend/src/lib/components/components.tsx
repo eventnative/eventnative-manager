@@ -109,7 +109,7 @@ export function StatCard({value, ...otherProps}) {
         } else {
             extraClassName = "stat-card-flat stat-card-comparison"
             icon = <CaretRightFilled/>
-            percent = "0"
+            percent = "0%"
         }
         if (percent === '') {
             icon = null;
@@ -259,7 +259,8 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
         }
         this.setState((state) => {
             state['__lifecycle'] = ComponentLifecycle.WAITING;
-        })
+        });
+        this.forceUpdate();
         try {
             let result = await callback();
             if (result === undefined) {

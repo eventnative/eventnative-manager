@@ -1,31 +1,28 @@
 import React, {useState} from 'react';
 import {LoadableComponent, StatCard} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
-import {Button, Card, Col, Form, Radio, Row} from "antd";
+import {Button, Card, Col, Row} from "antd";
 import './StatusPage.less'
 
-import {ChartContainer, ChartRow, Charts, LineChart, YAxis, Resizable} from "react-timeseries-charts";
+import {ChartContainer, ChartRow, Charts, LineChart, YAxis, Resizable, TimeAxis} from "react-timeseries-charts";
 import styler from "react-timeseries-charts/lib/js/styler"
 
 import {TimeSeries} from "pondjs";
-import moment, {Moment} from "moment";
+import moment, {Moment, unitOfTime} from "moment";
 import {isNullOrUndef, withDefaultVal} from "../../commons/utils";
-import {Option} from "antd/es/mentions";
 import {NavLink} from "react-router-dom";
-import UnorderedListOutlined from "@ant-design/icons/lib/icons/UnorderedListOutlined";
 import ReloadOutlined from "@ant-design/icons/lib/icons/ReloadOutlined";
 
 /**
  * Information about events per current period and prev
  * period
  */
-class EventsComparison  {
+class EventsComparison {
     current: number
     currentExtrapolated: number //if current isn't representing a full period (example, we're in the middle
     //of the hour), this value will contain extrapolated value. Currently not calculated, reserver for future use
     previous: number
     lastPeriod: Moment
-
 
 
     constructor(series: DatePoint[], granularity: Granularity) {
@@ -79,15 +76,38 @@ function roundDown(date: Date, granularity: Granularity): Date {
     return res;
 }
 
-
-function roundUp(date: Date, granularity: Granularity): Date {
-    let res = new Date(date);
-    res.setMinutes(59, 23, 999);
-    if (granularity == "day") {
-        res.setHours(23);
+function emptySeries(from: Moment, to: Moment, granularity: Granularity): DatePoint[] {
+    let res: DatePoint[] = [];
+    let end = moment(to).utc().startOf(granularity as unitOfTime.StartOf);
+    let start = moment(from).utc().startOf(granularity as unitOfTime.StartOf);
+    while (end.isSameOrAfter(start)) {
+        res.push({date: moment(end), events: 0});
+        end = end.subtract(1, granularity as unitOfTime.DurationConstructor)
     }
     return res;
 }
+
+function mergeSeries(lowPriority: DatePoint[], highPriority: DatePoint[]): DatePoint[] {
+    return Object.entries({...index(lowPriority), ...index(highPriority)}).map(([key, val]) => {
+        return {date: moment(key).utc(), events: val}
+    }).sort((e1, e2) => {
+        if (e1.date > e2.date) {
+            return 1;
+        } else if (e1.date < e2.date) {
+            return -1;
+        }
+        return 0;
+    });
+}
+
+function index(series: DatePoint[]): Record<string, number> {
+    let res = {}
+    series.forEach((point) => {
+        res[point.date.toISOString()] = point.events;
+    });
+    return res;
+}
+
 
 class StatServiceImpl implements StatService {
     private readonly service: ApplicationServices
@@ -100,18 +120,12 @@ class StatServiceImpl implements StatService {
 
     async get(from: Date, to: Date, granularity: Granularity): Promise<DatePoint[]> {
         let data = (await this.service.backendApiClient.get(`/statistics?project_id=${this.service.activeProject.id}&from=${from.toISOString()}&to=${to.toISOString()}&granularity=${granularity}`))['data'];
-        let dates: DatePoint[] = data.map((el) => {
-            return {date: this.timeInUTC ? moment(el.key).utc() : moment(el.key), events: el.events}
-        });
-        dates.sort((e1, e2) => {
-            if (e1.date > e2.date) {
-                return 1;
-            } else if (e1.date < e2.date) {
-                return -1;
-            }
-            return 0;
-        })
-        return dates;
+        return mergeSeries(
+            emptySeries(moment(from).utc(), moment(to).utc(), granularity),
+            data.map((el) => {
+                return {date: this.timeInUTC ? moment(el.key).utc() : moment(el.key), events: el.events}
+            })
+        );
     }
 }
 
@@ -129,9 +143,6 @@ export default class StatusPage extends LoadableComponent<Props, State> {
         this.state = {}
     }
 
-    getCardTitle(name: string, comparison: EventsComparison, format: string) {
-        return isNullOrUndef(comparison.lastPeriod) ? name : `${name} (${comparison.lastPeriod.format(format)})`
-    }
 
 
     async componentDidMount(): Promise<void> {
@@ -139,15 +150,14 @@ export default class StatusPage extends LoadableComponent<Props, State> {
     }
 
 
-
     renderReady() {
         let utcPostfix = this.timeInUTC ? " [UTC]" : "";
         return <>
             <div className="status-and-events-panel">
                 <NavLink to="/events_stream" className="status-and-events-panel-main">Recent Events</NavLink>
-                <Button className="status-and-events-panel-reload" icon={<ReloadOutlined />} onClick={() => {
+                <Button className="status-and-events-panel-reload" icon={<ReloadOutlined/>} onClick={() => {
                     this.reload();
-                }} />
+                }}/>
             </div>
             <div className="status-page-cards-row">
                 <Row gutter={16}>
@@ -156,11 +166,11 @@ export default class StatusPage extends LoadableComponent<Props, State> {
                     </Col>
                     <Col span={8}>
                         <StatCard value={this.state.dailyComparison.current} valuePrev={this.state.dailyComparison.previous}
-                                  title={this.getCardTitle("Last day", this.state.dailyComparison, "MMMM Do YYYY")} bordered={false}/>
+                                  title={"Today"} bordered={false}/>
                     </Col>
                     <Col span={8}>
                         <StatCard value={this.state.hourlyComparison.current} valuePrev={this.state.hourlyComparison.previous}
-                                  title={this.getCardTitle("Last hour", this.state.hourlyComparison, `HH:mm${utcPostfix}`)} bordered={false}/>
+                                  title={(`Last hour (${moment().utc().format("HH:[00]")} UTC) `)} bordered={false}/>
                     </Col>
                 </Row>
             </div>
@@ -168,12 +178,12 @@ export default class StatusPage extends LoadableComponent<Props, State> {
                 <Row gutter={16}>
                     <Col span={12}>
                         <Card title="Events last 30 days" bordered={false}>
-                            <Chart data={this.state.dailyEvents} granularity={"day"} />
+                            <Chart data={this.state.dailyEvents} granularity={"day"}/>
                         </Card>
                     </Col>
                     <Col span={12}>
                         <Card title="Events last 24 hours" bordered={false}>
-                            <Chart data={this.state.hourlyEvents} granularity={"hour"} />
+                            <Chart data={this.state.hourlyEvents} granularity={"hour"}/>
                         </Card>
                     </Col>
                 </Row>
@@ -196,7 +206,6 @@ export default class StatusPage extends LoadableComponent<Props, State> {
         let str = val + "";
         return str.length > 1 ? str : ("0" + str);
     }
-
 
 
     async load(): Promise<State> {
@@ -240,11 +249,12 @@ export default class StatusPage extends LoadableComponent<Props, State> {
 }
 
 
-function Chart({data, granularity}: {data: DatePoint[], granularity: "hour" | "day"}) {
+function Chart({data, granularity}: { data: DatePoint[], granularity: "hour" | "day" }) {
     let [mouseover, setMouseover] = useState({x: null, y: null})
     const style = styler([
         {key: "events", color: "steelblue", width: 2},
     ]);
+
     if (data.length <= 1) {
         return <div className="status-page-empty-chart">
             <h3>No Data</h3><p>There're too few events to display on a chart</p>
@@ -276,17 +286,22 @@ function Chart({data, granularity}: {data: DatePoint[], granularity: "hour" | "d
         }}
     >
         <ChartRow height="300">
+            <TimeAxis
+                utc={true}
+                angled={true}
+            />
             <YAxis id="events" label={null} min={Math.min(...vals)} max={Math.max(...vals)} width="60" type="linear" format=",.0f"/>
             <Charts>
                 <LineChart
                     axis="events"
+                    smooth={false}
                     series={timeseries}
                     columns={["events"]}
-                    breakLine={false}
+                    breakLine={true}
                     style={style}
                     interpolation="curveBasis"
                 />
-                <CrossHairs x={mouseover.x} y={mouseover.y} />
+                <CrossHairs x={mouseover.x} y={mouseover.y}/>
             </Charts>
         </ChartRow>
     </ChartContainer></Resizable>
@@ -294,16 +309,16 @@ function Chart({data, granularity}: {data: DatePoint[], granularity: "hour" | "d
 
 class CrossHairs extends React.Component<any, {}> {
     render() {
-        const { x, y } = this.props;
-        if (x !== undefined && x !== null && y !== undefined && y !== null && x >=0 && y >= 0) {
+        const {x, y} = this.props;
+        if (x !== undefined && x !== null && y !== undefined && y !== null && x >= 0 && y >= 0) {
             return (
                 <g>
-                    <line style={{pointerEvents: "none", stroke: "#ccc"}} x1={0} y1={y} x2={this.props.width} y2={y} />
-                    <line style={{pointerEvents: "none", stroke: "#ccc"}} x1={x} y1={0} x2={x} y2={this.props.height} />
+                    <line style={{pointerEvents: "none", stroke: "#ccc"}} x1={0} y1={y} x2={this.props.width} y2={y}/>
+                    <line style={{pointerEvents: "none", stroke: "#ccc"}} x1={x} y1={0} x2={x} y2={this.props.height}/>
                 </g>
             );
         } else {
-            return <g />;
+            return <g/>;
         }
     }
 }
