@@ -1,6 +1,6 @@
 import * as React from 'react'
 import {ReactNode, useState} from 'react'
-import {ClickHouseConfig, DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig, RedshiftConfig, SnowflakeConfig} from "../../services/destinations";
+import {BQConfig, ClickHouseConfig, DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig, RedshiftConfig, SnowflakeConfig} from "../../services/destinations";
 import {Avatar, Button, Col, Divider, Dropdown, Form, Input, List, Menu, message, Modal, Popover, Radio, Row, Select, Switch} from "antd";
 
 import ColumnWidthOutlined from "@ant-design/icons/lib/icons/ColumnWidthOutlined";
@@ -538,7 +538,7 @@ class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
     }
 }
 
-class SnowflakeDialog extends DestinationDialog<RedshiftConfig> {
+class SnowflakeDialog extends DestinationDialog<SnowflakeConfig> {
     items(): React.ReactNode {
         let className = "destinations-list-s3config-" + (this.state.currentValue.formData['mode'] === "batch" ? "enabled" : "disabled")
         return (
@@ -565,13 +565,15 @@ class SnowflakeDialog extends DestinationDialog<RedshiftConfig> {
                     <Input.Password type="password" iconRender={visible => (visible ? <EyeTwoTone/> : <EyeInvisibleOutlined/>)}/>
                 </Form.Item>
                 <Divider className={className} plain>
-                    <LabelWithTooltip documentation={(<>For batch mode data is being uploaded through <a href="https://docs.snowflake.com/en/user-guide/data-load-local-file-system-create-stage.html">stages</a>.
-                        We support S3 and GCP as stage.</>)}>
+                    <LabelWithTooltip
+                        documentation={(<>For batch mode data is being uploaded through <a href="https://docs.snowflake.com/en/user-guide/data-load-local-file-system-create-stage.html">stages</a>.
+                            We support S3 and GCP as stage.</>)}>
                         Intermediate Stage (S3 or GCP)
                     </LabelWithTooltip>
                 </Divider>
 
-                <Form.Item label="Stage name" className={className} name="snowflakeStageName" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: this.state.currentValue.formData['mode'] === "batch", message: 'Field is required'}]}>
+                <Form.Item label="Stage name" className={className} name="snowflakeStageName" labelCol={{span: 4}} wrapperCol={{span: 12}}
+                           rules={[{required: this.state.currentValue.formData['mode'] === "batch", message: 'Field is required'}]}>
                     <Input type="text"/>
                 </Form.Item>
 
@@ -589,6 +591,27 @@ class SnowflakeDialog extends DestinationDialog<RedshiftConfig> {
                 {gcsConfigComponents("snowflake", !(this.state.currentValue.formData['mode'] === "batch" && this.state.currentValue.formData['snowflakeStageType'] === "gcs"))}
             </>);
     }
+}
+
+class BiqQueryDialog extends DestinationDialog<BQConfig> {
+    items(): React.ReactNode {
+        return <>
+            <Form.Item label="Project ID" name="bqProjectId" labelCol={{span: 4}} wrapperCol={{span: 12}}
+                       rules={[{required: true}]}>
+                <Input type="text"/>
+            </Form.Item>
+            <Form.Item label={googleJsonKeyLabel()}
+                       name={"bqJSONKey"} labelCol={{span: 4}} wrapperCol={{span: 12}}
+                       rules={[{required: true, message: 'JSON Key is required'}]}>
+                <Input.TextArea allowClear={true} bordered={true}/>
+            </Form.Item>
+            <Form.Item className={this.state.currentValue.formData['mode'] === "batch" ? "" : "destinations-list-hidden"} label="GCS Bucket" name="bqProjectId" labelCol={{span: 4}} wrapperCol={{span: 12}}
+                       rules={[{required: this.state.currentValue.formData['mode'] === "batch"}]}>
+                <Input type="text"/>
+            </Form.Item>
+        </>
+    }
+
 }
 
 
@@ -622,6 +645,10 @@ function s3ConfigComponents(prefix: string, disabled: boolean) {
         </Form.Item></>
 }
 
+function googleJsonKeyLabel() {
+    return <LabelWithTooltip documentation={(<>JSON access credentials</>)}>Access Key</LabelWithTooltip>;
+}
+
 function gcsConfigComponents(prefix: string, disabled: boolean) {
     let className = "destinations-list-s3config-" + (disabled ? "disabled" : "enabled")
     return <>
@@ -629,11 +656,12 @@ function gcsConfigComponents(prefix: string, disabled: boolean) {
                    rules={[{required: !disabled}]}>
             <Input type="text" disabled={disabled}/>
         </Form.Item>
-        <Form.Item className={className} label={<LabelWithTooltip documentation={(<>JSON access credentials</>)}>
-            Access Key
-        </LabelWithTooltip>} name={prefix + "JSONKey"} labelCol={{span: 4}} wrapperCol={{span: 12}}
+        <Form.Item className={className} label={googleJsonKeyLabel()}
+                   name={prefix + "JSONKey"}
+                   labelCol={{span: 4}}
+                   wrapperCol={{span: 12}}
                    rules={[{required: !disabled, message: 'JSON Key is required'}]}>
-            <Input.TextArea allowClear={true} bordered={true} />
+            <Input.TextArea allowClear={true} bordered={true}/>
         </Form.Item></>
 }
 
@@ -642,5 +670,6 @@ const dialogsByType = {
     'postgres': PostgresDestinationDialog,
     'clickhouse': ClickHouseDialog,
     'redshift': RedshiftDestinationDialog,
-    'snowflake': SnowflakeDialog
+    'snowflake': SnowflakeDialog,
+    'bigquery': BiqQueryDialog
 }
