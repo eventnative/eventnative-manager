@@ -1,30 +1,7 @@
 import * as React from 'react'
 import {ReactNode, useState} from 'react'
-import {
-    ClickHouseConfig,
-    DestinationConfig,
-    destinationConfigTypes,
-    destinationsByTypeId,
-    PostgresConfig,
-    RedshiftConfig
-} from "../../services/destinations";
-import {
-    Avatar,
-    Button,
-    Col,
-    Divider,
-    Dropdown,
-    Form,
-    Input,
-    List,
-    Menu,
-    message,
-    Modal, Popover,
-    Radio,
-    Row,
-    Select,
-    Switch
-} from "antd";
+import {ClickHouseConfig, DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig, RedshiftConfig, SnowflakeConfig} from "../../services/destinations";
+import {Avatar, Button, Col, Divider, Dropdown, Form, Input, List, Menu, message, Modal, Popover, Radio, Row, Select, Switch} from "antd";
 
 import ColumnWidthOutlined from "@ant-design/icons/lib/icons/ColumnWidthOutlined";
 import DatabaseOutlined from "@ant-design/icons/lib/icons/DatabaseOutlined";
@@ -78,7 +55,7 @@ type State = {
     activeMapping?: FieldMappings
 }
 
-const SERIALIZABLE_CLASSES = [DestinationConfig, PostgresConfig, ClickHouseConfig, RedshiftConfig, FieldMappings, Mapping];
+const SERIALIZABLE_CLASSES = [DestinationConfig, PostgresConfig, ClickHouseConfig, RedshiftConfig, FieldMappings, Mapping, SnowflakeConfig];
 
 export class DestinationsList extends LoadableComponent<any, State> {
     private services: ApplicationServices;
@@ -150,7 +127,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
             <List.Item.Meta
                 avatar={<Avatar shape="square" src={DestinationsList.getIconSrc(config.type)}/>}
                 title={this.getTitle(config)}
-                description={<>{descriptionComponent}<br />mode: {config.mode}</>}
+                description={<>{descriptionComponent}<br/>mode: {config.mode}</>}
             />
         </List.Item>)
     }
@@ -253,7 +230,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
         return (<Menu className="destinations-list-add-menu">
             {destinationConfigTypes.map(type => <Menu.Item
                 key={type.name}
-                icon={<Icon component={() => <img height={16} width={16} src={DestinationsList.getIconSrc(type.type)} className="destination-type-icon" alt="[destination]" />} />}
+                icon={<Icon component={() => <img height={16} width={16} src={DestinationsList.getIconSrc(type.type)} className="destination-type-icon" alt="[destination]"/>}/>}
                 onClick={() => this.addDestination(type.type)}>Add {type.name}</Menu.Item>)}
         </Menu>);
     }
@@ -457,7 +434,7 @@ class ClickHouseDialog extends DestinationDialog<PostgresConfig> {
                     </Col>
                 </Row>
                 <Form.Item label={<LabelWithTooltip documentation={clusterDoc}>Cluster</LabelWithTooltip>}
-                           rules={[{required: true, message: 'Cluster name is required'}]}
+                           rules={[{required: false, message: 'Cluster name is required'}]}
                            name="ch_cluster" labelCol={{span: 4}} wrapperCol={{span: 12}}>
                     <Input type="text"/>
                 </Form.Item>
@@ -510,28 +487,22 @@ class PostgresDestinationDialog extends DestinationDialog<PostgresConfig> {
     }
 }
 
+
 class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
-
-    s3CredentialsEnabled() {
-        return !this.state.currentValue.formData['redshiftUseHostedS3'] && this.state.currentValue.formData['mode'] === "batch";
-    }
-
-    s3ConfigEnabled() {
-        return this.state.currentValue.formData['mode'] === "batch";
-    }
-
     items(): React.ReactNode {
         let s3Doc = (<>
             If the switch is enabled internal S3 bucket will be used. You won't be able to see raw logs. However, the data will be streamed to RedShift as-is.
             You still need to choose a S3 region which is most close to your redshift server
             to get the best performance
         </>);
+        let className = "destinations-list-s3config-" + (this.state.currentValue.formData['mode'] === "batch" ? "enabled" : "disabled")
+        console.log("WHAT", this.state.currentValue['redshiftUseHostedS3']);
         return (
             <>
                 <Row>
                     <Col span={16}>
-                        <Form.Item label="Host" name="redshiftHost" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Host is required'}]}><Input
-                            type="text"/></Form.Item>
+                        <Form.Item label="Host" name="redshiftHost" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Host is required'}]}>
+                            <Input type="text"/></Form.Item>
                     </Col>
                 </Row>
                 <Form.Item label="Database" name="redshiftDB" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'DB is required'}]}>
@@ -546,47 +517,130 @@ class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
                 <Form.Item label="Password" name="redshiftPassword" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Password is required'}]}>
                     <Input type="password"/>
                 </Form.Item>
-                <Divider plain>
+                <Divider className={className} plain><>
                     <LabelWithTooltip documentation={(<>If destination is working in batch mode (read about modes differences here), intermediate
-                        batches is stored on S3. You need tp provide S3 credentials. You can use S3 hosted by us as well, just switch off 'Use hosted S3 bucket' setting</>)}>
+                        batches is stored on S3. You need to provide S3 credentials. You can use S3 hosted by us as well, just switch off 'Use hosted S3 bucket' setting</>)}>
                         S3 configuration
                     </LabelWithTooltip>
+                </>
                 </Divider>
-                <Row>
-                    <Col span={16}>
-                        <Form.Item label="S3 Region" name="redshiftS3Region" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: this.s3ConfigEnabled(), message: 'DB is required'}]}>
-                            <Select disabled={!this.s3ConfigEnabled()}>
-                                {AWS_ZONES.map(zone => (<Option value={zone}>{zone}</Option>))}
-                            </Select>
-                        </Form.Item>
-                    </Col>
-                    <Col span={8}>
-                        <Form.Item label={<LabelWithTooltip documentation={s3Doc}>Use hosted S3 bucket</LabelWithTooltip>} name="redshiftUseHostedS3" labelCol={{span: 16}} wrapperCol={{span: 8}}
-                                   rules={[{required: this.s3ConfigEnabled(), message: 'Required'}]}>
-                            <Switch disabled={!this.s3ConfigEnabled()} onChange={() => this.refreshStateFromForm()}/>
-                        </Form.Item>
-                    </Col>
-                </Row>
-                <Form.Item label="S3 Bucket" name="redshiftS3Bucket" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: this.s3CredentialsEnabled(), message: 'S3 Bucket is required'}]}>
-                    <Input type="text" disabled={!this.s3CredentialsEnabled()}/>
+                <Form.Item className={className} label={<LabelWithTooltip documentation={s3Doc}>Use Jitsu S3 bucket</LabelWithTooltip>} name="redshiftUseHostedS3" labelCol={{span: 4}}
+                           wrapperCol={{span: 8}}
+                           rules={[{required: this.state.currentValue.formData['mode'] === "batch", message: 'Required'}]}>
+                    <Switch disabled={!(this.state.currentValue.formData['mode'] === "batch")} onChange={() => {
+                        this.refreshStateFromForm();
+                    }}/>
                 </Form.Item>
+                {s3ConfigComponents("redshift", !(this.state.currentValue.formData['mode'] === "batch") || this.state.currentValue.formData['redshiftUseHostedS3'])}
 
-                <Form.Item label="S3 Access Key" name="redshiftS3AccessKey" labelCol={{span: 4}} wrapperCol={{span: 12}}
-                           rules={[{required: this.s3CredentialsEnabled(), message: 'S3 Access Key is required'}]}>
-                    <Input type="text" disabled={!this.s3CredentialsEnabled()}/>
-                </Form.Item>
-                <Form.Item label="S3 Secret Key" name="redshiftS3SecretKey" labelCol={{span: 4}} wrapperCol={{span: 12}}
-                           rules={[{required: this.s3CredentialsEnabled(), message: 'S3 Secret Key is required'}]}>
-                    <Input type="password" disabled={!this.s3CredentialsEnabled()}/>
-                </Form.Item>
 
             </>);
     }
+}
+
+class SnowflakeDialog extends DestinationDialog<RedshiftConfig> {
+    items(): React.ReactNode {
+        let className = "destinations-list-s3config-" + (this.state.currentValue.formData['mode'] === "batch" ? "enabled" : "disabled")
+        return (
+            <>
+                <Row>
+                    <Col span={16}>
+                        <Form.Item label="Account" name="snowflakeAccount" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Field is required'}]}><Input
+                            type="text"/></Form.Item>
+                    </Col>
+                </Row>
+                <Form.Item label="Warehouse" name="snowflakeWarehouse" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Field is required'}]}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item label="DB" name="snowflakeDB" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Field is required'}]}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item label="Schema" initialValue="public" name="snowflakeSchema" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Field is required'}]}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item label="Username" name="snowflakeUsername" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Field is required'}]}>
+                    <Input type="text"/>
+                </Form.Item>
+                <Form.Item label="Password" name="snowflakePassword" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: true, message: 'Field is required'}]}>
+                    <Input.Password type="password" iconRender={visible => (visible ? <EyeTwoTone/> : <EyeInvisibleOutlined/>)}/>
+                </Form.Item>
+                <Divider className={className} plain>
+                    <LabelWithTooltip documentation={(<>For batch mode data is being uploaded through <a href="https://docs.snowflake.com/en/user-guide/data-load-local-file-system-create-stage.html">stages</a>.
+                        We support S3 and GCP as stage.</>)}>
+                        Intermediate Stage (S3 or GCP)
+                    </LabelWithTooltip>
+                </Divider>
+
+                <Form.Item label="Stage name" className={className} name="snowflakeStageName" labelCol={{span: 4}} wrapperCol={{span: 12}} rules={[{required: this.state.currentValue.formData['mode'] === "batch", message: 'Field is required'}]}>
+                    <Input type="text"/>
+                </Form.Item>
+
+
+                <Form.Item className={className} label="Stage type" name="snowflakeStageType" initialValue={"hosted"} labelCol={{span: 4}}
+                           wrapperCol={{span: 8}}
+                           rules={[{required: this.state.currentValue.formData['mode'] === "batch", message: 'Required'}]}>
+                    <Radio.Group optionType="button" buttonStyle="solid" onChange={() => this.refreshStateFromForm()}>
+                        <Radio.Button value="hosted">Hosted by Jitsu</Radio.Button>
+                        <Radio.Button value="s3">S3</Radio.Button>
+                        <Radio.Button value="gcs">Google Cloud Storage</Radio.Button>
+                    </Radio.Group>
+                </Form.Item>
+                {s3ConfigComponents("snowflake", !(this.state.currentValue.formData['mode'] === "batch" && this.state.currentValue.formData['snowflakeStageType'] === "s3"))}
+                {gcsConfigComponents("snowflake", !(this.state.currentValue.formData['mode'] === "batch" && this.state.currentValue.formData['snowflakeStageType'] === "gcs"))}
+            </>);
+    }
+}
+
+
+function s3ConfigComponents(prefix: string, disabled: boolean) {
+    let className = "destinations-list-s3config-" + (disabled ? "disabled" : "enabled")
+    return <><Row>
+        <Col span={8}>
+            <Form.Item className={className} label="S3 Region" name={prefix + "S3Region"} labelCol={{span: 12}} wrapperCol={{span: 12}} rules={[{required: !disabled, message: 'DB is required'}]}>
+                <Select disabled={disabled}>
+                    {AWS_ZONES.map(zone => (<Option key={zone} value={zone}>{zone}</Option>))}
+                </Select>
+            </Form.Item>
+        </Col>
+        <Col span={8}>
+            <Form.Item className={className} label="Bucket" name={prefix + "S3Bucket"} labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: !disabled, message: 'S3 Bucket is required'}]}>
+                <Input type="text" disabled={disabled}/>
+            </Form.Item>
+        </Col>
+        <Col span={8}>
+
+        </Col>
+    </Row>
+
+        <Form.Item className={className} label="S3 Access Key" name={prefix + "S3AccessKey"} labelCol={{span: 4}} wrapperCol={{span: 12}}
+                   rules={[{required: !disabled, message: 'S3 Access Key is required'}]}>
+            <Input type="text" disabled={disabled}/>
+        </Form.Item>
+        <Form.Item className={className} label="S3 Secret Key" name={prefix + "S3SecretKey"} labelCol={{span: 4}} wrapperCol={{span: 12}}
+                   rules={[{required: !disabled, message: 'S3 Secret Key is required'}]}>
+            <Input.Password type="password" disabled={disabled} iconRender={visible => (visible ? <EyeTwoTone/> : <EyeInvisibleOutlined/>)}/>
+        </Form.Item></>
+}
+
+function gcsConfigComponents(prefix: string, disabled: boolean) {
+    let className = "destinations-list-s3config-" + (disabled ? "disabled" : "enabled")
+    return <>
+        <Form.Item className={className} label="GCS Bucket" name={prefix + "GcsBucket"} labelCol={{span: 4}} wrapperCol={{span: 12}}
+                   rules={[{required: !disabled}]}>
+            <Input type="text" disabled={disabled}/>
+        </Form.Item>
+        <Form.Item className={className} label={<LabelWithTooltip documentation={(<>JSON access credentials</>)}>
+            Access Key
+        </LabelWithTooltip>} name={prefix + "JSONKey"} labelCol={{span: 4}} wrapperCol={{span: 12}}
+                   rules={[{required: !disabled, message: 'JSON Key is required'}]}>
+            <Input.TextArea allowClear={true} bordered={true} />
+        </Form.Item></>
 }
 
 
 const dialogsByType = {
     'postgres': PostgresDestinationDialog,
     'clickhouse': ClickHouseDialog,
-    'redshift': RedshiftDestinationDialog
+    'redshift': RedshiftDestinationDialog,
+    'snowflake': SnowflakeDialog
 }

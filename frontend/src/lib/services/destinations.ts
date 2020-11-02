@@ -138,7 +138,7 @@ export class PostgresConfig extends DestinationConfig {
 
     describe(): ConnectionDescription {
         return {
-            displayURL: `${this.formData['pguser']}:***@${this.formData['pghost']}:${this.formData['pgport']}/${this.formData['pgdatabase']}`,
+            displayURL: `${this.formData['pghost']}`,
             commandLineConnect: `PGPASSWORD="${this.formData['pgpassword']}" psql -U ${this.formData['pguser']} -d ${this.formData['pgdatabase']} -h ${this.formData['pghost']} -p ${this.formData['pgport']} -c "SELECT 1"`
         }
     }
@@ -195,7 +195,10 @@ export class SnowflakeConfig extends DestinationConfig {
     }
 
     describe(): ConnectionDescription {
-        return null;
+        return {
+            displayURL: `${this.formData['snowflakeWarehouse']} / ${this.formData['snowflakeDB']}`,
+            commandLineConnect: null
+        };
     }
 }
 

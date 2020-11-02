@@ -89,11 +89,21 @@ body {
   border-radius: @small-border-radius;
 }
 
+.ant-tooltip-inner a {
+  color: lightblue !important;
+  text-decoration: underline
+}
+
 //Without this one, buttons looks weirdly aligned
+.ant-btn-loading-icon {
+  vertical-align: bottom !important;
+  height: 90%;
+}
+
 .ant-btn span.anticon {
-  vertical-align: baseline;
+  vertical-align: baseline !important;
 }
 
 .ant-btn span.anticon svg {
-  vertical-align: bottom;
+  vertical-align: bottom !important;
 }
