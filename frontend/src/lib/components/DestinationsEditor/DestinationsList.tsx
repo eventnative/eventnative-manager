@@ -600,6 +600,10 @@ class BiqQueryDialog extends DestinationDialog<BQConfig> {
                        rules={[{required: true}]}>
                 <Input type="text"/>
             </Form.Item>
+            <Form.Item label="Dataset" name="bqDataset" labelCol={{span: 4}} wrapperCol={{span: 12}}
+                       rules={[{required: false}]}>
+                <Input type="text"/>
+            </Form.Item>
             <Form.Item label={googleJsonKeyLabel()}
                        name={"bqJSONKey"} labelCol={{span: 4}} wrapperCol={{span: 12}}
                        rules={[{required: true, message: 'JSON Key is required'}]}>
