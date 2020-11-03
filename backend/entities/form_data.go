@@ -40,3 +40,14 @@ type RedshiftFormData struct {
 	S3SecretKey string `firestore:"redshiftS3SecretKey" json:"redshiftS3SecretKey"`
 	UseHostedS3 bool   `firestore:"redshiftUseHostedS3" json:"redshiftUseHostedS3"`
 }
+
+// BigQueryFormData entity is stored in main storage (Firebase)
+type BigQueryFormData struct {
+	Mode      string `firestore:"mode" json:"mode"`
+	TableName string `firestore:"tableName" json:"tableName"`
+
+	ProjectId string `firestore:"bqProjectId" json:"bqProjectId"`
+	Dataset   string `firestore:"bqDataset" json:"bqDataset"`
+	JsonKey   string `firestore:"bqJSONKey" json:"bqJSONKey"`
+	GCSBucket string `firestore:"bqGCSBucket" json:"bqGCSBucket"`
+}

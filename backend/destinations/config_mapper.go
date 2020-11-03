@@ -17,9 +17,32 @@ func MapConfig(destinationId string, destination *entities.Destination, defaultS
 		return mapClickhouse(destination)
 	case enstorages.RedshiftType:
 		return mapRedshift(destinationId, destination, defaultS3)
+	case enstorages.BigQueryType:
+		return mapBigQuery(destination)
 	default:
 		return nil, fmt.Errorf("Unknown destination type: %s", destination.Type)
 	}
+}
+
+func mapBigQuery(bqDestination *entities.Destination) (*enstorages.DestinationConfig, error) {
+	b, err := json.Marshal(bqDestination.Data)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling BigQuery config destination: %v", err)
+	}
+
+	bqFormData := &entities.BigQueryFormData{}
+	err = json.Unmarshal(b, bqFormData)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshaling BigQuery form data: %v", err)
+	}
+	return &enstorages.DestinationConfig{
+		Type: enstorages.BigQueryType,
+		Mode: bqFormData.Mode,
+		DataLayout: &enstorages.DataLayout{
+			TableNameTemplate: bqFormData.TableName,
+		},
+		Google: &enadapters.GoogleConfig{Project: bqFormData.ProjectId, Bucket: bqFormData.GCSBucket, KeyFile: bqFormData.JsonKey, Dataset: bqFormData.Dataset},
+	}, nil
 }
 
 func mapPostgres(pgDestinations *entities.Destination) (*enstorages.DestinationConfig, error) {

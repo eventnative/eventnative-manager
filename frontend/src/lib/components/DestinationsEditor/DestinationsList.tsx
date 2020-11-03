@@ -605,7 +605,7 @@ class BiqQueryDialog extends DestinationDialog<BQConfig> {
                        rules={[{required: true, message: 'JSON Key is required'}]}>
                 <Input.TextArea rows={10} className="destinations-list-json-textarea" allowClear={true} bordered={true}/>
             </Form.Item>
-            <Form.Item className={this.state.currentValue.formData['mode'] === "batch" ? "" : "destinations-list-hidden"} label="GCS Bucket" name="bqProjectId" labelCol={{span: 4}} wrapperCol={{span: 12}}
+            <Form.Item className={this.state.currentValue.formData['mode'] === "batch" ? "" : "destinations-list-hidden"} label="GCS Bucket" name="bqGCSBucket" labelCol={{span: 4}} wrapperCol={{span: 12}}
                        rules={[{required: this.state.currentValue.formData['mode'] === "batch"}]}>
                 <Input type="text"/>
             </Form.Item>
