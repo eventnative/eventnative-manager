@@ -21,7 +21,7 @@ export class ApplicationConfiguration {
     constructor() {
         this._firebaseConfig = {
             apiKey: "AIzaSyDBm2HqvxleuJyD9xo8rh0vo1TQGp8Vohg",
-            authDomain: "back1.eventnative.com",
+            authDomain: "backbase.jitsu.com",
             databaseURL: "https://tracker-285220.firebaseio.com",
             projectId: "tracker-285220",
             storageBucket: "tracker-285220.appspot.com",
