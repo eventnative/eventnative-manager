@@ -55,7 +55,7 @@ type State = {
     activeMapping?: FieldMappings
 }
 
-const SERIALIZABLE_CLASSES = [DestinationConfig, PostgresConfig, ClickHouseConfig, RedshiftConfig, FieldMappings, Mapping, SnowflakeConfig];
+const SERIALIZABLE_CLASSES = [DestinationConfig, PostgresConfig, ClickHouseConfig, RedshiftConfig, FieldMappings, Mapping, SnowflakeConfig, BQConfig];
 
 export class DestinationsList extends LoadableComponent<any, State> {
     private services: ApplicationServices;

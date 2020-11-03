@@ -230,7 +230,10 @@ export class BQConfig extends DestinationConfig {
         super("bigquery", id);
     }
     describe(): ConnectionDescription {
-        return null;
+        return {
+            displayURL: `${this.formData['bqProjectId']}`,
+            commandLineConnect: `stub`
+        }
     }
 }
 
