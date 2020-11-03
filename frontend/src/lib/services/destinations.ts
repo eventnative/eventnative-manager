@@ -232,7 +232,7 @@ export class BQConfig extends DestinationConfig {
     describe(): ConnectionDescription {
         return {
             displayURL: `${this.formData['bqProjectId']}`,
-            commandLineConnect: `stub`
+            commandLineConnect: `echo '${this.formData['bqJSONKey']}' > bqkey.json \ngcloud auth activate-service-account --key-file bqkey.json \nbq query "QUERY"`
         }
     }
 }
