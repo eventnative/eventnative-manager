@@ -120,7 +120,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
                     <CodeSnippet className="destinations-list-multiline-code" language="bash">{description.commandLineConnect}</CodeSnippet>
                 </>
             }
-            descriptionComponent = (<><Popover placement="top" content={<><h4><b>Use following command to connect to DB and run a test query:</b></h4>{codeSnippet}</>} trigger="click">
+            descriptionComponent = (<><Popover placement="topLeft" content={<><h4><b>Use following command to connect to DB and run a test query:</b></h4>{codeSnippet}</>} trigger="click">
                 <span className="destinations-list-show-connect-command">{description.displayURL}</span>
             </Popover></>)
         }
