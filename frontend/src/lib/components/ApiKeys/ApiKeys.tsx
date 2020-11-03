@@ -1,18 +1,21 @@
-import React, {ReactElement, ReactNode, useEffect, useState} from 'react';
-import {Button, Col, Input, message, Modal, Row, Select, Space, Switch, Table, Tabs, Tooltip} from "antd";
+import React, {ReactElement, useEffect, useState} from 'react';
+import {Button, Input, message, Modal, Select, Space, Switch, Table, Tabs, Tooltip} from "antd";
 import ApplicationServices from "../../services/ApplicationServices";
+import {Prompt} from 'react-router';
 
 import CodeFilled from "@ant-design/icons/lib/icons/CodeFilled";
 import DeleteFilled from "@ant-design/icons/lib/icons/DeleteFilled";
 import PlusOutlined from "@ant-design/icons/lib/icons/PlusOutlined";
 import RollbackOutlined from "@ant-design/icons/lib/icons/RollbackOutlined";
 import SaveOutlined from "@ant-design/icons/lib/icons/SaveOutlined";
+import CloseOutlined from "@ant-design/icons/lib/icons/CloseOutlined";
 
 import './ApiKeys.less'
-import {ActionLink, Align, CenteredError, CenteredSpin, CodeInline, CodeSnippet, handleError, LabelWithTooltip, lazyComponent, LoadableComponent} from "../components";
+import {ActionLink, CenteredError, CenteredSpin, CodeInline, CodeSnippet, handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import {copyToClipboard, randomId} from "../../commons/utils";
 import TagsInput from "../TagsInput/TagsInput";
 import {EVENTNATIVE_HOST, getCurlDocumentation, getEmpeddedJS, getNPMDocumentation} from "../../commons/api-documentation";
+import {FlexContainer, FlexItem} from "../flex";
 
 type Token = {
     uid: string
@@ -63,7 +66,21 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
     }
 
     protected renderReady() {
-        let header = (<div className="api-keys-buttons-header">{this.generateButton()}{this.saveButton()}{this.cancelButton()}</div>)
+        let numberOfChanges = this.state.tokens.filter(token => token.status != "original").length;
+        let header = (
+            <FlexContainer direction="left-to-right" justifyContent="space-between" className="api-keys-buttons-header" alignContent="flex-end">
+                <FlexItem>
+                    <b>{numberOfChanges > 0 ? `${numberOfChanges} keys are changed and unsaved:` : null}</b><br />
+                    <Space>
+                        {this.saveButton(numberOfChanges > 0)}
+                        {this.cancelButton(numberOfChanges > 0)}
+                    </Space>
+                </FlexItem>
+                <FlexItem>
+                    <br />
+                    {this.generateButton()}
+                </FlexItem>
+            </FlexContainer>)
         const columns = [
             {
                 width: "250px", className: "api-keys-column-id", dataIndex: 'uid', key: 'uid', render: (text, row: TokenDisplay, index) => {
@@ -160,7 +177,11 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
             {header}
             <Table pagination={false} className="api-keys-table" columns={columns} dataSource={this.state.tokens.map((t) => {
                 return {...t, key: t.uid}
-            })}/></>
+            })}/>
+            <Prompt
+                when={!!this.state.tokens.find(tok => tok.status != "original")}
+                message="Are you sure you want to leave? Changes that you made may not be saved."
+            /></>
     }
 
     private static keys(nodes: ReactElement[]): ReactElement[] {
@@ -183,16 +204,19 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
         return (<Button type="primary" icon={<PlusOutlined/>} onClick={onClick}>Generate New Token</Button>)
     }
 
-    cancelButton() {
-        if (this.state.tokens.find(token => token.status != "original")) {
-            return (<Button type="ghost" loading={this.state.loading} icon={<RollbackOutlined/>} onClick={() => this.reload()}>Rollback all changes</Button>)
+    cancelButton(hasChanges: boolean) {
+        if (hasChanges) {
+            return (<Button type="dashed" loading={this.state.loading} icon={<CloseOutlined />} onClick={() => this.reload()}>Cancel changes</Button>)
         } else {
             return <></>
         }
 
     }
 
-    saveButton() {
+    saveButton(hasChanges: boolean) {
+        if (!hasChanges) {
+            return null;
+        }
         let onClick = async () => {
             this.setState({loading: true})
             let tokensToSave = this.state.tokens.map((token) => {
@@ -214,7 +238,7 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
                 handleError(error, 'Error saving keys');
             }
         }
-        return (<Button type="primary" loading={this.state.loading} icon={<SaveOutlined/>} onClick={onClick}>Save</Button>)
+        return (<Button type="default" loading={this.state.loading} icon={<SaveOutlined/>} onClick={onClick}>Save</Button>)
     }
 
     copyToClipboard(value) {
@@ -274,8 +298,10 @@ function KeyDocumentation({token}: { token: Token }) {
 
     return <Tabs className="api-keys-documentation-tabs" defaultActiveKey="1" tabBarExtraContent={(<>
         <LabelWithTooltip documentation="Domain">Domain</LabelWithTooltip>: <Select defaultValue={domains[0]} onChange={(value) => setSelectedDomain(value)}>
-            {domains.map(domain => {return (<Select.Option value={domain}>{domain}</Select.Option>)})}
-        </Select>
+        {domains.map(domain => {
+            return (<Select.Option value={domain}>{domain}</Select.Option>)
+        })}
+    </Select>
     </>)}>
         <Tabs.TabPane tab="Embed JavaScript" key="1">
             <p className="api-keys-documentation-tab-description">Easiest way to start tracking events within your web app is to

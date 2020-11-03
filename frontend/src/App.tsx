@@ -52,7 +52,6 @@ export default class App extends React.Component<AppProperties, AppState> {
 
     constructor(props: AppProperties, context: any) {
         super(props, context);
-        console.log("Location", props.location)
         this.services = ApplicationServices.get();
         this.state = {
             lifecycle: AppLifecycle.LOADING,
@@ -201,11 +200,12 @@ export default class App extends React.Component<AppProperties, AppState> {
     }
 
     private leftMenu() {
+        console.log("Render leftMenu, location", this.props.location)
         let key = this.props.location === '/' || this.props.location === "" ? 'dashboard' : this.props.location;
         if (key.charAt(0) === '/') {
             key = key.substr(1);
         }
-        return <Menu mode="inline" defaultSelectedKeys={[key]} className="app-layout-sidebar-menu">
+        return <Menu mode="inline" selectedKeys={[key]} className="app-layout-sidebar-menu">
             <Menu.Item key="dashboard" icon={<AreaChartOutlined/>}>
                 <NavLink to="/dashboard" activeClassName="selected">Status</NavLink>
             </Menu.Item>

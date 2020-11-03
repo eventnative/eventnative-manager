@@ -13,7 +13,7 @@ import EyeTwoTone from "@ant-design/icons/lib/icons/EyeTwoTone";
 import PlusOutlined from "@ant-design/icons/lib/icons/PlusOutlined";
 
 import './DestinationEditor.less'
-import {ActionLink, Align, CodeInline, handleError, LabelWithTooltip, LoadableComponent} from "../components";
+import {ActionLink, Align, CodeInline, CodeSnippet, handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {copyToClipboard, firstToLower, IndexedList} from "../../commons/utils";
 import Marshal from "../../commons/marshalling";
@@ -104,17 +104,23 @@ export class DestinationsList extends LoadableComponent<any, State> {
         if (!description.commandLineConnect) {
             descriptionComponent = description.displayURL;
         } else {
-            let codeSnippet = <>
-                <h4><b>Use following command to connect to DB and run a test query:</b></h4>
-                <div><CodeInline>{description.commandLineConnect}</CodeInline></div>
-                <Align horizontal="right">
-                    <ActionLink onClick={() => {
-                        copyToClipboard(description.commandLineConnect);
-                        message.info("Command copied to clipboard", 2);
-                    }}>Copy command to clipboard</ActionLink>
-                </Align>
-            </>;
-            descriptionComponent = (<><Popover placement="top" content={codeSnippet} trigger="click">
+            let codeSnippet;
+            if (description.commandLineConnect.indexOf("\n") < 0) {
+                codeSnippet = <>
+                    <div><CodeInline>{description.commandLineConnect}</CodeInline></div>
+                    <Align horizontal="right">
+                        <ActionLink onClick={() => {
+                            copyToClipboard(description.commandLineConnect);
+                            message.info("Command copied to clipboard", 2);
+                        }}>Copy command to clipboard</ActionLink>
+                    </Align>
+                </>;
+            } else {
+                codeSnippet = <>
+                    <CodeSnippet className="destinations-list-multiline-code" language="bash">{description.commandLineConnect}</CodeSnippet>
+                </>
+            }
+            descriptionComponent = (<><Popover placement="top" content={<><h4><b>Use following command to connect to DB and run a test query:</b></h4>{codeSnippet}</>} trigger="click">
                 <span className="destinations-list-show-connect-command">{description.displayURL}</span>
             </Popover></>)
         }

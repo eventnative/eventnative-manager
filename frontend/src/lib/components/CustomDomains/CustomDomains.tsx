@@ -38,7 +38,7 @@ export class CustomDomains extends LoadableComponent<any, State> {
     protected async load() {
         let result = await this.services.storageService.get("custom_domains", this.services.activeProject.id);
         return {
-            certificateExpiration: result._certificateExpiration && result._certificateExpiration.length > 0 ?
+            certificateExpiration: result && result._certificateExpiration && result._certificateExpiration.length > 0 ?
                 new Date(Date.parse(result._certificateExpiration)): null,
             domains: result?.domains || [],
             enterNameVisible: false
@@ -195,8 +195,9 @@ function EnterNameModal({onClose, onReady}: {
         visible={true}
         closable={true}
         keyboard={true}
+        maskClosable={true}
         onOk={ok}
-        onCancel={() => onClose}
+        onCancel={onClose}
         footer={[
             <Button key="close" onClick={onClose}>Cancel</Button>,
             <Button key="submit" type="primary" onClick={ok}>Add</Button>,
