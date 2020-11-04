@@ -10,6 +10,12 @@ function loadScript(src, async, defer) {
 
 const PapercupsWrapper = {
     init: function (user, enableStorytime) {
+        let customer = {
+            name: user.name,
+            email: user.email,
+            external_id: user.id,
+        };
+        //console.log("Papercups customer", customer);
         window.Papercups = {
             config: {
                 accountId: "ebbac26e-4997-4165-a0bc-d05732f28a76",
@@ -20,11 +26,7 @@ const PapercupsWrapper = {
                 newMessagePlaceholder: "Start typing...",
                 baseUrl: "https://app.papercups.io"
             },
-            customer: {
-                name: user.name,
-                email: user.email,
-                external_id: user.id,
-            }
+            customer
         };
         loadScript("https://app.papercups.io/widget.js", true, true)
         if (enableStorytime) {
@@ -32,7 +34,7 @@ const PapercupsWrapper = {
         }
     },
     focusWidget() {
-        //todo
+        window.dispatchEvent(new Event('papercups:open'));
     }
 }
 

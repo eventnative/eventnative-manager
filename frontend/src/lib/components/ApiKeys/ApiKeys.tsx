@@ -305,8 +305,7 @@ function KeyDocumentation({token}: { token: Token }) {
     </>)}>
         <Tabs.TabPane tab="Embed JavaScript" key="1">
             <p className="api-keys-documentation-tab-description">Easiest way to start tracking events within your web app is to
-                add following snippet to <CodeInline>&lt;head&gt;</CodeInline>
-                section of your html file. <a href="https://docs.eventnative.org/javascript-reference">Read more</a> about JavaScript integration
+                add following snippet to <CodeInline>&lt;head&gt;</CodeInline> section of your html file. <a href="https://docs.eventnative.org/javascript-reference">Read more</a> about JavaScript integration
                 on our documentation website
             </p>
             <CodeSnippet language="javascript"

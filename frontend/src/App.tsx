@@ -184,7 +184,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                             {this.leftMenu()}
                         </div>
                         <div className="app-layout-side-bar-bottom">
-                            {/*<a className="app-layout-side-bar-bottom-item" onClick={() => {PapercupsWrapper.focus()}}><WechatOutlined /> Chat with us!</a>*/}
+                            <a className="app-layout-side-bar-bottom-item" onClick={() => {PapercupsWrapper.focusWidget()}}><WechatOutlined /> Chat with us!</a>
 
                         </div>
                     </Layout.Sider>
@@ -200,7 +200,6 @@ export default class App extends React.Component<AppProperties, AppState> {
     }
 
     private leftMenu() {
-        console.log("Render leftMenu, location", this.props.location)
         let key = this.props.location === '/' || this.props.location === "" ? 'dashboard' : this.props.location;
         if (key.charAt(0) === '/') {
             key = key.substr(1);
