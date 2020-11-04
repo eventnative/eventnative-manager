@@ -52,3 +52,25 @@ type BigQueryFormData struct {
 	JsonKey   string `firestore:"bqJSONKey" json:"bqJSONKey"`
 	GCSBucket string `firestore:"bqGCSBucket" json:"bqGCSBucket"`
 }
+
+// SnowflakeFormData entity is stored in main storage (Firebase)
+type SnowflakeFormData struct {
+	Mode      string `firestore:"mode" json:"mode"`
+	TableName string `firestore:"tableName" json:"tableName"`
+
+	Account   string `firestore:"snowflakeAccount" json:"snowflakeAccount"`
+	Warehouse string `firestore:"snowflakeWarehouse" json:"snowflakeWarehouse"`
+	DB        string `firestore:"snowflakeDB" json:"snowflakeDB"`
+	Schema    string `firestore:"snowflakeSchema" json:"snowflakeSchema"`
+	Username  string `firestore:"snowflakeUsername" json:"snowflakeUsername"`
+	Password  string `firestore:"snowflakePassword" json:"snowflakePassword"`
+	StageName string `firestore:"snowflakeStageName" json:"snowflakeStageName"`
+
+	S3Region    string `firestore:"snowflakeS3Region" json:"snowflakeS3Region"`
+	S3Bucket    string `firestore:"snowflakeS3Bucket" json:"snowflakeS3Bucket"`
+	S3AccessKey string `firestore:"snowflakeS3AccessKey" json:"snowflakeS3AccessKey"`
+	S3SecretKey string `firestore:"snowflakeS3SecretKey" json:"snowflakeS3SecretKey"`
+
+	GCSBucket string      `firestore:"snowflakeGcsBucket" json:"snowflakeGcsBucket"`
+	GCSKey    interface{} `firestore:"snowflakeJSONKey" json:"snowflakeJSONKey"`
+}

@@ -19,6 +19,8 @@ func MapConfig(destinationId string, destination *entities.Destination, defaultS
 		return mapRedshift(destinationId, destination, defaultS3)
 	case enstorages.BigQueryType:
 		return mapBigQuery(destination)
+	case enstorages.SnowflakeType:
+		return mapSnowflake(destination)
 	default:
 		return nil, fmt.Errorf("Unknown destination type: %s", destination.Type)
 	}
@@ -149,4 +151,27 @@ func mapRedshift(destinationId string, rsDestinations *entities.Destination, def
 		S3: s3,
 	}
 	return &config, nil
+}
+
+func mapSnowflake(snowflakeDestination *entities.Destination) (*enstorages.DestinationConfig, error) {
+	b, err := json.Marshal(snowflakeDestination.Data)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling Snowflake config destination: %v", err)
+	}
+
+	snowflakeFormData := &entities.SnowflakeFormData{}
+	err = json.Unmarshal(b, snowflakeFormData)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshaling Snowflake form data: %v", err)
+	}
+	return &enstorages.DestinationConfig{
+		Type: enstorages.SnowflakeType,
+		Mode: snowflakeFormData.Mode,
+		DataLayout: &enstorages.DataLayout{
+			TableNameTemplate: snowflakeFormData.TableName,
+		},
+		Snowflake: &enadapters.SnowflakeConfig{Account: snowflakeFormData.Account, Warehouse: snowflakeFormData.Warehouse, Db: snowflakeFormData.DB, Schema: snowflakeFormData.Schema, Username: snowflakeFormData.Username, Password: snowflakeFormData.Password, Stage: snowflakeFormData.StageName},
+		S3:        &enadapters.S3Config{Region: snowflakeFormData.S3Region, Bucket: snowflakeFormData.S3Bucket, AccessKeyID: snowflakeFormData.S3AccessKey, SecretKey: snowflakeFormData.S3SecretKey},
+		Google:    &enadapters.GoogleConfig{Bucket: snowflakeFormData.GCSBucket, KeyFile: snowflakeFormData.GCSKey},
+	}, nil
 }
