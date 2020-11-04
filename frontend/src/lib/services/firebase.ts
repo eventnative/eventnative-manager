@@ -92,6 +92,7 @@ export class FirebaseUserService implements UserService {
         } else {
             this.user = new User(user.uid, userToken, suggestedInfo);
             this.user.created = new Date();
+            return this.user;
         }
     }
     removeAuth(callback: () => void) {
