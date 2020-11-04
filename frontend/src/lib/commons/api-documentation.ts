@@ -52,7 +52,7 @@ export function getNPMDocumentation(key: string, host: string) {
     //init
     eventN.init({
         key: "${key}",
-        tracking_host: "${host}"
+        tracking_host: "https://${host}"
     });
     //identify user
     eventN.id({
@@ -66,7 +66,7 @@ export function getNPMDocumentation(key: string, host: string) {
 
 export function getCurlDocumentation(key: string, host: string) {
     return formatCode(`
-    curl -X POST -H "Content-Type: application/json" -H 'X-Auth-Token: ${key}' \\
+    curl -i -X POST -H "Content-Type: application/json" -H 'X-Auth-Token: ${key}' \\
      --data-binary '{"test_str_field": "str", "test_int_field": 42}' 'https://${host}/api/v1/s2s/event'
     `);
 
