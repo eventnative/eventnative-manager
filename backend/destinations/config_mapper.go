@@ -62,6 +62,7 @@ func mapPostgres(pgDestinations *entities.Destination) (*enstorages.DestinationC
 		Mode: pgFormData.Mode,
 		DataLayout: &enstorages.DataLayout{
 			TableNameTemplate: pgFormData.TableName,
+			PrimaryKeyFields:  pgFormData.PKFields,
 		},
 		DataSource: &enadapters.DataSourceConfig{
 			Host:     pgFormData.Host,
