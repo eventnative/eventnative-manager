@@ -127,8 +127,8 @@ export function MappingEditor({entity, onChange, closeDialog}: IMappingEditorPro
             <Radio.Group optionType="button" buttonStyle="solid" defaultValue={keepUnknownFields ? 'keep' : 'remove'} onChange={(value) => {
                 setKeepUnknownFields(value.target.value === 'keep');
             }}>
-                <Radio.Button value="keep">Removed unmapped fields</Radio.Button>
-                <Radio.Button value="remove">Keep unmapped fields</Radio.Button>
+                <Radio.Button value="keep">Keep unmapped fields</Radio.Button>
+                <Radio.Button value="remove">Remove unmapped fields</Radio.Button>
             </Radio.Group><LabelWithTooltip documentation={<>If the field doesn't have mapping: Keep - keep field as is, Remove - remove field from original JSON</>} />
         </div>
 
