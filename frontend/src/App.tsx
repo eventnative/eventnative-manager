@@ -61,10 +61,14 @@ export default class App extends React.Component<AppProperties, AppState> {
 
     }
 
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        this.services.analyticsService.onGlobalError(error)
+    }
+
     public async componentDidMount() {
         window.setTimeout(() => {
             if (this.state.lifecycle == AppLifecycle.LOADING) {
-                console.log("Login timout");
+                this.services.analyticsService.onGlobalError(new Error("Login timeout"));
                 this.setState({lifecycle: AppLifecycle.ERROR, globalErrorDetails: "Timout"})
             }
         }, LOGIN_TIMEOUT);
@@ -82,8 +86,10 @@ export default class App extends React.Component<AppProperties, AppState> {
             })
         }).catch((error) => {
             console.error("Failed to get user", error);
+            this.services.analyticsService.onGlobalError(error, true);
             this.setState({lifecycle: AppLifecycle.ERROR});
         });
+
 
     }
 
@@ -358,6 +364,6 @@ function SetNewPassword({onCompleted}: { onCompleted: () => Promise<void> }) {
             </Form.Item>
         </Form>
     </Modal>
-
-
 }
+
+

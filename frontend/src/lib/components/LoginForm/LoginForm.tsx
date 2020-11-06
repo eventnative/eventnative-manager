@@ -125,7 +125,7 @@ export default class LoginForm extends React.Component<Props, State> {
     }
 
     private passwordLogin(values) {
-        this.setState({loading: true});
+        throw new Error();
         this.services.userService.login(values['username'].trim(), values['password'].trim()).then(() => {
             message.destroy()
             this.setState({loading: false});

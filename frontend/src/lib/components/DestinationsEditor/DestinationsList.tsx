@@ -502,7 +502,6 @@ class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
             to get the best performance
         </>);
         let className = "destinations-list-s3config-" + (this.state.currentValue.formData['mode'] === "batch" ? "enabled" : "disabled")
-        console.log("WHAT", this.state.currentValue['redshiftUseHostedS3']);
         return (
             <>
                 <Row>

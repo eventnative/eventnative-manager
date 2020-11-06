@@ -14,9 +14,9 @@ export class ApplicationConfiguration {
     private readonly _backendApiBase: string;
     private readonly _routerType: RoutingType = "hash";
     /**
-     * One of the following: dev, prod
+     * One of the following: development, production
      */
-    private readonly _appEnvironment;
+    private readonly _appEnvironment: 'development' | 'production';
 
     constructor() {
         this._firebaseConfig = {
@@ -35,7 +35,11 @@ export class ApplicationConfiguration {
             this._backendApiBase = "https://app-api.jitsu.com/api/v1";
         }
         if (process.env.APP_ENV) {
-            this._appEnvironment = process.env.APP_ENV.toLowerCase();
+            if (process.env.APP_ENV.toLowerCase() === 'production' || process.env.APP_ENV.toLowerCase() === 'development') {
+                this._appEnvironment = 'production';
+            } else {
+                throw new Error(`Unknown app environment: ${process.env.APP_ENV.toLowerCase()}`)
+            }
         } else {
             this._appEnvironment = 'development';
         }
@@ -79,8 +83,8 @@ export default class ApplicationServices {
         firebaseInit(this._applicationConfiguration.firebaseConfig)
         this._userService = new FirebaseUserService();
         this._storageService = new FirebaseServerStorage();
-        this._backendApiClient = new JWTBackendClient(this._applicationConfiguration.backendApiBase, () => this._userService.getUser().authToken);
         this._analyticsService = new AnalyticsService(this._applicationConfiguration);
+        this._backendApiClient = new JWTBackendClient(this._applicationConfiguration.backendApiBase, () => this._userService.getUser().authToken, this._analyticsService);
     }
 
     get userService(): UserService {
@@ -286,17 +290,21 @@ export interface Transformer<T> {
     (data: any, headers?: any): T;
 }
 
+
+
 const JSON_FORMAT: Transformer<any> = undefined;
 const AS_IS_FORMAT: Transformer<string> = (response) => response ? response.toString() : null;
 
 export class JWTBackendClient implements BackendApiClient {
     private tokenAccessor: () => string;
     private baseUrl: string;
+    private analyticsService: AnalyticsService;
 
 
-    constructor(baseUrl: string, tokenAccessor: () => string) {
+    constructor(baseUrl: string, tokenAccessor: () => string, analyticsService: AnalyticsService) {
         this.baseUrl = baseUrl;
         this.tokenAccessor = tokenAccessor;
+        this.analyticsService = analyticsService;
     }
 
     private exec(method: Method, transform: AxiosTransformer, url: string, payload?: any): Promise<any> {
@@ -323,20 +331,40 @@ export class JWTBackendClient implements BackendApiClient {
                 } else if (response.status == 204) {
                     resolve({});
                 } else {
-                    reject(new APIError(response, request));
+                    let error = new APIError(response, request);
+                    this.handleApiError(request, response);
+                    reject(error);
                 }
             }).catch((error) => {
                 if (error.response) {
-                    console.log("Error with response", error.response)
+                    this.handleApiError(request, error.response);
                     reject(new APIError(error.response, request));
                 } else {
                     let baseMessage = "Request at " + fullUrl + " failed";
                     if (error.message) {
                         baseMessage += " with " + error.message;
                     }
+                    this.analyticsService.onFailedAPI({
+                        method: request.method,
+                        url: request.url,
+                        requestPayload: request.data,
+                        responseStatus: -1,
+                        errorMessage: baseMessage
+                    });
+                    reject(error);
                     reject(new Error(baseMessage));
                 }
             });
+        });
+    }
+
+    private handleApiError(request: AxiosRequestConfig, response: AxiosResponse<any>) {
+        this.analyticsService.onFailedAPI({
+            method: request.method,
+            url: request.url,
+            requestPayload: request.data,
+            responseStatus: response.status,
+            responseObject: response.data
         });
     }
 

@@ -24,9 +24,9 @@ const PapercupsWrapper = {
                 primaryColor: "#044f64",
                 greeting: 'Hi there! How can I help you?',
                 newMessagePlaceholder: "Start typing...",
-                baseUrl: "https://app.papercups.io"
+                baseUrl: "https://app.papercups.io",
+                customer
             },
-            customer
         };
         loadScript("https://app.papercups.io/widget.js", true, true)
         if (enableStorytime) {

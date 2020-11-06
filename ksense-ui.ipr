@@ -50,6 +50,7 @@
       <envs>
         <env name="BACKEND_API_BASE" value="https://app-api.jitsu.com" />
         <env name="ROUTING_TYPE" value="url" />
+        <env name="APP_ENV" value="production" />
       </envs>
       <method v="2" />
     </configuration>

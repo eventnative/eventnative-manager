@@ -165,10 +165,7 @@ export function handleError(error: any, errorDescription?: string) {
         }
     }
     let app = ApplicationServices.get();
-    app.analyticsService.onError({
-        user: app.userService.hasUser() ? app.userService.getUser() : null,
-        error: error
-    });
+    app.analyticsService.onGlobalError(error, true);
 }
 
 enum ComponentLifecycle {
@@ -251,7 +248,6 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
      * Also, fadein effect is disabled for reload
      */
     protected async reload(callback?: () => Promise<any | void>) {
-        console.log("Reload");
         if (!callback) {
             callback = async () => {
                 return this.load();
