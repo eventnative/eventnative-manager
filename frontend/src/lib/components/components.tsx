@@ -272,7 +272,6 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
         } catch (e) {
             this.setState(this.errorState(e))
         }
-
     }
 
 
