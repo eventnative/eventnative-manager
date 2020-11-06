@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {PureComponent, useState} from 'react';
 import {LoadableComponent, StatCard} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
 import {Button, Card, Col, Row} from "antd";
@@ -8,7 +8,7 @@ import moment, {Moment, unitOfTime} from "moment";
 import {isNullOrUndef, withDefaultVal} from "../../commons/utils";
 import {NavLink} from "react-router-dom";
 import ReloadOutlined from "@ant-design/icons/lib/icons/ReloadOutlined";
-import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend} from 'recharts';
+import {BarChart, LineChart, Line, Bar, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from 'recharts';
 
 /**
  * Information about events per current period and prev
@@ -141,7 +141,6 @@ export default class StatusPage extends LoadableComponent<Props, State> {
     }
 
 
-
     async componentDidMount(): Promise<void> {
         await super.componentDidMount();
     }
@@ -245,14 +244,54 @@ export default class StatusPage extends LoadableComponent<Props, State> {
     }
 }
 
+const testData = [
+    {name: "Page A", uv: 4000, pv: 2400, amt: 2400},
+    {name: "Page B", uv: 3000, pv: 1398, amt: 2210},
+    {name: "Page C", uv: 2000, pv: 9800, amt: 2290},
+    {name: "Page D", uv: 2780, pv: 3908, amt: 2000},
+    {name: "Page E", uv: 1890, pv: 4800, amt: 2181},
+    {name: "Page F", uv: 2390, pv: 3800, amt: 2500},
+    {name: "Page G", uv: 3490, pv: 4300, amt: 2100}
+];
 
-function Chart({data, granularity}: { data: DatePoint[], granularity: "hour" | "day" }) {
-    return <LineChart data={data} >
-        <Line type="monotone" dataKey="events" stroke="#8884d8" />
-        <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
-        <XAxis dataKey="date" />
-        <YAxis />
-        <Tooltip />
-    </LineChart>
+function CustomizedAxisTick(props) {
+
+    return (
+        <g transform={`translate(${props.x},${props.y})`}>
+            <text x={0} y={0} dy={16} font-size="10" textAnchor="end" fill="black">{props.payload.value}</text>
+        </g>
+    );
 }
+
+const Chart = ({data, granularity}: { data: DatePoint[], granularity: "hour" | "day" }) => {
+    return (
+        <ResponsiveContainer width="100%" minHeight={300} minWidth={300}>
+            <LineChart data={data.map((point) => {
+                return {
+                    label: granularity == "hour" ? point.date.format("HH:mm") : point.date.format("DD MMM"),
+                    events: point.events
+                }
+            })}>
+                <XAxis dataKey="label" tick={<CustomizedAxisTick />} />
+                <YAxis tickFormatter={tick => {
+                    return new Intl.NumberFormat('en').format(tick);
+                }}/>
+                <CartesianGrid strokeDasharray="3 3"/>
+                <Tooltip formatter={(value) => new Intl.NumberFormat('en').format(value)}/>
+                <Line type="monotone" dataKey="events" stroke="#044f64" activeDot={{r: 8}} strokeWidth={2}/>
+            </LineChart></ResponsiveContainer>
+    );
+};
+
+// function Chart({data, granularity}: { data: DatePoint[], granularity: "hour" | "day" }) {
+//     return <ResponsiveContainer>
+//         <LineChart data={data} >
+//         <Line type="monotone" dataKey="events" stroke="#8884d8" />
+//         <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
+//         <XAxis dataKey="date" />
+//         <YAxis />
+//         <Tooltip />
+//         </LineChart>
+//     </ResponsiveContainer>
+// }
 
