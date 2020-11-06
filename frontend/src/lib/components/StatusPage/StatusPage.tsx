@@ -4,14 +4,11 @@ import ApplicationServices from "../../services/ApplicationServices";
 import {Button, Card, Col, Row} from "antd";
 import './StatusPage.less'
 
-import {ChartContainer, ChartRow, Charts, LineChart, YAxis, Resizable, TimeAxis} from "react-timeseries-charts";
-import styler from "react-timeseries-charts/lib/js/styler"
-
-import {TimeSeries} from "pondjs";
 import moment, {Moment, unitOfTime} from "moment";
 import {isNullOrUndef, withDefaultVal} from "../../commons/utils";
 import {NavLink} from "react-router-dom";
 import ReloadOutlined from "@ant-design/icons/lib/icons/ReloadOutlined";
+import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend} from 'recharts';
 
 /**
  * Information about events per current period and prev
@@ -250,75 +247,12 @@ export default class StatusPage extends LoadableComponent<Props, State> {
 
 
 function Chart({data, granularity}: { data: DatePoint[], granularity: "hour" | "day" }) {
-    let [mouseover, setMouseover] = useState({x: null, y: null})
-    const style = styler([
-        {key: "events", color: "steelblue", width: 2},
-    ]);
-
-    if (data.length <= 1) {
-        return <div className="status-page-empty-chart">
-            <h3>No Data</h3><p>There're too few events to display on a chart</p>
-        </div>
-    }
-    const timeseries = new TimeSeries({
-        name: "Events per " + granularity,
-        columns: ["time", "events"],
-        utc: true,
-        points: data.map(point => [point.date, point.events])
-    });
-    let vals = data.map(point => point.events);
-    return <Resizable><ChartContainer
-        timeRange={timeseries.timerange()}
-        width={600}
-        onMouseMove={(x, y) => setMouseover({x, y})}
-        timeAxisStyle={{
-            ticks: {
-                stroke: "#AAA",
-                opacity: 0.25,
-                "stroke-dasharray": "1,1"
-            }
-        }}
-        showGrid={true}
-        onTrackerChanged={(tracker) => {
-            if (!tracker) {
-                setMouseover({x: null, y: null});
-            }
-        }}
-    >
-        <ChartRow height="300">
-            <TimeAxis
-                utc={true}
-                angled={true}
-            />
-            <YAxis id="events" label={null} min={Math.min(...vals)} max={Math.max(...vals)} width="60" type="linear" format=",.0f"/>
-            <Charts>
-                <LineChart
-                    axis="events"
-                    smooth={false}
-                    series={timeseries}
-                    columns={["events"]}
-                    breakLine={true}
-                    style={style}
-                    interpolation="curveBasis"
-                />
-                <CrossHairs x={mouseover.x} y={mouseover.y}/>
-            </Charts>
-        </ChartRow>
-    </ChartContainer></Resizable>
+    return <LineChart data={data} >
+        <Line type="monotone" dataKey="events" stroke="#8884d8" />
+        <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
+        <XAxis dataKey="date" />
+        <YAxis />
+        <Tooltip />
+    </LineChart>
 }
 
-class CrossHairs extends React.Component<any, {}> {
-    render() {
-        const {x, y} = this.props;
-        if (x !== undefined && x !== null && y !== undefined && y !== null && x >= 0 && y >= 0) {
-            return (
-                <g>
-                    <line style={{pointerEvents: "none", stroke: "#ccc"}} x1={0} y1={y} x2={this.props.width} y2={y}/>
-                    <line style={{pointerEvents: "none", stroke: "#ccc"}} x1={x} y1={0} x2={x} y2={this.props.height}/>
-                </g>
-            );
-        } else {
-            return <g/>;
-        }
-    }
-}

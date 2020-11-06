@@ -106,7 +106,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                                     pagePath: routeProps.location.key
                                 })
                                 document.title = route.pageTitle;
-                                return route.getComponent({});
+                               return route.getComponent({});
                             }}
                         />)
                     })}
