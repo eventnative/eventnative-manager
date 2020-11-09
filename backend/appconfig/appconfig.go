@@ -1,7 +1,7 @@
 package appconfig
 
 import (
-	"github.com/ksensehq/eventnative/logging"
+	"github.com/jitsucom/eventnative/logging"
 	"github.com/spf13/viper"
 	"io"
 )

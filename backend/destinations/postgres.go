@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/ksensehq/enhosted/entities"
-	"github.com/ksensehq/enhosted/random"
-	"github.com/ksensehq/eventnative/logging"
+	"github.com/jitsucom/enhosted/entities"
+	"github.com/jitsucom/enhosted/random"
+	"github.com/jitsucom/eventnative/logging"
 	"github.com/spf13/viper"
 	"strings"
 )

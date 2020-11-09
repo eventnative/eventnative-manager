@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/storages"
-	enauth "github.com/ksensehq/eventnative/authorization"
-	"github.com/ksensehq/eventnative/logging"
-	enmiddleware "github.com/ksensehq/eventnative/middleware"
+	"github.com/jitsucom/enhosted/storages"
+	enauth "github.com/jitsucom/eventnative/authorization"
+	"github.com/jitsucom/eventnative/logging"
+	enmiddleware "github.com/jitsucom/eventnative/middleware"
 	"net/http"
 	"time"
 )

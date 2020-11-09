@@ -2,10 +2,10 @@ package ssl
 
 import (
 	"fmt"
-	"github.com/ksensehq/enhosted/entities"
-	"github.com/ksensehq/enhosted/files"
-	entime "github.com/ksensehq/enhosted/time"
-	"github.com/ksensehq/eventnative/logging"
+	"github.com/jitsucom/enhosted/entities"
+	"github.com/jitsucom/enhosted/files"
+	entime "github.com/jitsucom/enhosted/time"
+	"github.com/jitsucom/eventnative/logging"
 	"io/ioutil"
 	"os/exec"
 	"strings"

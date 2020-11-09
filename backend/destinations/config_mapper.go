@@ -3,9 +3,9 @@ package destinations
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ksensehq/enhosted/entities"
-	enadapters "github.com/ksensehq/eventnative/adapters"
-	enstorages "github.com/ksensehq/eventnative/storages"
+	"github.com/jitsucom/enhosted/entities"
+	enadapters "github.com/jitsucom/eventnative/adapters"
+	enstorages "github.com/jitsucom/eventnative/storages"
 	"strings"
 )
 

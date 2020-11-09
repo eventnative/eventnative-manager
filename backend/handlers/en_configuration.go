@@ -2,14 +2,14 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/authorization"
-	"github.com/ksensehq/enhosted/destinations"
-	"github.com/ksensehq/enhosted/entities"
-	"github.com/ksensehq/enhosted/random"
-	"github.com/ksensehq/enhosted/storages"
-	enadapters "github.com/ksensehq/eventnative/adapters"
-	"github.com/ksensehq/eventnative/middleware"
-	enstorages "github.com/ksensehq/eventnative/storages"
+	"github.com/jitsucom/enhosted/authorization"
+	"github.com/jitsucom/enhosted/destinations"
+	"github.com/jitsucom/enhosted/entities"
+	"github.com/jitsucom/enhosted/random"
+	"github.com/jitsucom/enhosted/storages"
+	enadapters "github.com/jitsucom/eventnative/adapters"
+	"github.com/jitsucom/eventnative/middleware"
+	enstorages "github.com/jitsucom/eventnative/storages"
 	"gopkg.in/yaml.v3"
 	"net/http"
 )

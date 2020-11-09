@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/eventnative"
-	"github.com/ksensehq/enhosted/storages"
-	enevents "github.com/ksensehq/eventnative/events"
-	enhandlers "github.com/ksensehq/eventnative/handlers"
-	"github.com/ksensehq/eventnative/logging"
-	enmiddleware "github.com/ksensehq/eventnative/middleware"
+	"github.com/jitsucom/enhosted/eventnative"
+	"github.com/jitsucom/enhosted/storages"
+	enevents "github.com/jitsucom/eventnative/events"
+	enhandlers "github.com/jitsucom/eventnative/handlers"
+	"github.com/jitsucom/eventnative/logging"
+	enmiddleware "github.com/jitsucom/eventnative/middleware"
 	"net/http"
 	"strconv"
 	"time"

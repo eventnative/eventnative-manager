@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/authorization"
-	"github.com/ksensehq/eventnative/logging"
-	"github.com/ksensehq/eventnative/middleware"
+	"github.com/jitsucom/enhosted/authorization"
+	"github.com/jitsucom/eventnative/logging"
+	"github.com/jitsucom/eventnative/middleware"
 	"net/http"
 )
 

@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/authorization"
-	middleware2 "github.com/ksensehq/enhosted/middleware"
-	"github.com/ksensehq/enhosted/ssl"
-	"github.com/ksensehq/eventnative/middleware"
+	"github.com/jitsucom/enhosted/authorization"
+	middleware2 "github.com/jitsucom/enhosted/middleware"
+	"github.com/jitsucom/enhosted/ssl"
+	"github.com/jitsucom/eventnative/middleware"
 	"net/http"
 	"strings"
 )

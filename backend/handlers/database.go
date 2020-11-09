@@ -3,10 +3,10 @@ package handlers
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/middleware"
-	"github.com/ksensehq/enhosted/storages"
-	"github.com/ksensehq/eventnative/logging"
-	enmiddleware "github.com/ksensehq/eventnative/middleware"
+	"github.com/jitsucom/enhosted/middleware"
+	"github.com/jitsucom/enhosted/storages"
+	"github.com/jitsucom/eventnative/logging"
+	enmiddleware "github.com/jitsucom/eventnative/middleware"
 	"net/http"
 )
 
