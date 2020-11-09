@@ -3,6 +3,7 @@ import {User} from "./model";
 import {H} from 'highlight.run'
 import {eventN} from '@ksense/eventnative'
 import LogRocket from 'logrocket';
+import * as Sentry from "@sentry/browser";
 
 const AnalyticsJS = require('./analyticsjs-wrapper.js').default;
 import posthog from 'posthog-js';
@@ -102,7 +103,11 @@ export default class AnalyticsService {
     constructor(appConfig: ApplicationConfiguration) {
         this.appConfig = appConfig;
         this.consoleInterceptor.init();
-
+        Sentry.init({
+            dsn: "https://08ec8a1b7499405b861051e514312b2a@o334233.ingest.sentry.io/5510170",
+            release: "jitsu-frontend@" + process.env.npm_package_version,
+            defaultIntegrations: false
+        });
         eventN.init({
             key: "daaac3a7-a7e4-475f-80dd-43a2985680c5",
             tracking_host: "https://t.jitsu.com"
@@ -131,6 +136,10 @@ export default class AnalyticsService {
         if (!user || this.isDev() || this.userHasDomain(user.email, ["ksense.io", "jitsu.com", "ksense.ai"])) {
             return;
         }
+        Sentry.setUser({
+            email: user.email,
+            id: user.uid
+        });
         H.init(33);
         posthog.init('72gPORhrnFw9os9uBF_IHSEohx9fObmIAyFyhHq_1mA', {api_host: 'https://ph-ksense.herokuapp.com'});
         this.user = user;
@@ -179,8 +188,7 @@ export default class AnalyticsService {
         }
         if (!this.isDev()) {
             try {
-                this.ensureLogRocketInitialized();
-                LogRocket.captureException(error);
+                this.sendException(error);
             } catch (e) {
                 console.warn("Failed to send event to error monitoring", e)
             }
@@ -191,8 +199,7 @@ export default class AnalyticsService {
         this.consoleInterceptor.error(`[Jitsu] uncaught error '${event.message || 'unknown'}' at ${event.filename}:${event.lineno}:${event.colno}`, event.error)
         if (!this.isDev()) {
             try {
-                this.ensureLogRocketInitialized();
-                LogRocket.captureException(event.error);
+                this.sendException(event.error);
             } catch (e) {
                 console.warn("Failed to send event to error monitoring", e)
             }
@@ -214,8 +221,14 @@ export default class AnalyticsService {
         let message = `[Jitsu] ${param.method.toUpperCase()} ${param.url} failed with ${param.responseStatus}`;
         this.consoleInterceptor.error(message);
         if (!this.isDev()) {
-            LogRocket.captureException(new ApiErrorWrapper(message, param))
+            this.sendException(new ApiErrorWrapper(message, param));
         }
+    }
+
+    private sendException(error: Error) {
+        this.ensureLogRocketInitialized();
+        Sentry.captureException(error);
+        LogRocket.captureException(error)
     }
 }
 
