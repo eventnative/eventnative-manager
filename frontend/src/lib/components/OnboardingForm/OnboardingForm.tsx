@@ -49,6 +49,9 @@ export default function OnboardingForm(props: Props) {
                 Utils.randomId(),
                 values['projectName']
             )];
+            if (!user.created) {
+                user.created = new Date();
+            }
             user.name = values['userDisplayName']
             user.emailOptout = emailOptout;
 
