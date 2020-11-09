@@ -10,7 +10,7 @@ require (
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-acme/lego v2.7.2+incompatible
 	github.com/hashicorp/go-multierror v1.1.0
-	github.com/ksensehq/eventnative v1.15.2-0.20201103073741-ae87f9da0474
+	github.com/ksensehq/eventnative v1.15.6
 	github.com/lib/pq v1.8.0
 	github.com/prometheus/common v0.4.0
 	github.com/spf13/viper v1.7.1
