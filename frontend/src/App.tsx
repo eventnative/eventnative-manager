@@ -310,7 +310,7 @@ function SetNewPassword({onCompleted}: { onCompleted: () => Promise<void> }) {
                     await services.userService.login(services.userService.getUser().email, newPassword)
                     let user = (await services.userService.waitForUser()).user;
                     user.forcePasswordChange = false;
-                    await services.userService.update(user);
+                    //await services.userService.update(user);
                     await onCompleted();
 
                 } catch (e) {

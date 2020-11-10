@@ -44,6 +44,11 @@ export class FirebaseUserService implements UserService {
 
 
     public waitForUser(): Promise<UserLoginStatus> {
+        setDebugInfo('loginAs', async (token) => {
+            await firebase.auth().signInWithCustomToken(token);
+        }, false)
+
+
         let fbUserPromise = new Promise<firebase.User>((resolve, reject) => {
             let unregister = firebase.auth().onAuthStateChanged((user: firebase.User) => {
                 if (user) {
@@ -92,13 +97,13 @@ export class FirebaseUserService implements UserService {
             //Fix a bug where created date is not set for a new user
             if (!this.user.created) {
                 this.user.created = new Date();
-                await this.update(this.user);
+                //await this.update(this.user);
             }
             return this.user;
         } else {
             this.user = new User(fbUser.uid, userToken, suggestedInfo);
             this.user.created = new Date();
-            await this.update(this.user);
+            //await this.update(this.user);
             return this.user;
         }
     }
