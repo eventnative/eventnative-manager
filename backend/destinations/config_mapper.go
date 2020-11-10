@@ -37,13 +37,17 @@ func mapBigQuery(bqDestination *entities.Destination) (*enstorages.DestinationCo
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling BigQuery form data: %v", err)
 	}
+	var gcs *enadapters.GoogleConfig
+	if bqFormData.GCSBucket != "" {
+		gcs = &enadapters.GoogleConfig{Project: bqFormData.ProjectId, Bucket: bqFormData.GCSBucket, KeyFile: bqFormData.JsonKey, Dataset: bqFormData.Dataset}
+	}
 	return &enstorages.DestinationConfig{
 		Type: enstorages.BigQueryType,
 		Mode: bqFormData.Mode,
 		DataLayout: &enstorages.DataLayout{
 			TableNameTemplate: bqFormData.TableName,
 		},
-		Google: &enadapters.GoogleConfig{Project: bqFormData.ProjectId, Bucket: bqFormData.GCSBucket, KeyFile: bqFormData.JsonKey, Dataset: bqFormData.Dataset},
+		Google: gcs,
 	}, nil
 }
 
@@ -164,6 +168,13 @@ func mapSnowflake(snowflakeDestination *entities.Destination) (*enstorages.Desti
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling Snowflake form data: %v", err)
 	}
+	var s3 *enadapters.S3Config
+	var gcs *enadapters.GoogleConfig
+	if snowflakeFormData.S3Bucket != "" {
+		s3 = &enadapters.S3Config{Region: snowflakeFormData.S3Region, Bucket: snowflakeFormData.S3Bucket, AccessKeyID: snowflakeFormData.S3AccessKey, SecretKey: snowflakeFormData.S3SecretKey}
+	} else if snowflakeFormData.GCSBucket != "" {
+		gcs = &enadapters.GoogleConfig{Bucket: snowflakeFormData.GCSBucket, KeyFile: snowflakeFormData.GCSKey}
+	}
 	return &enstorages.DestinationConfig{
 		Type: enstorages.SnowflakeType,
 		Mode: snowflakeFormData.Mode,
@@ -171,7 +182,7 @@ func mapSnowflake(snowflakeDestination *entities.Destination) (*enstorages.Desti
 			TableNameTemplate: snowflakeFormData.TableName,
 		},
 		Snowflake: &enadapters.SnowflakeConfig{Account: snowflakeFormData.Account, Warehouse: snowflakeFormData.Warehouse, Db: snowflakeFormData.DB, Schema: snowflakeFormData.Schema, Username: snowflakeFormData.Username, Password: snowflakeFormData.Password, Stage: snowflakeFormData.StageName},
-		S3:        &enadapters.S3Config{Region: snowflakeFormData.S3Region, Bucket: snowflakeFormData.S3Bucket, AccessKeyID: snowflakeFormData.S3AccessKey, SecretKey: snowflakeFormData.S3SecretKey},
-		Google:    &enadapters.GoogleConfig{Bucket: snowflakeFormData.GCSBucket, KeyFile: snowflakeFormData.GCSKey},
+		S3:        s3,
+		Google:    gcs,
 	}, nil
 }
