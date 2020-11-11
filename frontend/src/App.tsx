@@ -24,7 +24,7 @@ import {ReactNode, useState} from "react";
 
 import logo from './icons/logo.svg';
 import PapercupsWrapper from "./lib/commons/papercups";
-import {WechatOutlined} from "@ant-design/icons/lib";
+import WechatOutlined from "@ant-design/icons/lib/icons/WechatOutlined";
 
 enum AppLifecycle {
     LOADING, //Application is loading

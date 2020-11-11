@@ -4,7 +4,7 @@ package entities
 type PostgresFormData struct {
 	Mode      string   `firestore:"mode" json:"mode"`
 	TableName string   `firestore:"tableName" json:"tableName"`
-	PKFields  []string `firestore:"pkFields" json:"primary_key_fields"`
+	PKFields  []string `firestore:"pkFields" json:"pkFields"`
 
 	Db       string `firestore:"pgdatabase" json:"pgdatabase"`
 	Host     string `firestore:"pghost" json:"pghost"`

@@ -79,19 +79,26 @@ export class FirebaseUserService implements UserService {
 
     private static readonly USERS_COLLECTION = "users_info";
 
-    private async restoreUser(user: firebase.User): Promise<User> {
+    private async restoreUser(fbUser: firebase.User): Promise<User> {
 
-        let userInfo = await firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(user.uid).get();
-        let userToken = await user.getIdToken(false);
+        let userInfo = await firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(fbUser.uid).get();
+        let userToken = await fbUser.getIdToken(false);
         let suggestedInfo = {
-            email: user.email,
-            name: user.displayName,
+            email: fbUser.email,
+            name: fbUser.displayName,
         };
         if (userInfo.exists) {
-            return this.user = new User(user.uid, userToken, suggestedInfo, userInfo.data());
+            this.user = new User(fbUser.uid, userToken, suggestedInfo, userInfo.data());
+            //Fix a bug where created date is not set for a new user
+            if (!this.user.created) {
+                this.user.created = new Date();
+                await this.update(this.user);
+            }
+            return this.user;
         } else {
-            this.user = new User(user.uid, userToken, suggestedInfo);
+            this.user = new User(fbUser.uid, userToken, suggestedInfo);
             this.user.created = new Date();
+            await this.update(this.user);
             return this.user;
         }
     }

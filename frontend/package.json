@@ -5,6 +5,7 @@
   "dependencies": {
     "@ant-design/icons": "^4.2.2",
     "@ksense/eventnative": "^1.0.11",
+    "@sentry/browser": "^5.27.3",
     "@types/react-router-dom": "^5.1.6",
     "antd": "^4.7.2",
     "axios": "^0.20.0",
