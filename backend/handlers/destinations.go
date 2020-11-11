@@ -13,7 +13,6 @@ import (
 	endestinations "github.com/ksensehq/eventnative/destinations"
 	"github.com/ksensehq/eventnative/logging"
 	enmiddleware "github.com/ksensehq/eventnative/middleware"
-	"github.com/ksensehq/eventnative/schema"
 	enstorages "github.com/ksensehq/eventnative/storages"
 	"net/http"
 	"time"
@@ -85,8 +84,6 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 			} else {
 				enDestinationConfig.OnlyTokens = projectTokenIds
 			}
-
-			EnrichMappingRules(destination, enDestinationConfig)
 			idConfig[destinationId] = *enDestinationConfig
 		}
 	}
@@ -98,34 +95,6 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 
 	logging.Infof("Destinations response in [%.2f] seconds", time.Now().Sub(start).Seconds())
 	c.JSON(http.StatusOK, &endestinations.Payload{Destinations: idConfig})
-}
-
-func EnrichMappingRules(destination *entities.Destination, enDestinationConfig *enstorages.DestinationConfig) {
-	if !destination.Mappings.IsEmpty() {
-		var rules []string
-		for _, rule := range destination.Mappings.Rules {
-			var cast string
-			switch rule.Action {
-			case "move", "erase":
-				cast = ""
-			case "cast/int":
-				cast = "(int) "
-			case "cast/double":
-				cast = "(double) "
-			case "cast/date":
-				cast = "(timestamp) "
-			case "cast/string":
-				cast = "(string) "
-			}
-			rules = append(rules, rule.SourceField+" -> "+cast+rule.DestinationField)
-		}
-		enDestinationConfig.DataLayout.Mapping = rules
-		mappingType := schema.Default
-		if !destination.Mappings.KeepFields {
-			mappingType = schema.Strict
-		}
-		enDestinationConfig.DataLayout.MappingType = mappingType
-	}
 }
 
 func (dh *DestinationsHandler) TestHandler(c *gin.Context) {

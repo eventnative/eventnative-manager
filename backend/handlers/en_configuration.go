@@ -71,7 +71,6 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed to build destinations response"})
 			return
 		}
-		EnrichMappingRules(destination, config)
 		mappedDestinations[id] = config
 	}
 

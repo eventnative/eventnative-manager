@@ -5,25 +5,33 @@ import (
 	"fmt"
 	"github.com/ksensehq/enhosted/entities"
 	enadapters "github.com/ksensehq/eventnative/adapters"
+	"github.com/ksensehq/eventnative/schema"
 	enstorages "github.com/ksensehq/eventnative/storages"
 	"strings"
 )
 
 func MapConfig(destinationId string, destination *entities.Destination, defaultS3 *enadapters.S3Config) (*enstorages.DestinationConfig, error) {
+	var config *enstorages.DestinationConfig
+	var err error
 	switch destination.Type {
 	case enstorages.PostgresType:
-		return mapPostgres(destination)
+		config, err = mapPostgres(destination)
 	case enstorages.ClickHouseType:
-		return mapClickhouse(destination)
+		config, err = mapClickhouse(destination)
 	case enstorages.RedshiftType:
-		return mapRedshift(destinationId, destination, defaultS3)
+		config, err = mapRedshift(destinationId, destination, defaultS3)
 	case enstorages.BigQueryType:
-		return mapBigQuery(destination)
+		config, err = mapBigQuery(destination)
 	case enstorages.SnowflakeType:
-		return mapSnowflake(destination)
+		config, err = mapSnowflake(destination)
 	default:
 		return nil, fmt.Errorf("Unknown destination type: %s", destination.Type)
 	}
+	if err != nil {
+		return nil, err
+	}
+	enrichMappingRules(destination, config)
+	return config, nil
 }
 
 func mapBigQuery(bqDestination *entities.Destination) (*enstorages.DestinationConfig, error) {
@@ -185,4 +193,32 @@ func mapSnowflake(snowflakeDestination *entities.Destination) (*enstorages.Desti
 		S3:        s3,
 		Google:    gcs,
 	}, nil
+}
+
+func enrichMappingRules(destination *entities.Destination, enDestinationConfig *enstorages.DestinationConfig) {
+	if !destination.Mappings.IsEmpty() {
+		var rules []string
+		for _, rule := range destination.Mappings.Rules {
+			var cast string
+			switch rule.Action {
+			case "move", "erase":
+				cast = ""
+			case "cast/int":
+				cast = "(int) "
+			case "cast/double":
+				cast = "(double) "
+			case "cast/date":
+				cast = "(timestamp) "
+			case "cast/string":
+				cast = "(string) "
+			}
+			rules = append(rules, rule.SourceField+" -> "+cast+rule.DestinationField)
+		}
+		enDestinationConfig.DataLayout.Mapping = rules
+		mappingType := schema.Default
+		if !destination.Mappings.KeepFields {
+			mappingType = schema.Strict
+		}
+		enDestinationConfig.DataLayout.MappingType = mappingType
+	}
 }
