@@ -86,7 +86,7 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 				enDestinationConfig.OnlyTokens = projectTokenIds
 			}
 
-			EnrichRules(destination, enDestinationConfig)
+			EnrichMappingRules(destination, enDestinationConfig)
 			idConfig[destinationId] = *enDestinationConfig
 		}
 	}
@@ -100,7 +100,7 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, &endestinations.Payload{Destinations: idConfig})
 }
 
-func EnrichRules(destination *entities.Destination, enDestinationConfig *enstorages.DestinationConfig) {
+func EnrichMappingRules(destination *entities.Destination, enDestinationConfig *enstorages.DestinationConfig) {
 	if !destination.Mappings.IsEmpty() {
 		var rules []string
 		for _, rule := range destination.Mappings.Rules {
