@@ -86,31 +86,7 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 				enDestinationConfig.OnlyTokens = projectTokenIds
 			}
 
-			if !destination.Mappings.IsEmpty() {
-				var rules []string
-				for _, rule := range destination.Mappings.Rules {
-					var cast string
-					switch rule.Action {
-					case "move", "erase":
-						cast = ""
-					case "cast/int":
-						cast = "(int) "
-					case "cast/double":
-						cast = "(double) "
-					case "cast/date":
-						cast = "(timestamp) "
-					case "cast/string":
-						cast = "(string) "
-					}
-					rules = append(rules, rule.SourceField+" -> "+cast+rule.DestinationField)
-				}
-				enDestinationConfig.DataLayout.Mapping = rules
-				mappingType := schema.Default
-				if !destination.Mappings.KeepFields {
-					mappingType = schema.Strict
-				}
-				enDestinationConfig.DataLayout.MappingType = mappingType
-			}
+			EnrichRules(destination, enDestinationConfig)
 			idConfig[destinationId] = *enDestinationConfig
 		}
 	}
@@ -122,6 +98,34 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 
 	logging.Infof("Destinations response in [%.2f] seconds", time.Now().Sub(start).Seconds())
 	c.JSON(http.StatusOK, &endestinations.Payload{Destinations: idConfig})
+}
+
+func EnrichRules(destination *entities.Destination, enDestinationConfig *enstorages.DestinationConfig) {
+	if !destination.Mappings.IsEmpty() {
+		var rules []string
+		for _, rule := range destination.Mappings.Rules {
+			var cast string
+			switch rule.Action {
+			case "move", "erase":
+				cast = ""
+			case "cast/int":
+				cast = "(int) "
+			case "cast/double":
+				cast = "(double) "
+			case "cast/date":
+				cast = "(timestamp) "
+			case "cast/string":
+				cast = "(string) "
+			}
+			rules = append(rules, rule.SourceField+" -> "+cast+rule.DestinationField)
+		}
+		enDestinationConfig.DataLayout.Mapping = rules
+		mappingType := schema.Default
+		if !destination.Mappings.KeepFields {
+			mappingType = schema.Strict
+		}
+		enDestinationConfig.DataLayout.MappingType = mappingType
+	}
 }
 
 func (dh *DestinationsHandler) TestHandler(c *gin.Context) {
