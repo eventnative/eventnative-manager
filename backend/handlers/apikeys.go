@@ -23,7 +23,7 @@ func (akh *ApiKeysHandler) GetHandler(c *gin.Context) {
 	keys, err := akh.storage.GetApiKeys()
 	if err != nil {
 		logging.Error(err)
-		c.JSON(http.StatusInternalServerError, enmiddleware.ErrorResponse{Error: err, Message: "Api keys err"})
+		c.JSON(http.StatusInternalServerError, enmiddleware.ErrorResponse{Error: err.Error(), Message: "Api keys err"})
 		return
 	}
 

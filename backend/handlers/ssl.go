@@ -39,7 +39,7 @@ func (h *CustomDomainHandler) PerProjectHandler(c *gin.Context) {
 	} else {
 		err := h.updateExecutor.RunForProject(projectId)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: err.Error()})
+			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Error running"})
 			return
 		}
 		c.JSON(http.StatusOK, middleware2.OkResponse{Status: "ok"})
@@ -58,7 +58,7 @@ func (h *CustomDomainHandler) AllHandler(c *gin.Context) {
 	} else {
 		err := h.updateExecutor.Run()
 		if err != nil {
-			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: err.Error()})
+			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Error running"})
 			return
 		}
 		c.JSON(http.StatusOK, middleware2.OkResponse{Status: "ok"})

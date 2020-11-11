@@ -5,10 +5,10 @@ import (
 	"strings"
 )
 
-func Cors(h http.Handler) http.Handler {
+func Cors(h http.Handler, allowedDomainSuffix string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reqOrigin := r.Header.Get("Origin")
-		if strings.HasSuffix(reqOrigin, ".jitsu.com") {
+		if strings.HasSuffix(reqOrigin, allowedDomainSuffix) {
 			w.Header().Add("Access-Control-Allow-Origin", reqOrigin)
 		}
 		w.Header().Add("Access-Control-Max-Age", "86400")

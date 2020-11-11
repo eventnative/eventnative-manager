@@ -183,7 +183,7 @@ func main() {
 	router := SetupRouter(staticFilesPath, enService, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage, sslUpdateExecutor)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
-		Handler:           middleware.Cors(router),
+		Handler:           middleware.Cors(router, viper.GetString("server.domain")),
 		ReadTimeout:       time.Second * 60,
 		ReadHeaderTimeout: time.Second * 60,
 		IdleTimeout:       time.Second * 65,
@@ -214,6 +214,11 @@ func SetupRouter(staticContentDirectory string, enService *eventnative.Service,
 	sslUpdateExecutor *ssl.UpdateExecutor) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
+	router.Use(gin.Recovery())
+	//TODO when https://github.com/gin-gonic will have a new version (https://github.com/gin-gonic/gin/pull/2322)
+	/*router.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+	    c.JSON(http.StatusInternalServerError, `{"err":"System error on %s server"}`
+	}))*/
 
 	router.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")

@@ -53,13 +53,13 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 
 	keys, err := ch.fb.GetApiKeysByProjectId(projectId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed to get API keys"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed to get API keys"})
 		return
 	}
 
 	projectDestinations, err := ch.fb.GetDestinationsByProjectId(projectId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed to get Destinations"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed to get Destinations"})
 		return
 	}
 	mappedDestinations := make(map[string]*enstorages.DestinationConfig)
@@ -68,7 +68,7 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 		config, err := destinations.MapConfig(id, destination, ch.defaultS3)
 
 		if err != nil {
-			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed to build destinations response"})
+			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed to build destinations response"})
 			return
 		}
 		mappedDestinations[id] = config
@@ -80,7 +80,7 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 	marshal, err := yaml.Marshal(&config)
 	configYaml := yaml.Node{}
 	if err = yaml.Unmarshal(marshal, &configYaml); err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed to deserialize result configuration"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed to deserialize result configuration"})
 		return
 	}
 	configYaml.HeadComment = configHeaderText
@@ -88,6 +88,6 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 	marshal, err = yaml.Marshal(&configYaml)
 	c.Header("Content-Type", "application/yaml")
 	if _, err = c.Writer.Write(marshal); err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed write response"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed write response"})
 	}
 }

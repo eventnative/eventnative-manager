@@ -46,7 +46,7 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 	destinationsMap, err := dh.storage.GetDestinations()
 	if err != nil {
 		logging.Error(err)
-		c.JSON(http.StatusInternalServerError, enmiddleware.ErrorResponse{Error: err, Message: "Destinations err"})
+		c.JSON(http.StatusInternalServerError, enmiddleware.ErrorResponse{Error: err.Error(), Message: "Destinations err"})
 		return
 	}
 
@@ -128,25 +128,25 @@ func (dh *DestinationsHandler) TestHandler(c *gin.Context) {
 	destinationEntity := &entities.Destination{}
 	err := c.BindJSON(destinationEntity)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to parse request body", Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to parse request body", Error: err.Error()})
 		return
 	}
 
 	enDestinationConfig, err := destinations.MapConfig("test_connection", destinationEntity, dh.defaultS3)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: fmt.Sprintf("Failed to map [%s] firebase config to eventnative format", destinationEntity.Type), Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: fmt.Sprintf("Failed to map [%s] firebase config to eventnative format", destinationEntity.Type), Error: err.Error()})
 		return
 	}
 
 	b, err := json.Marshal(enDestinationConfig)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to serialize destination config", Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to serialize destination config", Error: err.Error()})
 		return
 	}
 
 	code, content, err := dh.enService.TestDestination(b)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to get response from eventnative: " + err.Error(), Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to get response from eventnative", Error: err.Error()})
 		return
 	}
 
@@ -160,6 +160,6 @@ func (dh *DestinationsHandler) TestHandler(c *gin.Context) {
 
 	_, err = c.Writer.Write(content)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to write response", Error: err})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Message: "Failed to write response", Error: err.Error()})
 	}
 }

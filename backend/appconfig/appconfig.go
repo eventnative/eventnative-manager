@@ -17,6 +17,7 @@ var Instance *AppConfig
 
 func setDefaultParams() {
 	viper.SetDefault("server.port", "8001")
+	viper.SetDefault("server.domain", ".jitsu.com")
 }
 
 func Init() error {

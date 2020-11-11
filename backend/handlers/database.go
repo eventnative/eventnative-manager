@@ -36,7 +36,7 @@ func (eh *DatabaseHandler) PostHandler(c *gin.Context) {
 	userProjectId := extractProjectId(c)
 	if userProjectId == "" {
 		logging.Error(systemErrProjectId)
-		c.JSON(http.StatusUnauthorized, enmiddleware.ErrorResponse{Error: systemErrProjectId, Message: "Authorization error"})
+		c.JSON(http.StatusUnauthorized, enmiddleware.ErrorResponse{Error: systemErrProjectId.Error(), Message: "Authorization error"})
 		return
 	}
 
@@ -47,7 +47,7 @@ func (eh *DatabaseHandler) PostHandler(c *gin.Context) {
 
 	database, err := eh.storage.CreateDatabase(projectId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Error: err, Message: "Failed to create a database for project " + projectId + ": " + err.Error()})
+		c.JSON(http.StatusBadRequest, enmiddleware.ErrorResponse{Error: err.Error(), Message: "Failed to create a database for project " + projectId})
 		return
 	}
 
