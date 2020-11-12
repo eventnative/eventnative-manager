@@ -13,7 +13,6 @@ import (
 	endestinations "github.com/jitsucom/eventnative/destinations"
 	"github.com/jitsucom/eventnative/logging"
 	enmiddleware "github.com/jitsucom/eventnative/middleware"
-	"github.com/jitsucom/eventnative/schema"
 	enstorages "github.com/jitsucom/eventnative/storages"
 	"net/http"
 	"time"
