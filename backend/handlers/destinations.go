@@ -85,32 +85,6 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 			} else {
 				enDestinationConfig.OnlyTokens = projectTokenIds
 			}
-
-			if !destination.Mappings.IsEmpty() {
-				var rules []string
-				for _, rule := range destination.Mappings.Rules {
-					var cast string
-					switch rule.Action {
-					case "move", "erase":
-						cast = ""
-					case "cast/int":
-						cast = "(int) "
-					case "cast/double":
-						cast = "(double) "
-					case "cast/date":
-						cast = "(timestamp) "
-					case "cast/string":
-						cast = "(string) "
-					}
-					rules = append(rules, rule.SourceField+" -> "+cast+rule.DestinationField)
-				}
-				enDestinationConfig.DataLayout.Mapping = rules
-				mappingType := schema.Default
-				if !destination.Mappings.KeepFields {
-					mappingType = schema.Strict
-				}
-				enDestinationConfig.DataLayout.MappingType = mappingType
-			}
 			idConfig[destinationId] = *enDestinationConfig
 		}
 	}

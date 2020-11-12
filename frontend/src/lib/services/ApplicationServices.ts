@@ -223,7 +223,7 @@ export function setDebugInfo(field: string, obj: any, purify = true) {
         if (!window['__enUIDebug']) {
             window['__enUIDebug'] = {}
         }
-        window['__enUIDebug'][field] = purify ? Object.assign({}, obj) : obj;
+        window['__enUIDebug'][field] = (typeof obj === 'object' && purify) ? Object.assign({}, obj) : obj;
     }
 }
 
