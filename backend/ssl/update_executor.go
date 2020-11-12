@@ -2,10 +2,11 @@ package ssl
 
 import (
 	"fmt"
-	"github.com/ksensehq/enhosted/entities"
-	"github.com/ksensehq/enhosted/files"
-	entime "github.com/ksensehq/enhosted/time"
-	"github.com/ksensehq/eventnative/logging"
+	"github.com/jitsucom/enhosted/entities"
+	"github.com/jitsucom/enhosted/files"
+	entime "github.com/jitsucom/enhosted/time"
+	"github.com/jitsucom/eventnative/logging"
+	"github.com/jitsucom/eventnative/safego"
 	"io/ioutil"
 	"os/exec"
 	"strings"
@@ -34,14 +35,14 @@ func NewSSLUpdateExecutor(processor *CertificateService, targetHosts []string, u
 
 func (e *UpdateExecutor) Schedule(interval time.Duration) {
 	ticker := time.NewTicker(interval)
-	go func() {
+	safego.RunWithRestart(func() {
 		for {
 			<-ticker.C
 			if err := e.Run(); err != nil {
 				logging.Errorf("Failed to update SSL certificates: %s", err)
 			}
 		}
-	}()
+	})
 }
 
 func (e *UpdateExecutor) Run() error {

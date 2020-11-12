@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/statistics"
-	"github.com/ksensehq/eventnative/logging"
-	"github.com/ksensehq/eventnative/middleware"
+	"github.com/jitsucom/enhosted/statistics"
+	"github.com/jitsucom/eventnative/logging"
+	"github.com/jitsucom/eventnative/middleware"
 	"net/http"
 )
 
@@ -31,7 +31,7 @@ func (h *StatisticsHandler) GetHandler(c *gin.Context) {
 	userProjectId := extractProjectId(c)
 	if userProjectId == "" {
 		logging.Error(systemErrProjectId)
-		c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Error: systemErrProjectId, Message: "Authorization error"})
+		c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Error: systemErrProjectId.Error(), Message: "Authorization error"})
 		return
 	}
 
@@ -57,7 +57,7 @@ func (h *StatisticsHandler) GetHandler(c *gin.Context) {
 	}
 	data, err := h.storage.GetEvents(projectId, from, to, granularity)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to provide statistics: " + err.Error(), Error: err})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: "Failed to provide statistics", Error: err.Error()})
 		logging.Errorf("Failed to provide statistics project_id[%s]: %v", projectId, err)
 		return
 	}

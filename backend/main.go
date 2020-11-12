@@ -5,19 +5,19 @@ import (
 	"flag"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/appconfig"
-	"github.com/ksensehq/enhosted/authorization"
-	"github.com/ksensehq/enhosted/destinations"
-	"github.com/ksensehq/enhosted/eventnative"
-	"github.com/ksensehq/enhosted/handlers"
-	"github.com/ksensehq/enhosted/middleware"
-	"github.com/ksensehq/enhosted/ssh"
-	"github.com/ksensehq/enhosted/ssl"
-	"github.com/ksensehq/enhosted/statistics"
-	"github.com/ksensehq/enhosted/storages"
-	enadapters "github.com/ksensehq/eventnative/adapters"
-	"github.com/ksensehq/eventnative/logging"
-	enstorages "github.com/ksensehq/eventnative/storages"
+	"github.com/jitsucom/enhosted/appconfig"
+	"github.com/jitsucom/enhosted/authorization"
+	"github.com/jitsucom/enhosted/destinations"
+	"github.com/jitsucom/enhosted/eventnative"
+	"github.com/jitsucom/enhosted/handlers"
+	"github.com/jitsucom/enhosted/middleware"
+	"github.com/jitsucom/enhosted/ssh"
+	"github.com/jitsucom/enhosted/ssl"
+	"github.com/jitsucom/enhosted/statistics"
+	"github.com/jitsucom/enhosted/storages"
+	enadapters "github.com/jitsucom/eventnative/adapters"
+	"github.com/jitsucom/eventnative/logging"
+	enstorages "github.com/jitsucom/eventnative/storages"
 	"github.com/spf13/viper"
 	"os"
 	"os/signal"
@@ -183,7 +183,7 @@ func main() {
 	router := SetupRouter(staticFilesPath, enService, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage, sslUpdateExecutor)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
-		Handler:           middleware.Cors(router),
+		Handler:           middleware.Cors(router, viper.GetString("server.domain")),
 		ReadTimeout:       time.Second * 60,
 		ReadHeaderTimeout: time.Second * 60,
 		IdleTimeout:       time.Second * 65,
@@ -214,6 +214,11 @@ func SetupRouter(staticContentDirectory string, enService *eventnative.Service,
 	sslUpdateExecutor *ssl.UpdateExecutor) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
+	router.Use(gin.Recovery())
+	//TODO when https://github.com/gin-gonic will have a new version (https://github.com/gin-gonic/gin/pull/2322)
+	/*router.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+	    c.JSON(http.StatusInternalServerError, `{"err":"System error on %s server"}`
+	}))*/
 
 	router.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")

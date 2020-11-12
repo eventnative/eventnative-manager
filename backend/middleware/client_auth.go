@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/authorization"
-	"github.com/ksensehq/eventnative/logging"
-	"github.com/ksensehq/eventnative/middleware"
+	"github.com/jitsucom/enhosted/authorization"
+	"github.com/jitsucom/eventnative/logging"
+	"github.com/jitsucom/eventnative/middleware"
 	"net/http"
 )
 
@@ -15,7 +15,7 @@ func ClientAuth(main gin.HandlerFunc, service *authorization.Service) gin.Handle
 		token := c.GetHeader("X-Client-Auth")
 		projectId, err := service.Authenticate(c, token)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Error: err, Message: "You are not authorized"})
+			c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Error: err.Error(), Message: "You are not authorized"})
 			return
 		}
 

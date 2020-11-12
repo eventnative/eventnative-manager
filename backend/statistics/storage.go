@@ -2,8 +2,8 @@ package statistics
 
 import (
 	"errors"
-	"github.com/ksensehq/eventnative/logging"
-	enstorages "github.com/ksensehq/eventnative/storages"
+	"github.com/jitsucom/eventnative/logging"
+	enstorages "github.com/jitsucom/eventnative/storages"
 	"io"
 )
 

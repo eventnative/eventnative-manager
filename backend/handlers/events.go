@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/eventnative"
-	"github.com/ksensehq/enhosted/storages"
-	enevents "github.com/ksensehq/eventnative/events"
-	enhandlers "github.com/ksensehq/eventnative/handlers"
-	"github.com/ksensehq/eventnative/logging"
-	enmiddleware "github.com/ksensehq/eventnative/middleware"
+	"github.com/jitsucom/enhosted/eventnative"
+	"github.com/jitsucom/enhosted/storages"
+	enevents "github.com/jitsucom/eventnative/events"
+	enhandlers "github.com/jitsucom/eventnative/handlers"
+	"github.com/jitsucom/eventnative/logging"
+	enmiddleware "github.com/jitsucom/eventnative/middleware"
 	"net/http"
 	"strconv"
 	"time"
@@ -47,7 +47,7 @@ func (eh *EventsHandler) GetHandler(c *gin.Context) {
 	userProjectId := extractProjectId(c)
 	if userProjectId == "" {
 		logging.Error(systemErrProjectId)
-		c.JSON(http.StatusUnauthorized, enmiddleware.ErrorResponse{Error: systemErrProjectId, Message: "Authorization error"})
+		c.JSON(http.StatusUnauthorized, enmiddleware.ErrorResponse{Error: systemErrProjectId.Error(), Message: "Authorization error"})
 		return
 	}
 
@@ -75,7 +75,7 @@ func (eh *EventsHandler) GetHandler(c *gin.Context) {
 	events, err := eh.enService.GetEvents(apiKeys, limit)
 	if err != nil {
 		logging.Error(err)
-		c.JSON(http.StatusInternalServerError, enmiddleware.ErrorResponse{Message: "Events err: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, enmiddleware.ErrorResponse{Message: "Events err", Error: err.Error()})
 		return
 	}
 

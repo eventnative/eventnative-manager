@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	enevents "github.com/ksensehq/eventnative/events"
-	enhandlers "github.com/ksensehq/eventnative/handlers"
-	"github.com/ksensehq/eventnative/logging"
+	enevents "github.com/jitsucom/eventnative/events"
+	enhandlers "github.com/jitsucom/eventnative/handlers"
+	"github.com/jitsucom/eventnative/logging"
+	"github.com/jitsucom/eventnative/safego"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -86,7 +87,7 @@ func (s *Service) TestDestination(reqB []byte) (int, []byte, error) {
 }
 
 func (s *Service) startClusterMonitor() {
-	go func() {
+	safego.RunWithRestart(func() {
 		for {
 			if s.closed {
 				break
@@ -106,7 +107,7 @@ func (s *Service) startClusterMonitor() {
 
 			time.Sleep(time.Minute)
 		}
-	}()
+	})
 }
 
 func (s *Service) getClusterFromEN() ([]string, error) {

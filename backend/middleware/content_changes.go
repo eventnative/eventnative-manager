@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/storages"
-	"github.com/ksensehq/eventnative/logging"
+	"github.com/jitsucom/enhosted/storages"
+	"github.com/jitsucom/eventnative/logging"
 	"net/http"
 	"time"
 )

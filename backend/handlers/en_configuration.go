@@ -2,14 +2,14 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/authorization"
-	"github.com/ksensehq/enhosted/destinations"
-	"github.com/ksensehq/enhosted/entities"
-	"github.com/ksensehq/enhosted/random"
-	"github.com/ksensehq/enhosted/storages"
-	enadapters "github.com/ksensehq/eventnative/adapters"
-	"github.com/ksensehq/eventnative/middleware"
-	enstorages "github.com/ksensehq/eventnative/storages"
+	"github.com/jitsucom/enhosted/authorization"
+	"github.com/jitsucom/enhosted/destinations"
+	"github.com/jitsucom/enhosted/entities"
+	"github.com/jitsucom/enhosted/random"
+	"github.com/jitsucom/enhosted/storages"
+	enadapters "github.com/jitsucom/eventnative/adapters"
+	"github.com/jitsucom/eventnative/middleware"
+	enstorages "github.com/jitsucom/eventnative/storages"
 	"gopkg.in/yaml.v3"
 	"net/http"
 )
@@ -53,13 +53,13 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 
 	keys, err := ch.fb.GetApiKeysByProjectId(projectId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed to get API keys"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed to get API keys"})
 		return
 	}
 
 	projectDestinations, err := ch.fb.GetDestinationsByProjectId(projectId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed to get Destinations"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed to get Destinations"})
 		return
 	}
 	mappedDestinations := make(map[string]*enstorages.DestinationConfig)
@@ -68,7 +68,7 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 		config, err := destinations.MapConfig(id, destination, ch.defaultS3)
 
 		if err != nil {
-			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed to build destinations response"})
+			c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed to build destinations response"})
 			return
 		}
 		mappedDestinations[id] = config
@@ -80,7 +80,7 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 	marshal, err := yaml.Marshal(&config)
 	configYaml := yaml.Node{}
 	if err = yaml.Unmarshal(marshal, &configYaml); err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed to deserialize result configuration"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed to deserialize result configuration"})
 		return
 	}
 	configYaml.HeadComment = configHeaderText
@@ -88,6 +88,6 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 	marshal, err = yaml.Marshal(&configYaml)
 	c.Header("Content-Type", "application/yaml")
 	if _, err = c.Writer.Write(marshal); err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: "Failed write response"})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed write response"})
 	}
 }
