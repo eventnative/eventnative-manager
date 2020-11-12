@@ -16,11 +16,15 @@ type TokenResponse struct {
 	Token string `json:"token"`
 }
 
+func NewBecomeUserHandler(authService *authorization.Service) *BecomeUserHandler {
+	return &BecomeUserHandler{authService: authService}
+}
+
 func (buh *BecomeUserHandler) Handler(c *gin.Context) {
 	token := c.GetHeader("X-Client-Auth")
 	isAdmin, err := buh.authService.IsAdmin(c, token)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Message: "Only admins may call this API"})
+		c.JSON(http.StatusUnauthorized, middleware.ErrorResponse{Message: err.Error()})
 		return
 	}
 	if !isAdmin {

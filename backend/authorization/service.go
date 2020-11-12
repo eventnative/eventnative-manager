@@ -70,23 +70,32 @@ func (s *Service) IsAdmin(ctx context.Context, token string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	user, err := s.firestoreClient.Collection("users_info").Doc(verifiedToken.UID).Get(ctx)
+	uid := verifiedToken.UID
+	authUserInfo, err := s.authClient.GetUser(ctx, uid)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get authorization data for user_id [%s]", uid)
 	}
-	email, err := user.DataAt("_email")
-	if err != nil {
-		return false, err
-	}
-	emailString, ok := email.(string)
-	if !ok {
-		return false, fmt.Errorf("failed to parse [_email] field from user with token %s", token)
-	}
-	emailSplit := strings.Split(emailString, "@")
+	// email domain validation
+	email := authUserInfo.Email
+	emailSplit := strings.Split(email, "@")
 	if len(emailSplit) != 2 {
-		return false, fmt.Errorf("invalid email string %s: should contain one '@' character", emailString)
+		return false, fmt.Errorf("invalid email string %s: should contain exactly one '@' character", email)
 	}
-	return emailSplit[1] == "jitsu.com", nil
+	if emailSplit[1] != "jitsu.com" {
+		return false, fmt.Errorf("domain %s is not allowed to use this API", emailSplit[1])
+	}
+	// authorization method validation
+	isGoogleAuth := false
+	for _, providerInfo := range authUserInfo.ProviderUserInfo {
+		if providerInfo.ProviderID == "google.com" {
+			isGoogleAuth = true
+			break
+		}
+	}
+	if !isGoogleAuth {
+		return false, fmt.Errorf("only users with Google authorization have access to this API")
+	}
+	return true, nil
 }
 
 func HasAccessToProject(c *gin.Context, requestedProjectId string) bool {
