@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
+	"strings"
 )
 
 type Service struct {
@@ -52,12 +53,40 @@ func (s *Service) Authenticate(ctx context.Context, token string) (string, error
 	return projectIdString, nil
 }
 
+func (s *Service) GenerateUserToken(ctx context.Context, uid string) (string, error) {
+	return s.authClient.CustomToken(ctx, uid)
+}
+
 func (s *Service) Close() error {
 	if err := s.firestoreClient.Close(); err != nil {
 		return fmt.Errorf("Error closing firestore client in authorization service: %v", err)
 	}
 
 	return nil
+}
+
+func (s *Service) IsAdmin(ctx context.Context, token string) (bool, error) {
+	verifiedToken, err := s.authClient.VerifyIDToken(ctx, token)
+	if err != nil {
+		return false, err
+	}
+	user, err := s.firestoreClient.Collection("users_info").Doc(verifiedToken.UID).Get(ctx)
+	if err != nil {
+		return false, err
+	}
+	email, err := user.DataAt("_email")
+	if err != nil {
+		return false, err
+	}
+	emailString, ok := email.(string)
+	if !ok {
+		return false, fmt.Errorf("failed to parse [_email] field from user with token %s", token)
+	}
+	emailSplit := strings.Split(emailString, "@")
+	if len(emailSplit) != 2 {
+		return false, fmt.Errorf("invalid email string %s: should contain one '@' character", emailString)
+	}
+	return emailSplit[1] == "jitsu.com", nil
 }
 
 func HasAccessToProject(c *gin.Context, requestedProjectId string) bool {
