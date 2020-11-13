@@ -272,6 +272,9 @@ export default class App extends React.Component<AppProperties, AppState> {
 
     private async becomeUser() {
         let email = prompt("Please enter e-mail of the user", '');
+        if (!email) {
+            return;
+        }
         try {
             this.services.userService.becomeUser(email)
         } catch (e) {
