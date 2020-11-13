@@ -249,6 +249,8 @@ func SetupRouter(staticContentDirectory string, enService *eventnative.Service,
 		destinationsRoute.POST("/test", middleware.ClientAuth(destinationsHandler.TestHandler, authService))
 
 		apiV1.GET("/events", middleware.ClientAuth(handlers.NewEventsHandler(storage, enService).GetHandler, authService))
+
+		apiV1.GET("/become", middleware.ClientAuth(handlers.NewBecomeUserHandler(authService).Handler, authService))
 	}
 	router.Use(static.Serve("/", static.LocalFile(staticContentDirectory, false)))
 	return router
