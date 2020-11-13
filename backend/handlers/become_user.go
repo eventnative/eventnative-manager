@@ -3,8 +3,8 @@ package handlers
 import (
 	"context"
 	"github.com/gin-gonic/gin"
-	"github.com/ksensehq/enhosted/authorization"
-	"github.com/ksensehq/eventnative/middleware"
+	"github.com/jitsucom/enhosted/authorization"
+	"github.com/jitsucom/eventnative/middleware"
 	"net/http"
 )
 
@@ -34,7 +34,7 @@ func (buh *BecomeUserHandler) Handler(c *gin.Context) {
 	userId := c.Query("user_id")
 	customToken, err := buh.authService.GenerateUserToken(context.Background(), userId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err, Message: err.Error()})
+		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Message: err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, TokenResponse{Token: customToken})
