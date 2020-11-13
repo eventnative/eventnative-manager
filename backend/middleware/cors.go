@@ -8,8 +8,9 @@ import (
 func Cors(h http.Handler, allowedDomainSuffix string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reqOrigin := r.Header.Get("Origin")
-		if strings.HasSuffix(reqOrigin, allowedDomainSuffix) {
-			w.Header().Add("Access-Control-Allow-Origin", reqOrigin)
+		reqOriginWithoutPort := strings.Split(reqOrigin, ":")[0]
+		if strings.HasSuffix(reqOriginWithoutPort, allowedDomainSuffix) {
+			w.Header().Add("Access-Control-Allow-Origin", reqOriginWithoutPort)
 		}
 		w.Header().Add("Access-Control-Max-Age", "86400")
 		w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
