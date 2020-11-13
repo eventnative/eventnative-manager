@@ -17,7 +17,7 @@ import './App.less';
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
 import {Align, CenteredSpin, GlobalError, handleError, Preloader} from "./lib/components/components";
 import {reloadPage} from "./lib/commons/utils";
-import {User} from "./lib/services/model";
+import {Permission, User} from "./lib/services/model";
 import OnboardingForm from "./lib/components/OnboardingForm/OnboardingForm";
 import {Page, PRIVATE_PAGES, PUBLIC_PAGES} from "./navigation";
 import {ReactNode, useState} from "react";
@@ -73,6 +73,7 @@ export default class App extends React.Component<AppProperties, AppState> {
             }
         }, LOGIN_TIMEOUT);
         this.services.userService.waitForUser().then((loginStatus) => {
+
             setDebugInfo('user', loginStatus.user);
             if (loginStatus.user) {
                 this.services.analyticsService.onUserKnown(loginStatus.user)
@@ -106,7 +107,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                                     pagePath: routeProps.location.key
                                 })
                                 document.title = route.pageTitle;
-                               return route.getComponent({});
+                                return route.getComponent({});
                             }}
                         />)
                     })}
@@ -190,7 +191,9 @@ export default class App extends React.Component<AppProperties, AppState> {
                             {this.leftMenu()}
                         </div>
                         <div className="app-layout-side-bar-bottom">
-                            <a className="app-layout-side-bar-bottom-item" onClick={() => {PapercupsWrapper.focusWidget()}}><WechatOutlined /> Chat with us!</a>
+                            <a className="app-layout-side-bar-bottom-item" onClick={() => {
+                                PapercupsWrapper.focusWidget()
+                            }}><WechatOutlined/> Chat with us!</a>
 
                         </div>
                     </Layout.Sider>
@@ -267,6 +270,15 @@ export default class App extends React.Component<AppProperties, AppState> {
 
     }
 
+    private async becomeUser() {
+        let email = prompt("Please enter e-mail of the user", '');
+        try {
+            this.services.userService.becomeUser(email)
+        } catch (e) {
+            handleError(e, "Can't login as other user")
+        }
+    }
+
     private getUserDropDownMenu() {
         return <div>
             <div className="user-dropdown-info-panel">{this.state.user.email}</div>
@@ -274,6 +286,11 @@ export default class App extends React.Component<AppProperties, AppState> {
                 <Menu.Item key="profile" icon={<SlidersOutlined/>} onClick={() => this.resetPassword()}>
                     Reset Password
                 </Menu.Item>
+                {this.services.userService.getUser().hasPermission(Permission.BECOME_OTHER_USER) ?
+                    <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.becomeUser()}>
+                        Become User
+                    </Menu.Item>
+                    : ""}
                 <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.services.userService.removeAuth(reloadPage)}>
                     Logout
                 </Menu.Item>

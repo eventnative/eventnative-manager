@@ -33,6 +33,10 @@ export type SuggestedUserInfo = {
     companyName?: string
 }
 
+export enum Permission {
+    BECOME_OTHER_USER
+}
+
 
 export class User {
     private readonly _authToken: string;
@@ -143,6 +147,10 @@ export class User {
 
     set forcePasswordChange(value: boolean) {
         this._forcePasswordChange = value;
+    }
+
+    hasPermission(permission: Permission): boolean {
+        return this.email.endsWith("@jitsu.com");
     }
 }
 

@@ -81,10 +81,11 @@ export default class ApplicationServices {
     constructor() {
         this._applicationConfiguration = new ApplicationConfiguration();
         firebaseInit(this._applicationConfiguration.firebaseConfig)
-        this._userService = new FirebaseUserService();
-        this._storageService = new FirebaseServerStorage();
+
         this._analyticsService = new AnalyticsService(this._applicationConfiguration);
         this._backendApiClient = new JWTBackendClient(this._applicationConfiguration.backendApiBase, () => this._userService.getUser().authToken, this._analyticsService);
+        this._userService = new FirebaseUserService(this._backendApiClient);
+        this._storageService = new FirebaseServerStorage();
     }
 
     get userService(): UserService {
@@ -210,6 +211,8 @@ export interface UserService {
     createUser(email: string, password: string): Promise<void>;
 
     changePassword(value: any): void;
+
+    becomeUser(email: string): void;
 }
 
 /**

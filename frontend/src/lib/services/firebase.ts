@@ -3,13 +3,19 @@ import * as firebase from "firebase/app";
 import 'firebase/auth'
 import 'firebase/firestore'
 import Marshal from "../commons/marshalling";
-import {randomId} from "../commons/utils";
-import {ServerStorage, setDebugInfo, UserLoginStatus, UserService} from "./ApplicationServices";
+import {randomId, reloadPage} from "../commons/utils";
+import {BackendApiClient, ServerStorage, setDebugInfo, UserLoginStatus, UserService} from "./ApplicationServices";
 
 export class FirebaseUserService implements UserService {
     private user?: User
     private unregisterAuthObserver: firebase.Unsubscribe;
     private firebaseUser: firebase.User;
+    private backendApi: BackendApiClient
+
+
+    constructor(backendApi: BackendApiClient) {
+        this.backendApi = backendApi;
+    }
 
     initiateGithubLogin(redirect?: string) {
         return new Promise<void>(((resolve, reject) => {
@@ -157,7 +163,11 @@ export class FirebaseUserService implements UserService {
         return this.firebaseUser.updatePassword(newPassword)
     }
 
-
+    async becomeUser(email: string): Promise<void> {
+        let token = (await this.backendApi.get(`/become?user_id=${email}`))['token'];
+        await firebase.auth().signInWithCustomToken(token)
+        reloadPage();
+    }
 }
 
 export class FirebaseServerStorage implements ServerStorage {
