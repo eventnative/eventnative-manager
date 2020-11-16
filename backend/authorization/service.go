@@ -54,7 +54,11 @@ func (s *Service) Authenticate(ctx context.Context, token string) (string, error
 }
 
 func (s *Service) GenerateUserToken(ctx context.Context, uid string) (string, error) {
-	return s.authClient.CustomToken(ctx, uid)
+	user, err := s.authClient.GetUserByEmail(ctx, uid)
+	if err != nil {
+		return "", err
+	}
+	return s.authClient.CustomToken(ctx, user.UID)
 }
 
 func (s *Service) Close() error {
