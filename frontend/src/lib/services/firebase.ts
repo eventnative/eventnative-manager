@@ -194,6 +194,6 @@ export class FirebaseServerStorage implements ServerStorage {
 export function firebaseInit(config: any) {
     firebase.initializeApp(config);
     if (window) {
-        window.firebase = firebase;
+        //window['firebase'] = firebase;
     }
 }
