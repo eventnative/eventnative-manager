@@ -54,6 +54,7 @@ export default class App extends React.Component<AppProperties, AppState> {
     constructor(props: AppProperties, context: any) {
         super(props, context);
         this.services = ApplicationServices.get();
+        setDebugInfo("applicationServices", this.services, false);
         this.state = {
             lifecycle: AppLifecycle.LOADING,
             showOnboardingForm: false,
