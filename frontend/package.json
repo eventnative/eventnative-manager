@@ -9,7 +9,7 @@
     "@types/react-router-dom": "^5.1.6",
     "antd": "^4.7.2",
     "axios": "^0.20.0",
-    "firebase": "^7.24.0",
+    "firebase": "^8.0.2",
     "highlight.run": "^1.0.26",
     "identity-obj-proxy": "3.0.0",
     "less": "^3.12.2",

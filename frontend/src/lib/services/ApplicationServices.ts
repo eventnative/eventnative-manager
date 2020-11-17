@@ -212,7 +212,7 @@ export interface UserService {
 
     changePassword(value: any): void;
 
-    becomeUser(email: string): void;
+    becomeUser(email: string): Promise<void>;
 }
 
 /**
