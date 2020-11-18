@@ -145,6 +145,10 @@ export default class ApplicationServices {
         await this._storageService.save("destinations", {destinations: [destinationConfig]}, this.activeProject.id);
     }
 
+    public async initializeDefaultApiKey() {
+        await this._backendApiClient.post("/apikeys/default", {projectId: this.activeProject.id});
+    }
+
     generateToken(): any {
         return {
             token: {
