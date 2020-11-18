@@ -1,5 +1,5 @@
 import {Project, User} from "./model";
-import * as firebase from "firebase/app";
+import firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/firestore'
 import Marshal from "../commons/marshalling";
@@ -194,6 +194,6 @@ export class FirebaseServerStorage implements ServerStorage {
 export function firebaseInit(config: any) {
     firebase.initializeApp(config);
     if (window) {
-        window.firebase = firebase;
+        //window['firebase'] = firebase;
     }
 }

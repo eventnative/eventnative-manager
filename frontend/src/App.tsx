@@ -12,6 +12,7 @@ import UserOutlined from "@ant-design/icons/lib/icons/UserOutlined";
 import UnlockOutlined from "@ant-design/icons/lib/icons/UnlockOutlined";
 import DownloadOutlined from "@ant-design/icons/lib/icons/DownloadOutlined";
 import NotificationOutlined from "@ant-design/icons/lib/icons/NotificationOutlined";
+import UserSwitchOutlined from "@ant-design/icons/lib/icons/UserSwitchOutlined";
 
 import './App.less';
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
@@ -53,6 +54,7 @@ export default class App extends React.Component<AppProperties, AppState> {
     constructor(props: AppProperties, context: any) {
         super(props, context);
         this.services = ApplicationServices.get();
+        setDebugInfo("applicationServices", this.services, false);
         this.state = {
             lifecycle: AppLifecycle.LOADING,
             showOnboardingForm: false,
@@ -276,7 +278,7 @@ export default class App extends React.Component<AppProperties, AppState> {
             return;
         }
         try {
-            this.services.userService.becomeUser(email)
+            await this.services.userService.becomeUser(email)
         } catch (e) {
             handleError(e, "Can't login as other user")
         }
@@ -290,7 +292,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                     Reset Password
                 </Menu.Item>
                 {this.services.userService.getUser().hasPermission(Permission.BECOME_OTHER_USER) ?
-                    <Menu.Item key="logout" icon={<LogoutOutlined/>} onClick={() => this.becomeUser()}>
+                    <Menu.Item key="become" icon={<UserSwitchOutlined />} onClick={() => this.becomeUser()}>
                         Become User
                     </Menu.Item>
                     : ""}
