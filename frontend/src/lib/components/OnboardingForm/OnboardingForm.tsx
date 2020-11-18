@@ -57,6 +57,7 @@ export default function OnboardingForm(props: Props) {
 
             await services.userService.update(user);
             await services.initializeDefaultDestination();
+            await services.initializeDefaultApiKey();
             props.onCompleted();
         } catch (e) {
             handleError(e, "Can't save project data");

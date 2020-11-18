@@ -9,6 +9,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/jitsucom/enhosted/destinations"
 	"github.com/jitsucom/enhosted/entities"
+	"github.com/jitsucom/enhosted/random"
+	"github.com/jitsucom/eventnative/timestamp"
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 	"google.golang.org/api/iterator"
@@ -225,6 +227,37 @@ func (fb *Firebase) GetApiKeysByProjectId(projectId string) ([]*entities.ApiKey,
 	}
 
 	return apiKeys.Keys, nil
+}
+
+// Generates default key per project only in case if no other API key exists
+func (fb *Firebase) CreateDefaultApiKey(projectId string) error {
+	keys, err := fb.GetApiKeysByProjectId(projectId)
+	if err != nil {
+		return err
+	}
+	if len(keys) > 0 {
+		return nil
+	}
+	doc, err := fb.client.Collection(apiKeysCollection).Doc(projectId).Get(fb.ctx)
+	if err != nil {
+		if status.Code(err) != codes.NotFound {
+			return fmt.Errorf("Error getting api keys by projectId [%s]: %v", projectId, err)
+		}
+	}
+	apiKeyRecord := fb.generateDefaultAPIToken(projectId)
+	_, err = doc.Ref.Create(fb.ctx, apiKeyRecord)
+	return err
+}
+
+func (fb *Firebase) generateDefaultAPIToken(projectId string) entities.ApiKeys {
+	return entities.ApiKeys{
+		LastUpdated: timestamp.NowUTC(),
+		Keys: []*entities.ApiKey{{
+			Id:           projectId + "." + random.String(6),
+			ClientSecret: "js." + projectId + "." + random.String(21),
+			ServerSecret: "s2s." + projectId + "." + random.String(21),
+		}},
+	}
 }
 
 func (fb *Firebase) GetCustomDomains() (map[string]*entities.CustomDomains, error) {

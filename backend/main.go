@@ -227,11 +227,14 @@ func SetupRouter(staticContentDirectory string, enService *eventnative.Service,
 	serverToken := viper.GetString("server.auth")
 
 	statisticsHandler := handlers.NewStatisticsHandler(statisticsStorage)
+	apiKeysHandler := handlers.NewApiKeysHandler(storage)
 
 	apiV1 := router.Group("/api/v1")
 	{
 		apiV1.POST("/database", middleware.ClientAuth(handlers.NewDatabaseHandler(storage).PostHandler, authService))
-		apiV1.GET("/apikeys", middleware.ServerAuth(middleware.IfModifiedSince(handlers.NewApiKeysHandler(storage).GetHandler, storage.GetApiKeysLastUpdated), serverToken))
+		apiV1.POST("/apikeys/default", middleware.ClientAuth(apiKeysHandler.CreateDefaultApiKeyHandler, authService))
+
+		apiV1.GET("/apikeys", middleware.ServerAuth(middleware.IfModifiedSince(apiKeysHandler.GetHandler, storage.GetApiKeysLastUpdated), serverToken))
 		apiV1.GET("/statistics", middleware.ClientAuth(statisticsHandler.GetHandler, authService))
 
 		configurationHandler, err := handlers.NewConfigurationHandler(storage, defaultS3)
