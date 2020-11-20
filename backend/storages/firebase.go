@@ -10,7 +10,6 @@ import (
 	"github.com/jitsucom/enhosted/destinations"
 	"github.com/jitsucom/enhosted/entities"
 	"github.com/jitsucom/enhosted/random"
-	"github.com/jitsucom/eventnative/timestamp"
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 	"google.golang.org/api/iterator"
@@ -251,7 +250,7 @@ func (fb *Firebase) CreateDefaultApiKey(projectId string) error {
 
 func (fb *Firebase) generateDefaultAPIToken(projectId string) entities.ApiKeys {
 	return entities.ApiKeys{
-		LastUpdated: timestamp.NowUTC(),
+		LastUpdated: time.Now().UTC().Format(LastUpdatedLayout),
 		Keys: []*entities.ApiKey{{
 			Id:           projectId + "." + random.String(6),
 			ClientSecret: "js." + projectId + "." + random.String(21),
