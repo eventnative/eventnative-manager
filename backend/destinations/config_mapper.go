@@ -45,10 +45,8 @@ func mapBigQuery(bqDestination *entities.Destination) (*enstorages.DestinationCo
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling BigQuery form data: %v", err)
 	}
-	var gcs *enadapters.GoogleConfig
-	if bqFormData.GCSBucket != "" {
-		gcs = &enadapters.GoogleConfig{Project: bqFormData.ProjectId, Bucket: bqFormData.GCSBucket, KeyFile: bqFormData.JsonKey, Dataset: bqFormData.Dataset}
-	}
+	gcs := &enadapters.GoogleConfig{Project: bqFormData.ProjectId, Bucket: bqFormData.GCSBucket,
+		KeyFile: bqFormData.JsonKey, Dataset: bqFormData.Dataset}
 	return &enstorages.DestinationConfig{
 		Type: enstorages.BigQueryType,
 		Mode: bqFormData.Mode,
