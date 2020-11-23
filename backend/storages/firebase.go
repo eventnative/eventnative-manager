@@ -109,29 +109,21 @@ func (fb *Firebase) GetDestinationsLastUpdated() (*time.Time, error) {
 //GetDestinations() return map with projectId:destinations
 func (fb *Firebase) GetDestinations() (map[string]*entities.Destinations, error) {
 	result := map[string]*entities.Destinations{}
-	docIterator := fb.client.Collection(destinationsCollection).DocumentRefs(fb.ctx)
+	iter := fb.client.Collection(destinationsCollection).Documents(fb.ctx)
 	for {
-		document, err := docIterator.Next()
-		if err != nil {
-			if err == iterator.Done {
-				break
-			}
-
-			return nil, fmt.Errorf("Error getting destinations: %v", err)
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
 		}
-
-		data, err := document.Get(fb.ctx)
 		if err != nil {
-			return nil, fmt.Errorf("Error getting destinations of project [%s]: %v", document.ID, err)
+			return nil, err
 		}
-
 		destinationsEntity := &entities.Destinations{}
-		err = data.DataTo(destinationsEntity)
+		err = doc.DataTo(destinationsEntity)
 		if err != nil {
-			return nil, fmt.Errorf("Error parsing destinations of project [%s]: %v", document.ID, err)
+			return nil, err
 		}
-
-		result[document.ID] = destinationsEntity
+		result[doc.Ref.ID] = destinationsEntity
 	}
 	return result, nil
 }
