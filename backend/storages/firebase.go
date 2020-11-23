@@ -209,6 +209,35 @@ func (fb *Firebase) GetApiKeys() ([]*entities.ApiKey, error) {
 	return result, nil
 }
 
+func (fb *Firebase) GetApiKeysGroupByProjectId() (map[string][]*entities.ApiKey, error) {
+	result := make(map[string][]*entities.ApiKey)
+	docIterator := fb.client.Collection(apiKeysCollection).DocumentRefs(fb.ctx)
+	for {
+		document, err := docIterator.Next()
+		if err != nil {
+			if err == iterator.Done {
+				break
+			}
+
+			return nil, fmt.Errorf("Error reading api keys: %v", err)
+		}
+
+		data, err := document.Get(fb.ctx)
+		if err != nil {
+			return nil, fmt.Errorf("Error getting api keys of project [%s]: %v", document.ID, err)
+		}
+
+		apiKeys := &entities.ApiKeys{}
+		err = data.DataTo(apiKeys)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing api keys: %v", err)
+		}
+
+		result[document.ID] = apiKeys.Keys
+	}
+	return result, nil
+}
+
 func (fb *Firebase) GetApiKeysByProjectId(projectId string) ([]*entities.ApiKey, error) {
 	doc, err := fb.client.Collection(apiKeysCollection).Doc(projectId).Get(fb.ctx)
 	if err != nil {
