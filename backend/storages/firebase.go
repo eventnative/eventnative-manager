@@ -109,29 +109,21 @@ func (fb *Firebase) GetDestinationsLastUpdated() (*time.Time, error) {
 //GetDestinations() return map with projectId:destinations
 func (fb *Firebase) GetDestinations() (map[string]*entities.Destinations, error) {
 	result := map[string]*entities.Destinations{}
-	docIterator := fb.client.Collection(destinationsCollection).DocumentRefs(fb.ctx)
+	iter := fb.client.Collection(destinationsCollection).Documents(fb.ctx)
 	for {
-		document, err := docIterator.Next()
-		if err != nil {
-			if err == iterator.Done {
-				break
-			}
-
-			return nil, fmt.Errorf("Error getting destinations: %v", err)
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
 		}
-
-		data, err := document.Get(fb.ctx)
 		if err != nil {
-			return nil, fmt.Errorf("Error getting destinations of project [%s]: %v", document.ID, err)
+			return nil, fmt.Errorf("failed to get destinations from firestore: %v", err)
 		}
-
 		destinationsEntity := &entities.Destinations{}
-		err = data.DataTo(destinationsEntity)
+		err = doc.DataTo(destinationsEntity)
 		if err != nil {
-			return nil, fmt.Errorf("Error parsing destinations of project [%s]: %v", document.ID, err)
+			return nil, fmt.Errorf("failed to parse destinations for project [%s]: %v", doc.Ref.ID, err)
 		}
-
-		result[document.ID] = destinationsEntity
+		result[doc.Ref.ID] = destinationsEntity
 	}
 	return result, nil
 }
@@ -182,29 +174,33 @@ func (fb *Firebase) GetApiKeysLastUpdated() (*time.Time, error) {
 
 func (fb *Firebase) GetApiKeys() ([]*entities.ApiKey, error) {
 	var result []*entities.ApiKey
-	docIterator := fb.client.Collection(apiKeysCollection).DocumentRefs(fb.ctx)
+	keys, err := fb.GetApiKeysGroupByProjectId()
+	if err != nil {
+		return nil, err
+	}
+	for _, apiKeys := range keys {
+		result = append(result, apiKeys...)
+	}
+	return result, nil
+}
+
+func (fb *Firebase) GetApiKeysGroupByProjectId() (map[string][]*entities.ApiKey, error) {
+	result := make(map[string][]*entities.ApiKey)
+	iter := fb.client.Collection(apiKeysCollection).Documents(fb.ctx)
 	for {
-		document, err := docIterator.Next()
-		if err != nil {
-			if err == iterator.Done {
-				break
-			}
-
-			return nil, fmt.Errorf("Error reading api keys: %v", err)
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
 		}
-
-		data, err := document.Get(fb.ctx)
 		if err != nil {
-			return nil, fmt.Errorf("Error getting api keys of project [%s]: %v", document.ID, err)
+			return nil, fmt.Errorf("failed to get API keys from firestore: %v", err)
 		}
-
 		apiKeys := &entities.ApiKeys{}
-		err = data.DataTo(apiKeys)
+		err = doc.DataTo(apiKeys)
 		if err != nil {
-			return nil, fmt.Errorf("Error parsing api keys: %v", err)
+			return nil, fmt.Errorf("failed to parse APi keys for project [%s]: %v", doc.Ref.ID, err)
 		}
-
-		result = append(result, apiKeys.Keys...)
+		result[doc.Ref.ID] = apiKeys.Keys
 	}
 	return result, nil
 }
@@ -260,30 +256,22 @@ func (fb *Firebase) generateDefaultAPIToken(projectId string) entities.ApiKeys {
 }
 
 func (fb *Firebase) GetCustomDomains() (map[string]*entities.CustomDomains, error) {
-	docIterator := fb.client.Collection(customDomainsCollection).DocumentRefs(fb.ctx)
 	var result = map[string]*entities.CustomDomains{}
+	iter := fb.client.Collection(customDomainsCollection).Documents(fb.ctx)
 	for {
-		document, err := docIterator.Next()
-		if err != nil {
-			if err == iterator.Done {
-				break
-			}
-
-			return nil, fmt.Errorf("error reading custom domains: %v", err)
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
 		}
-
-		projectId := document.ID
-		data, err := document.Get(fb.ctx)
 		if err != nil {
-			return nil, fmt.Errorf("error getting custom domains of project [%s]: %v", document.ID, err)
+			return nil, fmt.Errorf("failed to get custom domains from firestore: %v", err)
 		}
-
 		customDomains := &entities.CustomDomains{}
-		err = data.DataTo(customDomains)
+		err = doc.DataTo(customDomains)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing custom domains: %v", err)
+			return nil, fmt.Errorf("failed to parse custom domains for project [%s]: %v", doc.Ref.ID, err)
 		}
-		result[projectId] = customDomains
+		result[doc.Ref.ID] = customDomains
 	}
 	return result, nil
 }
