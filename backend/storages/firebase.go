@@ -116,12 +116,12 @@ func (fb *Firebase) GetDestinations() (map[string]*entities.Destinations, error)
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get destinations from firestore: %v", err)
 		}
 		destinationsEntity := &entities.Destinations{}
 		err = doc.DataTo(destinationsEntity)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse destinations for project [%s]: %v", doc.Ref.ID, err)
 		}
 		result[doc.Ref.ID] = destinationsEntity
 	}
@@ -174,58 +174,33 @@ func (fb *Firebase) GetApiKeysLastUpdated() (*time.Time, error) {
 
 func (fb *Firebase) GetApiKeys() ([]*entities.ApiKey, error) {
 	var result []*entities.ApiKey
-	docIterator := fb.client.Collection(apiKeysCollection).DocumentRefs(fb.ctx)
-	for {
-		document, err := docIterator.Next()
-		if err != nil {
-			if err == iterator.Done {
-				break
-			}
-
-			return nil, fmt.Errorf("Error reading api keys: %v", err)
-		}
-
-		data, err := document.Get(fb.ctx)
-		if err != nil {
-			return nil, fmt.Errorf("Error getting api keys of project [%s]: %v", document.ID, err)
-		}
-
-		apiKeys := &entities.ApiKeys{}
-		err = data.DataTo(apiKeys)
-		if err != nil {
-			return nil, fmt.Errorf("Error parsing api keys: %v", err)
-		}
-
-		result = append(result, apiKeys.Keys...)
+	keys, err := fb.GetApiKeysGroupByProjectId()
+	if err != nil {
+		return nil, err
+	}
+	for _, apiKeys := range keys {
+		result = append(result, apiKeys...)
 	}
 	return result, nil
 }
 
 func (fb *Firebase) GetApiKeysGroupByProjectId() (map[string][]*entities.ApiKey, error) {
 	result := make(map[string][]*entities.ApiKey)
-	docIterator := fb.client.Collection(apiKeysCollection).DocumentRefs(fb.ctx)
+	iter := fb.client.Collection(apiKeysCollection).Documents(fb.ctx)
 	for {
-		document, err := docIterator.Next()
-		if err != nil {
-			if err == iterator.Done {
-				break
-			}
-
-			return nil, fmt.Errorf("Error reading api keys: %v", err)
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
 		}
-
-		data, err := document.Get(fb.ctx)
 		if err != nil {
-			return nil, fmt.Errorf("Error getting api keys of project [%s]: %v", document.ID, err)
+			return nil, fmt.Errorf("failed to get API keys from firestore: %v", err)
 		}
-
 		apiKeys := &entities.ApiKeys{}
-		err = data.DataTo(apiKeys)
+		err = doc.DataTo(apiKeys)
 		if err != nil {
-			return nil, fmt.Errorf("Error parsing api keys: %v", err)
+			return nil, fmt.Errorf("failed to parse APi keys for project [%s]: %v", doc.Ref.ID, err)
 		}
-
-		result[document.ID] = apiKeys.Keys
+		result[doc.Ref.ID] = apiKeys.Keys
 	}
 	return result, nil
 }

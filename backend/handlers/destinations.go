@@ -50,14 +50,12 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 	}
 
 	idConfig := map[string]enstorages.DestinationConfig{}
-	projectProcessingStart := time.Now()
 	keysByProject, err := dh.storage.GetApiKeysGroupByProjectId()
 	if err != nil {
 		logging.Errorf("Error getting api keys grouped by project id. All destinations will be skipped: %v", err)
 		c.JSON(http.StatusInternalServerError, enmiddleware.ErrorResponse{Error: err.Error(), Message: "Failed to get API keys"})
 		return
 	}
-
 	for projectId, destinationsEntity := range destinationsMap {
 		if len(destinationsEntity.Destinations) == 0 {
 			continue
@@ -95,8 +93,6 @@ func (dh *DestinationsHandler) GetHandler(c *gin.Context) {
 			idConfig[destinationId] = *enDestinationConfig
 		}
 	}
-	logging.Infof("Project data enriched in [%.2f] seconds", time.Now().Sub(projectProcessingStart).Seconds())
-
 	if dh.statisticsPostgres != nil {
 		//default statistic storage
 		idConfig[defaultStatisticsPostgresDestinationId] = *dh.statisticsPostgres
