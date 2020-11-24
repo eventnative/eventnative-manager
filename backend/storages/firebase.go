@@ -256,30 +256,22 @@ func (fb *Firebase) generateDefaultAPIToken(projectId string) entities.ApiKeys {
 }
 
 func (fb *Firebase) GetCustomDomains() (map[string]*entities.CustomDomains, error) {
-	docIterator := fb.client.Collection(customDomainsCollection).DocumentRefs(fb.ctx)
 	var result = map[string]*entities.CustomDomains{}
+	iter := fb.client.Collection(customDomainsCollection).Documents(fb.ctx)
 	for {
-		document, err := docIterator.Next()
-		if err != nil {
-			if err == iterator.Done {
-				break
-			}
-
-			return nil, fmt.Errorf("error reading custom domains: %v", err)
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
 		}
-
-		projectId := document.ID
-		data, err := document.Get(fb.ctx)
 		if err != nil {
-			return nil, fmt.Errorf("error getting custom domains of project [%s]: %v", document.ID, err)
+			return nil, fmt.Errorf("failed to get custom domains from firestore: %v", err)
 		}
-
 		customDomains := &entities.CustomDomains{}
-		err = data.DataTo(customDomains)
+		err = doc.DataTo(customDomains)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing custom domains: %v", err)
+			return nil, fmt.Errorf("failed to parse custom domains for project [%s]: %v", doc.Ref.ID, err)
 		}
-		result[projectId] = customDomains
+		result[doc.Ref.ID] = customDomains
 	}
 	return result, nil
 }
