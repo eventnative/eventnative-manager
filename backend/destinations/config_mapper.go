@@ -202,7 +202,7 @@ func enrichMappingRules(destination *entities.Destination, enDestinationConfig *
 			case "move", "erase":
 				cast = ""
 			case "cast/int":
-				cast = "(int) "
+				cast = "(integer) "
 			case "cast/double":
 				cast = "(double) "
 			case "cast/date":
