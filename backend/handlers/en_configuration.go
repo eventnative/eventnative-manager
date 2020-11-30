@@ -19,7 +19,8 @@ Documentation: https://docs.eventnative.org
 
 If executed out of our docker container and batch destinations are used, set up events logging
 log:
-	path: <path to event logs directory>`
+  path: <path to event logs directory>
+`
 
 type ConfigHandler struct {
 	fb        *storages.Firebase
@@ -77,17 +78,23 @@ func (ch *ConfigHandler) Handler(c *gin.Context) {
 	// building yaml response
 	server := Server{ApiKeys: keys, Name: &yaml.Node{Kind: yaml.ScalarNode, Value: random.String(5), LineComment: "rename server if another name is desired"}}
 	config := Config{Server: server, Destinations: mappedDestinations}
+
 	marshal, err := yaml.Marshal(&config)
 	configYaml := yaml.Node{}
+
 	if err = yaml.Unmarshal(marshal, &configYaml); err != nil {
 		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed to deserialize result configuration"})
 		return
 	}
 	configYaml.HeadComment = configHeaderText
 
-	marshal, err = yaml.Marshal(&configYaml)
 	c.Header("Content-Type", "application/yaml")
-	if _, err = c.Writer.Write(marshal); err != nil {
+	encoder := yaml.NewEncoder(c.Writer)
+	defer encoder.Close()
+
+	encoder.SetIndent(2)
+	err = encoder.Encode(&configYaml)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, middleware.ErrorResponse{Error: err.Error(), Message: "Failed write response"})
 	}
 }

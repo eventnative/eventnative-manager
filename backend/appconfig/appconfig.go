@@ -4,6 +4,7 @@ import (
 	"github.com/jitsucom/eventnative/logging"
 	"github.com/spf13/viper"
 	"io"
+	"os"
 )
 
 type AppConfig struct {
@@ -32,12 +33,23 @@ func Init() error {
 	var port = viper.GetString("server.port")
 	appConfig.Authority = "0.0.0.0:" + port
 
-	err := logging.InitGlobalLogger(logging.Config{
+	globalLoggerConfig := logging.Config{
 		LoggerName:  "main",
 		ServerName:  serverName,
 		FileDir:     viper.GetString("server.log.path"),
 		RotationMin: viper.GetInt64("server.log.rotation_min"),
-		MaxBackups:  viper.GetInt("server.log.max_backups")})
+		MaxBackups:  viper.GetInt("server.log.max_backups")}
+	var globalLogsWriter io.Writer
+	if globalLoggerConfig.FileDir != "" {
+		fileWriter := logging.NewRollingWriter(globalLoggerConfig)
+		globalLogsWriter = logging.Dual{
+			FileWriter: fileWriter,
+			Stdout:     os.Stdout,
+		}
+	} else {
+		globalLogsWriter = os.Stdout
+	}
+	err := logging.InitGlobalLogger(globalLogsWriter)
 	if err != nil {
 		return err
 	}
