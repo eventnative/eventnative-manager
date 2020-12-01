@@ -17,10 +17,13 @@ import (
 	"github.com/jitsucom/enhosted/storages"
 	enadapters "github.com/jitsucom/eventnative/adapters"
 	"github.com/jitsucom/eventnative/logging"
+	"github.com/jitsucom/eventnative/notifications"
+	"github.com/jitsucom/eventnative/safego"
 	enstorages "github.com/jitsucom/eventnative/storages"
 	"github.com/spf13/viper"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 
 	"net/http"
@@ -44,6 +47,19 @@ func main() {
 		time.Sleep(1 * time.Second)
 		os.Exit(0)
 	}()
+
+	safego.GlobalRecoverHandler = func(value interface{}) {
+		logging.Error("panic")
+		logging.Error(value)
+		logging.Error(string(debug.Stack()))
+		notifications.SystemErrorf("Panic:\n%s\n%s", value, string(debug.Stack()))
+	}
+
+	//notifications
+	slackNotificationsWebHook := viper.GetString("notifications.slack.url")
+	if slackNotificationsWebHook != "" {
+		notifications.Init("EN-helper", slackNotificationsWebHook, appconfig.Instance.ServerName, logging.Errorf)
+	}
 
 	//statistics postgres
 	var pgDestinationConfig *enstorages.DestinationConfig
@@ -100,13 +116,15 @@ func main() {
 
 	staticFilesPath := viper.GetString("server.static_files_dir")
 	logging.Infof("Static files serving path: [%s]", staticFilesPath)
-	eventnativeBaseUrl := viper.GetString("eventnative.base_url")
-	if eventnativeBaseUrl == "" {
-		logging.Fatal("Failed to get eventnative URL")
+
+	enConfig := &eventnative.Config{}
+	err = viper.UnmarshalKey("eventnative", enConfig)
+	if err != nil {
+		logging.Fatalf("Failed to parse eventnative config: %v", err)
 	}
-	eventnativeAdminToken := viper.GetString("eventnative.admin_token")
-	if eventnativeAdminToken == "" {
-		logging.Fatal("eventnative.admin_token is not set")
+	err = enConfig.Validate()
+	if err != nil {
+		logging.Fatal("Failed to validate eventnative config: %v", err)
 	}
 
 	//statistics prometheus
@@ -127,48 +145,14 @@ func main() {
 	}
 	appconfig.Instance.ScheduleClosing(statisticsStorage)
 
-	sshUser := viper.GetString("eventnative.ssl.ssh.user")
-	if sshUser == "" {
-		logging.Fatal("[eventnative.ssl.ssh.user] is not set")
-	}
-	privateKeyPath := viper.GetString("eventnative.ssl.ssh.privateKeyPath")
-	if privateKeyPath == "" {
-		logging.Fatal("[eventnative.ssl.ssh.privateKeyPath] is not set")
-	}
-	enHosts := viper.GetStringSlice("eventnative.ssl.hosts")
-	if enHosts == nil || len(enHosts) == 0 {
-		logging.Fatal("[eventnative.ssl.hosts] must not be empty")
-	}
-	sshClient, err := ssh.NewSshClient(privateKeyPath, sshUser)
+	sshClient, err := ssh.NewSshClient(enConfig.SSL.SSH.PrivateKeyPath, enConfig.SSL.SSH.User)
 	if err != nil {
 		logging.Fatal("Failed to create SSH client, %s", err)
 	}
-	nginxServerConfigTemplatePath := viper.GetString("eventnative.ssl.server_config_template")
-	sslNginxPath := viper.GetString("eventnative.ssl.nginx_conf_path")
-	if sslNginxPath == "" {
-		logging.Fatal("[eventnative.ssl.nginx_conf_path] is a required parameter")
-	}
-	acmeChallengePath := viper.GetString("eventnative.ssl.acme_challenge_path")
-	if acmeChallengePath == "" {
-		logging.Fatal("[eventnative.ssl.acme_challenge_path] is a required parameter")
-	}
-	customDomainProcessor, err := ssl.NewCertificateService(sshClient, enHosts, firebaseStorage, nginxServerConfigTemplatePath, sslNginxPath, acmeChallengePath)
-	if err != nil {
-		logging.Fatal("Failed to create customDomainProcessor " + err.Error())
-	}
-	enCName := viper.GetString("eventnative.cname")
-	if enCName == "" {
-		logging.Fatal("[eventnative.cname] is a required parameter")
-	}
-	certPath := viper.GetString("eventnative.ssl.cert_path")
-	if certPath == "" {
-		logging.Fatal("[eventnative.ssl.cert_path] is a required parameter")
-	}
-	pkPath := viper.GetString("eventnative.ssl.pk_path")
-	if pkPath == "" {
-		logging.Fatal("[eventnative.ssl.pk_path] is a required parameter")
-	}
-	sslUpdateExecutor := ssl.NewSSLUpdateExecutor(customDomainProcessor, enHosts, sshUser, privateKeyPath, enCName, certPath, pkPath, acmeChallengePath)
+
+	customDomainProcessor, err := ssl.NewCertificateService(sshClient, enConfig.SSL.Hosts, firebaseStorage, enConfig.SSL.ServerConfigTemplate, enConfig.SSL.NginxConfigPath, enConfig.SSL.AcmeChallengePath)
+
+	sslUpdateExecutor := ssl.NewSSLUpdateExecutor(customDomainProcessor, enConfig.SSL.Hosts, enConfig.SSL.SSH.User, enConfig.SSL.SSH.PrivateKeyPath, enConfig.CName, enConfig.SSL.CertificatePath, enConfig.SSL.PKPath, enConfig.SSL.AcmeChallengePath)
 
 	//updatePeriodMin := viper.GetUint("eventnative.ssl.period")
 	//if updatePeriodMin < 1 {
@@ -177,7 +161,7 @@ func main() {
 	// using cron job now to avoid multiple servers simultaneous execution
 	// sslUpdateExecutor.Schedule(time.Duration(updatePeriodMin) * time.Minute)
 
-	enService := eventnative.NewService(eventnativeBaseUrl, eventnativeAdminToken)
+	enService := eventnative.NewService(enConfig.BaseUrl, enConfig.AdminToken)
 	appconfig.Instance.ScheduleClosing(enService)
 
 	router := SetupRouter(staticFilesPath, enService, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage, sslUpdateExecutor)
@@ -251,7 +235,9 @@ func SetupRouter(staticContentDirectory string, enService *eventnative.Service,
 		destinationsRoute.GET("/", middleware.ServerAuth(middleware.IfModifiedSince(destinationsHandler.GetHandler, storage.GetDestinationsLastUpdated), serverToken))
 		destinationsRoute.POST("/test", middleware.ClientAuth(destinationsHandler.TestHandler, authService))
 
-		apiV1.GET("/events", middleware.ClientAuth(handlers.NewEventsHandler(storage, enService).GetHandler, authService))
+		eventsHandler := handlers.NewEventsHandler(storage, enService)
+		apiV1.GET("/events", middleware.ClientAuth(eventsHandler.OldGetHandler, authService))
+		apiV1.GET("/last_events", middleware.ClientAuth(eventsHandler.GetHandler, authService))
 
 		apiV1.GET("/become", middleware.ClientAuth(handlers.NewBecomeUserHandler(authService).Handler, authService))
 	}
