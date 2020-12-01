@@ -165,6 +165,8 @@ func main() {
 	appconfig.Instance.ScheduleClosing(enService)
 
 	router := SetupRouter(staticFilesPath, enService, firebaseStorage, authService, s3Config, pgDestinationConfig, statisticsStorage, sslUpdateExecutor)
+	notifications.ServerStart()
+	logging.Info("Started server: " + appconfig.Instance.Authority)
 	server := &http.Server{
 		Addr:              appconfig.Instance.Authority,
 		Handler:           middleware.Cors(router, viper.GetString("server.domain")),
