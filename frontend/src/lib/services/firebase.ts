@@ -8,6 +8,7 @@ import {BackendApiClient, ServerStorage, setDebugInfo, UserLoginStatus, UserServ
 
 export class FirebaseUserService implements UserService {
     private user?: User
+    private currentToken: string;
     private unregisterAuthObserver: firebase.Unsubscribe;
     private firebaseUser: firebase.User;
     private backendApi: BackendApiClient
@@ -93,13 +94,13 @@ export class FirebaseUserService implements UserService {
     private async restoreUser(fbUser: firebase.User): Promise<User> {
 
         let userInfo = await firebase.firestore().collection(FirebaseUserService.USERS_COLLECTION).doc(fbUser.uid).get();
-        let userToken = await fbUser.getIdToken(false);
+        await this.refreshToken(fbUser, false);
         let suggestedInfo = {
             email: fbUser.email,
             name: fbUser.displayName,
         };
         if (userInfo.exists) {
-            this.user = new User(fbUser.uid, userToken, suggestedInfo, userInfo.data());
+            this.user = new User(fbUser.uid, () => this.currentToken, suggestedInfo, userInfo.data());
             //Fix a bug where created date is not set for a new user
             if (!this.user.created) {
                 this.user.created = new Date();
@@ -107,7 +108,7 @@ export class FirebaseUserService implements UserService {
             }
             return this.user;
         } else {
-            this.user = new User(fbUser.uid, userToken, suggestedInfo);
+            this.user = new User(fbUser.uid, () => this.currentToken, suggestedInfo);
             this.user.created = new Date();
             //await this.update(this.user);
             return this.user;
@@ -145,10 +146,18 @@ export class FirebaseUserService implements UserService {
         return firebase.auth().sendPasswordResetEmail(email ? email : this.getUser().email);
     }
 
+    async refreshToken(firebaseUser:  firebase.User, forceRefresh: boolean) {
+        let tokenInfo = await firebaseUser.getIdTokenResult(forceRefresh);
+        let expirationMs = new Date(tokenInfo.expirationTime).getTime() - Date.now();
+        console.log(`Firebase token (force=${forceRefresh}) which expire at ${tokenInfo.expirationTime} in ${expirationMs}ms=(${tokenInfo.expirationTime})`);
+        this.currentToken = tokenInfo.token;
+        setTimeout(() => this.refreshToken(firebaseUser, true), expirationMs/2);
+    }
+
     async createUser(email: string, password: string): Promise<void> {
         let firebaseUser = await firebase.auth().createUserWithEmailAndPassword(email.trim(), password.trim());
-        let token = await firebaseUser.user.getIdToken(false);
-        let user = new User(firebaseUser.user.uid, token, {name: null, email: email}, {
+        await this.refreshToken(firebaseUser.user, false);
+        let user = new User(firebaseUser.user.uid, () => this.currentToken, {name: null, email: email}, {
             "_name": name,
             "_project": new Project(randomId(), null)
         });

@@ -39,7 +39,7 @@ export enum Permission {
 
 
 export class User {
-    private readonly _authToken: string;
+    private readonly _authTokenAccessor: () => string;
     private readonly _uid: string;
     private readonly _email: string;
     private _name: string;
@@ -50,7 +50,7 @@ export class User {
     private _forcePasswordChange: boolean = false;
     private _created: string; //creation date in ISO string
 
-    constructor(uid: string, authToken: string, suggested: SuggestedUserInfo, data?: any) {
+    constructor(uid: string, authTokenAccessor: () => string, suggested: SuggestedUserInfo, data?: any) {
         if (data) {
             let projectSingleton = data._project;
             delete data['_project'];
@@ -80,7 +80,7 @@ export class User {
         }
         //End of WEIRD code
 
-        this._authToken = authToken;
+        this._authTokenAccessor = authTokenAccessor;
         this._uid = uid;
     }
 
@@ -89,8 +89,8 @@ export class User {
         this._created = value.toISOString();
     }
 
-    get authToken(): string {
-        return this._authToken;
+    getCurrentToken(): string {
+        return this._authTokenAccessor();
     }
 
     get uid(): string {

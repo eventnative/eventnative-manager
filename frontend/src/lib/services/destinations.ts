@@ -1,4 +1,4 @@
-import {randomId} from "../commons/utils";
+import {isNullOrUndef, randomId} from "../commons/utils";
 import {FieldMappings} from "./mappings";
 
 export class DestinationConfigFactory<T extends DestinationConfig> {
@@ -53,8 +53,8 @@ export abstract class DestinationConfig {
     protected readonly _type: string
     protected readonly _onlyKeys = [];
     protected _formData: any = {};
-    protected _connectionTestOk: boolean = true;
-    protected _connectionErrorMessage: string = null;
+    private _connectionTestOk: boolean = true;
+    private _connectionErrorMessage: string = null;
 
 
     constructor(type: string, id: string) {
@@ -116,6 +116,15 @@ export abstract class DestinationConfig {
         this._mappings = value;
     }
 
+
+    get connectionTestOk(): boolean {
+        return this._connectionTestOk;
+    }
+
+    get connectionErrorMessage(): string {
+        return this._connectionErrorMessage;
+    }
+
     get mode(): string {
         return this.formData['mode'];
     }
@@ -153,6 +162,7 @@ export class PostgresConfig extends DestinationConfig {
 
 export class ClickHouseConfig extends DestinationConfig {
     private _dsns: string = ""
+    private _dsnLists: string[] = []
     private _cluster: string = ""
     private _database: string = ""
 
@@ -162,16 +172,24 @@ export class ClickHouseConfig extends DestinationConfig {
 
 
     describe(): ConnectionDescription {
-        let dsn = this.formData['ch_dsns'].split(",", -1);
+        this.migrateData();
+        let dsn = this.formData['ch_dsns_list'].length > 0 ? this.formData['ch_dsns_list'][0] : "Unknown";
         return {
-            displayURL: `${this.formData['ch_dsns']}`,
-            commandLineConnect: `echo 'SELECT 1' | curl '${dsn[0]}' --data-binary @-`
+            displayURL: dsn,
+            commandLineConnect: `echo 'SELECT 1' | curl '${dsn}' --data-binary @-`
         }
     }
 
 
-    get dsns(): string {
-        return this._dsns;
+    public migrateData() {
+        if (isNullOrUndef(this.formData['ch_dsns_list'])) {
+            if (!isNullOrUndef(this.formData['ch_dsns']) && this.formData['ch_dsns'].toString().length > 0) {
+                this.formData['ch_dsns_list'] = this.formData['ch_dsns'].toString().split(",");
+                this.formData['ch_dsns'] = null;
+            } else {
+                this.formData['ch_dsns_list'] = [];
+            }
+        }
     }
 
     get cluster(): string {
@@ -229,6 +247,7 @@ export class BQConfig extends DestinationConfig {
     constructor(id: string) {
         super("bigquery", id);
     }
+
     describe(): ConnectionDescription {
         return {
             displayURL: `${this.formData['bqProjectId']}`,

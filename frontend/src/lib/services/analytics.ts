@@ -130,7 +130,6 @@ export default class AnalyticsService {
         if (!user || this.isDev()) {
             return;
         }
-
         posthog.init('72gPORhrnFw9os9uBF_IHSEohx9fObmIAyFyhHq_1mA', {api_host: 'https://ph-ksense.herokuapp.com'});
         this.user = user;
         this.ensureLogRocketInitialized();
