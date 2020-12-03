@@ -191,7 +191,7 @@ function EnterNameModal({onClose, onReady}: {
             });
     };
     return <Modal
-        title="Please input domain name"
+        title="Please input a tracking domain name"
         visible={true}
         closable={true}
         keyboard={true}
@@ -203,6 +203,10 @@ function EnterNameModal({onClose, onReady}: {
             <Button key="submit" type="primary" onClick={ok}>Add</Button>,
         ]}>
         <Form form={form}>
+            <div className="custom-domains-new-documentation">
+                Here you can add you custom tracking domain which usually looks like track.[yourdomain] or t.[yourdomain]. After adding the domain, configure it's CNAME to
+                point to <u>hosting.jitsu.com</u>. We'll take care of SSL!
+            </div>
             <Form.Item name="domain" rules={[{
                 message: "Invalid domain name",
                 validator(rule, value) {

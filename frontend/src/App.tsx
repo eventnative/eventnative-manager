@@ -229,7 +229,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                 <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
             </Menu.Item>
             <Menu.Item key="domains" icon={<CloudOutlined/>}>
-                <NavLink to="/domains" activeClassName="selected">Custom Domains</NavLink>
+                <NavLink to="/domains" activeClassName="selected">Tracking Domains</NavLink>
             </Menu.Item>
             <Menu.Item key="cfg_download" icon={<DownloadOutlined/>}>
                 <NavLink to="/cfg_download" activeClassName="selected">Download EN Config</NavLink>

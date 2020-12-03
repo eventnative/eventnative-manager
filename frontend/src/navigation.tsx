@@ -63,5 +63,5 @@ export const PRIVATE_PAGES: Page[] = [
     new Page("Jitsu | edit destinations", "/destinations", (props) => (<DestinationsList {...props} />), "Edit destinations"),
     new Page("Jitsu | download config", "/cfg_download", (props) => (<DownloadConfig {...props} />), "Download EventNative configuration"),
     new Page("Jitsu | edit API keys", "/api_keys", (props) => (<ApiKeys {...props} />), "API Keys"),
-    new Page("Jitsu | edit custom domains", "/domains", (props) => (<CustomDomains {...props} />), "Custom domains")
+    new Page("Jitsu | edit custom domains", "/domains", (props) => (<CustomDomains {...props} />), "Custom tracking domains")
 ];
