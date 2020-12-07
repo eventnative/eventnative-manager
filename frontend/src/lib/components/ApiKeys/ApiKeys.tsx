@@ -11,7 +11,7 @@ import {copyToClipboard, randomId} from "../../commons/utils";
 import TagsInput from "../TagsInput/TagsInput";
 import {EVENTNATIVE_HOST, getCurlDocumentation, getEmpeddedJS, getNPMDocumentation} from "../../commons/api-documentation";
 import {FlexContainer, FlexItem} from "../flex";
-import {DeleteFilled} from "@ant-design/icons/lib";
+import DeleteFilled from "@ant-design/icons/lib/icons/DeleteFilled";
 
 type Token = {
     uid: string

@@ -11,7 +11,6 @@ import ExclamationCircleOutlined from "@ant-design/icons/lib/icons/ExclamationCi
 import EyeInvisibleOutlined from "@ant-design/icons/lib/icons/EyeInvisibleOutlined";
 import EyeTwoTone from "@ant-design/icons/lib/icons/EyeTwoTone";
 import PlusOutlined from "@ant-design/icons/lib/icons/PlusOutlined";
-import CloseCircleOutlined from "@ant-design/icons/lib/icons/CloseCircleOutlined";
 
 
 import './DestinationEditor.less'
