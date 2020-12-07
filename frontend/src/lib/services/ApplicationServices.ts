@@ -83,7 +83,7 @@ export default class ApplicationServices {
         firebaseInit(this._applicationConfiguration.firebaseConfig)
 
         this._analyticsService = new AnalyticsService(this._applicationConfiguration);
-        this._backendApiClient = new JWTBackendClient(this._applicationConfiguration.backendApiBase, () => this._userService.getUser().authToken, this._analyticsService);
+        this._backendApiClient = new JWTBackendClient(this._applicationConfiguration.backendApiBase, () => this._userService.getUser().getCurrentToken(), this._analyticsService);
         this._userService = new FirebaseUserService(this._backendApiClient);
         this._storageService = new FirebaseServerStorage();
     }

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import {ReactNode, useState} from 'react'
 import {BQConfig, ClickHouseConfig, DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig, RedshiftConfig, SnowflakeConfig} from "../../services/destinations";
-import {Avatar, Button, Col, Divider, Dropdown, Form, Input, List, Menu, message, Modal, Popover, Radio, Row, Select, Switch} from "antd";
+import {Avatar, Button, Col, Divider, Dropdown, Form, Input, List, Menu, message, Modal, Popover, Radio, Row, Select, Switch, Tooltip} from "antd";
 
 import ColumnWidthOutlined from "@ant-design/icons/lib/icons/ColumnWidthOutlined";
 import DatabaseOutlined from "@ant-design/icons/lib/icons/DatabaseOutlined";
@@ -12,6 +12,7 @@ import EyeInvisibleOutlined from "@ant-design/icons/lib/icons/EyeInvisibleOutlin
 import EyeTwoTone from "@ant-design/icons/lib/icons/EyeTwoTone";
 import PlusOutlined from "@ant-design/icons/lib/icons/PlusOutlined";
 
+
 import './DestinationEditor.less'
 import {ActionLink, Align, CodeInline, CodeSnippet, handleError, LabelWithTooltip, LoadableComponent} from "../components";
 import ApplicationServices from "../../services/ApplicationServices";
@@ -21,6 +22,7 @@ import {Option} from "antd/es/mentions";
 import {FieldMappings, Mapping} from "../../services/mappings";
 import {MappingEditor} from "./MappingEditor";
 import Icon from '@ant-design/icons';
+import {EditableList} from "../EditableList/EditableList";
 
 const AWS_ZONES = [
     "us-east-2",
@@ -139,10 +141,14 @@ export class DestinationsList extends LoadableComponent<any, State> {
     }
 
     private getTitle(config: DestinationConfig): ReactNode {
+        let configTitle = config.connectionTestOk ? config.id :
+            (<Tooltip trigger={["click", "hover"]} title={<>Last connection test failed  with <b><i>'{config.connectionErrorMessage}'</i></b>. Destination might be not accepting data. Please, go to editor and fix the connection settings</>}>
+                <span className="destinations-list-failed-connection"><b>!</b> {config.id}</span>
+            </Tooltip>);
         if (config.comment) {
-            return <LabelWithTooltip documentation={config.comment}>{config.id}</LabelWithTooltip>
+            return <LabelWithTooltip documentation={config.comment}>{configTitle}</LabelWithTooltip>
         } else {
-            return config.id;
+            return configTitle;
         }
 
     }
@@ -306,6 +312,9 @@ abstract class DestinationDialog<T extends DestinationConfig> extends React.Comp
 
 
     public render() {
+        let tableName = <>
+            Table name can be either constant (in that case all events will be written into the same table) or
+        </>
         return (
             <Form layout="horizontal" form={this.props.form} initialValues={this.state.currentValue.formData}>
                 <Form.Item label="Mode" name="mode" labelCol={{span: 4}} wrapperCol={{span: 18}}>
@@ -314,7 +323,7 @@ abstract class DestinationDialog<T extends DestinationConfig> extends React.Comp
                         <Radio.Button value="batch">Batch</Radio.Button>
                     </Radio.Group>
                 </Form.Item>
-                <Form.Item label="Table Name Pattern" name="tableName" labelCol={{span: 4}} wrapperCol={{span: 12}} required={true}>
+                <Form.Item label={<LabelWithTooltip documentation={tableName}>Table Name</LabelWithTooltip>} name="tableName" labelCol={{span: 4}} wrapperCol={{span: 12}} required={true}>
                     <Input type="text"/>
                 </Form.Item>
                 {this.items()}
@@ -347,6 +356,7 @@ type IDestinationEditorModalProps = {
 function DestinationsEditorModal({config, onCancel, onSave, testConnection}: IDestinationEditorModalProps) {
     let configType = destinationsByTypeId[(config as DestinationConfig).type];
     const [saving, setSaving] = useState(false)
+
     const [connectionTesting, setConnectionTesting] = useState(false)
 
     let title = (<h1 className="destination-modal-header">{DestinationsList.getIcon((config as DestinationConfig).type)}Edit {configType.name} connection</h1>);
@@ -422,25 +432,53 @@ async function testConnectionResult(tester: () => Promise<any>): Promise<string>
     }
 }
 
-class ClickHouseDialog extends DestinationDialog<PostgresConfig> {
+class ClickHouseDialog extends DestinationDialog<ClickHouseConfig> {
+    isUrlValid(val) {
+        let res = val.match(/((http(s)?|tcp):\/\/.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
+        return res != null;
+    }
     items(): React.ReactNode {
-        let dsnDocs = (<>Comma separated list of data sources names (aka DSNs). See <a
+        this.state.currentValue.migrateData();
+        let dsnDocs = (<>A list of DSNs (server names). It's recommended to add at least two servers within the cluster for redundancy <a
             href='https://docs.eventnative.org/configuration-1/destination-configuration/clickhouse-destination#clickhouse)'>documentation</a></>);
-        let clusterDoc = (<>Cluster name. See <a href='https://docs.eventnative.org/configuration-1/destination-configuration/clickhouse-destination#clickhouse)'>documentation</a></>);
+        let clusterDoc = (<>
+                <p>Cluster name. See <a href='https://docs.eventnative.org/configuration-1/destination-configuration/clickhouse-destination#clickhouse)'>documentation</a>.</p>
+                <p>Run <CodeInline>SELECT * from system.clusters</CodeInline> to the list of all available clusters</p>
+            </>
+        );
         let databaseDoc = (<>Database name. See <a href='https://docs.eventnative.org/configuration-1/destination-configuration/clickhouse-destination#clickhouse)'>documentation</a></>);
 
+        const dsnValidator = (val) => {
+            if (val === "") {
+                return "Value can't be empty"
+            }
+            if (!this.isUrlValid(val)) {
+                return "URL is not valid should be [tcp|http(s)]://host[:port]?params"
+            }
+            return null;
+
+        };
         return (
             <>
                 <Row>
                     <Col span={16}>
-                        <Form.Item label={<LabelWithTooltip documentation={dsnDocs}>Datasources</LabelWithTooltip>} name="ch_dsns"
-                                   rules={[{required: true, message: 'Host is required'}]}
+                        <Form.Item label={<LabelWithTooltip documentation={dsnDocs}>Datasources</LabelWithTooltip>} name="ch_dsns_list"
+                                   rules={[{
+                                       validator: (rule, value, callback) => {
+                                           if (value.filter(val => dsnValidator(val) != null).length > 0) {
+                                               callback("One of the urls are not valid, see above");
+                                           }
+                                           return Promise.resolve();
+                                       }
+                                   }]}
                                    labelCol={{span: 6}}
-                                   wrapperCol={{span: 18}}><Input type="text"/></Form.Item>
+                                   wrapperCol={{span: 18}}>
+                            <EditableList newItemLabel="Add new server" validator={dsnValidator} />
+                        </Form.Item>
                     </Col>
                 </Row>
                 <Form.Item label={<LabelWithTooltip documentation={clusterDoc}>Cluster</LabelWithTooltip>}
-                           rules={[{required: false, message: 'Cluster name is required'}]}
+                           rules={[{required: true, message: 'Cluster name is required'}]}
                            name="ch_cluster" labelCol={{span: 4}} wrapperCol={{span: 12}}>
                     <Input type="text"/>
                 </Form.Item>

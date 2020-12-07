@@ -46,7 +46,7 @@ func NewService(balancerApiUrl, adminToken string) *Service {
 	return s
 }
 
-func (s *Service) GetEvents(apiKeys []string, limit int) ([]enevents.Fact, error) {
+func (s *Service) GetOldEvents(apiKeys []string, limit int) ([]enevents.Fact, error) {
 	s.RLock()
 	enInstances := s.instanceUrls
 	s.RUnlock()
@@ -63,7 +63,7 @@ func (s *Service) GetEvents(apiKeys []string, limit int) ([]enevents.Fact, error
 			return nil, fmt.Errorf("Error getting response from EventNative: http code isn't 200: %d", code)
 		}
 
-		content := &enhandlers.CachedEventsResponse{}
+		content := &enhandlers.OldCachedEventsResponse{}
 		if err = json.Unmarshal(body, content); err != nil {
 			return nil, fmt.Errorf("Error unmarshalling response from EventNative: %v", err)
 		}
@@ -80,6 +80,24 @@ func (s *Service) GetEvents(apiKeys []string, limit int) ([]enevents.Fact, error
 	}
 
 	return response, nil
+}
+
+func (s *Service) GetLastEvents(destinationIds string, start, end string, limit int) (*enhandlers.CachedEventsResponse, error) {
+	code, body, err := s.sendReq(http.MethodGet, s.balancerApiUrl+"/events/cache?destination_ids="+destinationIds+"&limit="+strconv.Itoa(limit)+"&start="+start+"&end="+end, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if code != http.StatusOK {
+		return nil, fmt.Errorf("Error getting response from EventNative: http code isn't 200: %d", code)
+	}
+
+	content := &enhandlers.CachedEventsResponse{}
+	if err = json.Unmarshal(body, content); err != nil {
+		return nil, fmt.Errorf("Error unmarshalling response from EventNative: %v", err)
+	}
+
+	return content, nil
 }
 
 func (s *Service) TestDestination(reqB []byte) (int, []byte, error) {
