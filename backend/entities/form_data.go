@@ -19,9 +19,10 @@ type ClickHouseFormData struct {
 	Mode      string `firestore:"mode" json:"mode"`
 	TableName string `firestore:"tableName" json:"tableName"`
 
-	ChCluster string `firestore:"ch_cluster" json:"ch_cluster"`
-	ChDb      string `firestore:"ch_database" json:"ch_database"`
-	ChDsns    string `firestore:"ch_dsns" json:"ch_dsns"`
+	ChCluster  string   `firestore:"ch_cluster" json:"ch_cluster"`
+	ChDb       string   `firestore:"ch_database" json:"ch_database"`
+	ChDsns     string   `firestore:"ch_dsns" json:"ch_dsns"`
+	ChDsnsList []string `firestore:"ch_dsns_list" json:"ch_dsns_list"`
 }
 
 //RedshiftFormData entity is stored in main storage (Firebase)

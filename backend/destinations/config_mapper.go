@@ -99,6 +99,10 @@ func mapClickhouse(chDestinations *entities.Destination) (*enstorages.Destinatio
 		return nil, fmt.Errorf("Error unmarshaling clickhouse form data: %v", err)
 	}
 
+	dsns := chFormData.ChDsnsList
+	if len(dsns) == 0 {
+		dsns = strings.Split(chFormData.ChDsns, ",")
+	}
 	return &enstorages.DestinationConfig{
 		Type: enstorages.ClickHouseType,
 		Mode: chFormData.Mode,
@@ -106,7 +110,7 @@ func mapClickhouse(chDestinations *entities.Destination) (*enstorages.Destinatio
 			TableNameTemplate: chFormData.TableName,
 		},
 		ClickHouse: &enadapters.ClickHouseConfig{
-			Dsns:     strings.Split(chFormData.ChDsns, ","),
+			Dsns:     dsns,
 			Database: chFormData.ChDb,
 			Cluster:  chFormData.ChCluster,
 		},
