@@ -161,10 +161,6 @@ export class PostgresConfig extends DestinationConfig {
 }
 
 export class ClickHouseConfig extends DestinationConfig {
-    private _dsns: string = ""
-    private _dsnLists: string[] = []
-    private _cluster: string = ""
-    private _database: string = ""
 
     constructor(id: string) {
         super("clickhouse", id);
@@ -181,6 +177,14 @@ export class ClickHouseConfig extends DestinationConfig {
     }
 
 
+    update(formValues: any) {
+        if (formValues['ch_dsns_list']) {
+            formValues['ch_dsns'] = formValues['ch_dsns_list'].join(",")
+        }
+        super.update(formValues);
+
+    }
+
     public migrateData() {
         if (isNullOrUndef(this.formData['ch_dsns_list'])) {
             if (!isNullOrUndef(this.formData['ch_dsns']) && this.formData['ch_dsns'].toString().length > 0) {
@@ -192,13 +196,6 @@ export class ClickHouseConfig extends DestinationConfig {
         }
     }
 
-    get cluster(): string {
-        return this._cluster;
-    }
-
-    get database(): string {
-        return this._database;
-    }
 }
 
 
