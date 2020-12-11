@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "google/protobuf/struct.proto";
+
+package jitsu;
+
+message SourceConfiguration {
+  //Type name. Can be type:subtype
+  string type_name = 1;
+  //List of destinations
+  repeated string destination_ids = 2;
+  //Either list of collections or ['*'] which means "all collections"
+  repeated string collections = 3;
+  //Configuration that can be different per different types of sources
+  google.protobuf.Struct config = 4;
+}
+
+
+message AllSourcesConfiguration {
+  string project_id = 1;
+  repeated SourceConfiguration sources = 2;
+}
+

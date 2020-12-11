@@ -4,7 +4,7 @@ import 'firebase/auth'
 import 'firebase/firestore'
 import Marshal from "../commons/marshalling";
 import {randomId, reloadPage} from "../commons/utils";
-import {BackendApiClient, ServerStorage, setDebugInfo, UserLoginStatus, UserService} from "./ApplicationServices";
+import {BackendApiClient, Persistence, setDebugInfo, UserLoginStatus, UserService} from "./ApplicationServices";
 
 export class FirebaseUserService implements UserService {
     private user?: User
@@ -179,24 +179,32 @@ export class FirebaseUserService implements UserService {
     }
 }
 
-export class FirebaseServerStorage implements ServerStorage {
+export class FirebaseServerStorage implements Persistence {
 
 
-    get(collectionName: string, key?: string): Promise<any> {
+    async get(collectionName: string, key?: string): Promise<any> {
         if (!key) {
             key = firebase.auth().currentUser.uid;
         }
-        return firebase.firestore().collection(collectionName).doc(key).get().then((doc) => doc.data())
+        try {
+            return await firebase.firestore().collection(collectionName).doc(key).get().then((doc) => doc.data())
+        } catch (e) {
+            throw new Error(`Failed to get object ${key} from ${collectionName}: ${e.message}`);
+        }
     }
 
-    save(collectionName: string, data: any, key?: string): Promise<void> {
+    async save(collectionName: string, data: any, key?: string): Promise<void> {
         if (!key) {
             key = firebase.auth().currentUser.uid;
         }
         let pureJson = Marshal.toPureJson(data);
         pureJson['_lastUpdated'] = new Date().toISOString();
         console.log("Saving to storage: " + key + " = ", pureJson)
-        return firebase.firestore().collection(collectionName).doc(key).set(pureJson)
+        try {
+            return await firebase.firestore().collection(collectionName).doc(key).set(pureJson)
+        } catch (e) {
+            throw new Error(`Failed to save object ${key} to ${collectionName}: ${e.message}. Object: ${JSON.stringify(data, null, 2)}`);
+        }
     }
 }
 

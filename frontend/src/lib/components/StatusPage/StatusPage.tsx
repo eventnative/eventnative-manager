@@ -224,7 +224,7 @@ export default class StatusPage extends LoadableComponent<Props, State> {
     }
 
     async getNumberOfDestinations() {
-        let destinations = await this.services.storageService.get("destinations", this.services.activeProject.id);
+        let destinations = await this.services.persistenceService.of<any>(Object, "destinations").get(this.services.activeProject.id);
         return destinations ? destinations.destinations.length : 0;
     }
 

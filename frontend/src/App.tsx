@@ -13,6 +13,7 @@ import UnlockOutlined from "@ant-design/icons/lib/icons/UnlockOutlined";
 import DownloadOutlined from "@ant-design/icons/lib/icons/DownloadOutlined";
 import NotificationOutlined from "@ant-design/icons/lib/icons/NotificationOutlined";
 import UserSwitchOutlined from "@ant-design/icons/lib/icons/UserSwitchOutlined";
+import ApiOutlined from "@ant-design/icons/lib/icons/ApiOutlined";
 
 import './App.less';
 import ApplicationServices, {setDebugInfo} from "./lib/services/ApplicationServices";
@@ -222,9 +223,9 @@ export default class App extends React.Component<AppProperties, AppState> {
             <Menu.Item key="api_keys" icon={<UnlockOutlined/>}>
                 <NavLink to="/api_keys" activeClassName="selected">Event API Keys</NavLink>
             </Menu.Item>
-            {/*<Menu.Item key="sources" icon={<ApiOutlined/>}>*/}
-            {/*    <NavLink to="/sources" activeClassName="selected">Sources</NavLink>*/}
-            {/*</Menu.Item>*/}
+            <Menu.Item key="sources" icon={<ApiOutlined/>}>
+                <NavLink to="/sources" activeClassName="selected">Sources</NavLink>
+            </Menu.Item>
             <Menu.Item key="destinations" icon={<NotificationOutlined/>}>
                 <NavLink to="/destinations" activeClassName="selected">Destinations</NavLink>
             </Menu.Item>

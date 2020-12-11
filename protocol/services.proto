@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+
+message GetObjectRequest {
+  //Objects collection id - MUST be set
+  string collection_id = 1;
+  //Collection key. If not set, current user is will be used as key
+  string key = 2;
+}
+
+message SaveObjectRequest {
+  //Objects collection id - MUST be set
+  string collection_id = 1;
+  //Collection key. If not set, current user is will be used as key
+  string key = 2;
+
+  google.protobuf.Struct object = 3;
+
+}
+
+service Persistance {
+  rpc GetObject (GetObjectRequest) returns (google.protobuf.Struct) {}
+  rpc SaveObject (SaveObjectRequest) returns (google.protobuf.Empty) {}
+}

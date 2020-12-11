@@ -9,6 +9,7 @@ import LoginForm from "./lib/components/LoginForm/LoginForm";
 import StatusPage from "./lib/components/StatusPage/StatusPage";
 import {DownloadConfig} from "./lib/components/DownloadConfig/DownloadConfig";
 import EventsStream from "./lib/components/EventsStream/EventsStream";
+import SourcesListPage from "./lib/components/SourcesConfiguration/SourcesListPage";
 
 
 export class Page {
@@ -61,6 +62,9 @@ export const PRIVATE_PAGES: Page[] = [
     new Page("Jitsu | recent events", "/events_stream", (props) => (<EventsStream {...props} />), "Recent events"),
     new Page("Jitsu | dashboard", ["/dashboard", ""], (props) => (<StatusPage {...props} />), "Dashboard"),
     new Page("Jitsu | edit destinations", "/destinations", (props) => (<DestinationsList {...props} />), "Edit destinations"),
+    new Page("Jitsu | edit sources", "/sources", (props) => (<SourcesListPage {...props} />), "Edit destinations"),
+    // new Page("Jitsu | edit source", "/sources/:id/", (props) => (<SourcesListPage {...props} />), "Edit destinations")
+    //     .withBackLink("Back to list of all sources", "/sources"),
     new Page("Jitsu | download config", "/cfg_download", (props) => (<DownloadConfig {...props} />), "Download EventNative configuration"),
     new Page("Jitsu | edit API keys", "/api_keys", (props) => (<ApiKeys {...props} />), "API Keys"),
     new Page("Jitsu | edit custom domains", "/domains", (props) => (<CustomDomains {...props} />), "Custom tracking domains")

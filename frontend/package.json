@@ -23,6 +23,7 @@
     "recharts": "^1.8.5"
   },
   "devDependencies": {
+    "protobufjs": "^6.10.2",
     "@babel/core": "7.9.0",
     "@svgr/webpack": "4.3.3",
     "@testing-library/jest-dom": "^4.2.4",
@@ -83,8 +84,9 @@
     "workbox-webpack-plugin": "4.3.1"
   },
   "scripts": {
-    "start": "TSC_COMPILE_ON_ERROR=true EXTEND_ESLINT=true node scripts/start.js",
-    "build": "GENERATE_SOURCEMAP=false TSC_COMPILE_ON_ERROR=false EXTEND_ESLINT=true node scripts/build.js",
+    "generate": "pbjs -es6 -w es6 -t static-module ../protocol/objects.proto  | tee src/generated/objects.js | pbts -o src/generated/objects.d.ts -",
+    "start": "yarn run generate &&TSC_COMPILE_ON_ERROR=true EXTEND_ESLINT=true node scripts/start.js",
+    "build": "yarn run generate && GENERATE_SOURCEMAP=false TSC_COMPILE_ON_ERROR=false EXTEND_ESLINT=true node scripts/build.js",
     "test": "node scripts/test.js"
   },
   "eslintConfig": {

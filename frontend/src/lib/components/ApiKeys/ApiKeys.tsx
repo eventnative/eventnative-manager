@@ -41,7 +41,7 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
     }
 
     protected async load(): Promise<State> {
-        let payload = await this.services.storageService.get("api_keys", this.services.activeProject.id)
+        let payload = await this.services.persistenceService.of<any>(Object, "api_keys").get(this.services.activeProject.id)
         return {tokens: payload && payload.keys ? payload.keys : [], loading: null}
     }
 
@@ -181,7 +181,7 @@ export default class ApiKeys extends LoadableComponent<{}, State> {
             loading: loading,
         });
         try {
-            await this.services.storageService.save("api_keys", {keys: newTokens}, this.services.activeProject.id);
+            await this.services.persistenceService.of<any>(Object, "api_keys").save(this.services.activeProject.id, {keys: newTokens});
             this.setState({tokens: newTokens, loading: null});
         } catch (e) {
             message.error("Can't generate new token: " + e.message);
@@ -212,7 +212,7 @@ function KeyDocumentation({token}: { token: Token }) {
     const services = ApplicationServices.get();
 
     useEffect(() => {
-        services.storageService.get("custom_domains", services.activeProject.id)
+        services.persistenceService.of<any>(Object, "custom_domains").get(services.activeProject.id)
             .then(result => {
                 let customDomains = result && result.domains ? result.domains.map(domain => domain.name) : [];
                 let newDomains = [...customDomains, EVENTNATIVE_HOST];

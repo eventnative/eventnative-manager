@@ -75,9 +75,9 @@ export class DestinationsList extends LoadableComponent<any, State> {
     }
 
     protected async load() {
-        let destinations = await this.services.storageService.get("destinations", this.services.activeProject.id);
+        let destinations = await this.services.persistenceService.of(Object, "destinations").get(this.services.activeProject.id);
         return {
-            destinations: this.newDestinationsList(destinations ? Marshal.newInstance(destinations.destinations, SERIALIZABLE_CLASSES) : []),
+            destinations: this.newDestinationsList(destinations ? Marshal.newInstance(destinations['destinations'], SERIALIZABLE_CLASSES) : []),
             loading: false
         }
     }
@@ -218,7 +218,7 @@ export class DestinationsList extends LoadableComponent<any, State> {
     private async saveCurrentDestinations(): Promise<boolean> {
         let payload = {destinations: this.state.destinations.toArray()};
         try {
-            await this.services.storageService.save("destinations", payload, this.services.activeProject.id);
+            await this.services.persistenceService.of(Object, "destinations").save(this.services.activeProject.id, Marshal.toPureJson(payload));
         } catch (e) {
             message.error("Interval error, destination has not been saved!", 10)
             return false;

@@ -215,7 +215,6 @@ export default class AnalyticsService {
 
     private sendException(error: Error) {
         if (!this.isDev()) {
-            console.log("Sending error to monitoring system")
             this.ensureLogRocketInitialized();
             LogRocket.captureException(error, {
                 tags: {

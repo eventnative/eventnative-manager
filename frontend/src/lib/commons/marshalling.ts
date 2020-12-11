@@ -5,7 +5,7 @@ const TYPE_PROPERTY = '$type';
 
 
 interface IMarshal {
-    toPureJson(object: any);
+    toPureJson(object: any, doNotWriteTypes?: boolean);
     newInstance(json: any, classes?: any[]): any;
     newKnownInstance(cls: any, json: any, classes?: any[]): any;
 }
@@ -68,11 +68,7 @@ const Marshal: IMarshal = {
         return newInstanceInternal(new cls(), json, classesMap(allClasses))
     },
 
-    newInstance: (json: any, classes?: any[]) => {
-        return newInstanceInternal(null, json, classesMap(classes));
-    },
-
-    toPureJson: (object: any) => {
+    toPureJson: (object: any, doNotWriteTypes?: boolean) => {
         if (object == null) {
             return null;
         } else if (typeof object !== 'object' && typeof object !== 'function') {
@@ -82,7 +78,7 @@ const Marshal: IMarshal = {
                 return (object as any[]).map((element) => Marshal.toPureJson(element))
             } else {
                 let result = {};
-                if (object.constructor.name !== 'Object') {
+                if (object.constructor.name !== 'Object' && !doNotWriteTypes) {
                     result[TYPE_PROPERTY] = object.constructor.name;
                 }
                 for (let key in object) {
@@ -96,6 +92,10 @@ const Marshal: IMarshal = {
         } else {
             throw new Error(`Unsupported object type ${typeof object}`)
         }
+    },
+
+    newInstance: (json: any, classes?: any[]) => {
+        return newInstanceInternal(null, json, classesMap(classes));
     }
 
 }

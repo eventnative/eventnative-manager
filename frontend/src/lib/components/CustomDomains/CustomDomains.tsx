@@ -36,7 +36,7 @@ export class CustomDomains extends LoadableComponent<any, State> {
 
 
     protected async load() {
-        let result = await this.services.storageService.get("custom_domains", this.services.activeProject.id);
+        let result = await this.services.persistenceService.of<any>(Object, "custom_domains").get(this.services.activeProject.id);
         return {
             certificateExpiration: result && result._certificateExpiration && result._certificateExpiration.length > 0 ?
                 new Date(Date.parse(result._certificateExpiration)): null,
@@ -135,7 +135,7 @@ export class CustomDomains extends LoadableComponent<any, State> {
                             onOk: () => {
                                 this.reload(async () => {
                                     let newDomains: Domain[] = this.state.domains.filter(element => element.name != domain.name);
-                                    await this.services.storageService.save("custom_domains", {domains: newDomains}, this.services.activeProject.id);
+                                    await this.services.persistenceService.of<any>(Object, "custom_domains").save(this.services.activeProject.id, {domains: newDomains});
                                     message.success("Domain deleted!");
                                     return {
                                         domains: newDomains
@@ -164,7 +164,7 @@ export class CustomDomains extends LoadableComponent<any, State> {
             {this.state.enterNameVisible ? <EnterNameModal onClose={() => this.setState({enterNameVisible: false})} onReady={(text) => {
                 this.reload(async () => {
                     let newDomains: Domain[] = [...this.state.domains, {name: text, status: "pending"}];
-                    await this.services.storageService.save("custom_domains", {domains: newDomains}, this.services.activeProject.id);
+                    await this.services.persistenceService.of<any>(Object, "custom_domains").save(this.services.activeProject.id, {domains: newDomains});
                     await this.services.backendApiClient.post(`/ssl?projectId=${this.services.activeProject.id}&async=${true}`, {});
                     message.success("New domain added!");
                     return {
