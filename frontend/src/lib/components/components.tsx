@@ -29,7 +29,7 @@ export function Preloader(props: IPreloaderProps) {
     //do not change img src here. We need to make sure that the image url is the same as
     //in pre-react boot loader
     return (<div style={{}} className="preloader-wrapper">
-        <img src="boot/loading.gif" alt="[loading]" className="preloader-image"/>
+        <img src="/boot/loading.gif" alt="[loading]" className="preloader-image"/>
         <div className="preloader-text">
             {text}
         </div>
@@ -184,6 +184,7 @@ export abstract class LoadableComponent<P, S> extends React.Component<P, S> {
         if (!this.state) {
             this.state = this.emptyState();
         }
+        this.context = context;
     }
 
     private getLifecycle(): ComponentLifecycle {

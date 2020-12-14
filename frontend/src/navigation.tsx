@@ -10,13 +10,20 @@ import StatusPage from "./lib/components/StatusPage/StatusPage";
 import {DownloadConfig} from "./lib/components/DownloadConfig/DownloadConfig";
 import EventsStream from "./lib/components/EventsStream/EventsStream";
 import SourcesListPage from "./lib/components/SourcesConfiguration/SourcesListPage";
+import SourceEditor from "./lib/components/SourcesConfiguration/SourceEditor";
 
+type Parent = {
+    title: string;
+    path: string;
+}
 
 export class Page {
     componentFactory: (props: any) => ReactElement
     pageTitle: string
     path: string[]
     pageHeader: React.ReactNode;
+    parent?: Parent
+
 
     public getPrefixedPath(): string[] {
         return this.path.map(el => el.startsWith("/") ? el : "/" + el)
@@ -41,6 +48,11 @@ export class Page {
         this.pageHeader = pageHeader;
         this.path = path instanceof Array ? path : [path];
     }
+
+    public withParent(parent: Parent): Page {
+        this.parent = parent;
+        return this;
+    }
 }
 
 function lazyPageFactory(importF): (params: Record<any, string>) => ReactElement {
@@ -62,7 +74,9 @@ export const PRIVATE_PAGES: Page[] = [
     new Page("Jitsu | recent events", "/events_stream", (props) => (<EventsStream {...props} />), "Recent events"),
     new Page("Jitsu | dashboard", ["/dashboard", ""], (props) => (<StatusPage {...props} />), "Dashboard"),
     new Page("Jitsu | edit destinations", "/destinations", (props) => (<DestinationsList {...props} />), "Edit destinations"),
-    new Page("Jitsu | edit sources", "/sources", (props) => (<SourcesListPage {...props} />), "Edit destinations"),
+    new Page("Jitsu | edit sources", "/sources", (props) => (<SourcesListPage {...props} />), "Sources"),
+    new Page("Jitsu | edit source", "/sources/:id", (props) => (<SourceEditor {...props} />), "Edit source")
+        .withParent({title: "Sources", path: "/sources"}),
     // new Page("Jitsu | edit source", "/sources/:id/", (props) => (<SourcesListPage {...props} />), "Edit destinations")
     //     .withBackLink("Back to list of all sources", "/sources"),
     new Page("Jitsu | download config", "/cfg_download", (props) => (<DownloadConfig {...props} />), "Download EventNative configuration"),

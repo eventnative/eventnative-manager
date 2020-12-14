@@ -110,7 +110,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                                     pagePath: routeProps.location.key
                                 })
                                 document.title = route.pageTitle;
-                                return route.getComponent({});
+                                return route.getComponent({...routeProps.match.params});
                             }}
                         />)
                     })}
@@ -136,7 +136,12 @@ export default class App extends React.Component<AppProperties, AppState> {
             <div className={["internal-page-wrapper", "page-" + route.id + "-wrapper"].join(" ")}>
                 <Row className="internal-page-header-container">
                     <Col span={12}>
-                        <h1 className="internal-page-header">{route.pageHeader}</h1>
+                        <h1 className="internal-page-header">
+                            {route.parent ?
+                                (<><a onClick={() => this.services.navigate(route.parent.path)}>{route.parent.title}</a> » </> ) :
+                                "" }
+
+                        {route.pageHeader}</h1>
                     </Col>
                     <Col span={12}>
                         <Align horizontal="right">
@@ -165,7 +170,7 @@ export default class App extends React.Component<AppProperties, AppState> {
                                        pagePath: routeProps.location.hash
                                    });
                                    document.title = route.pageTitle;
-                                   return this.wrapInternalPage(route, {});
+                                   return this.wrapInternalPage(route, {...routeProps.match.params});
                                }}/>);
             } else {
                 return (<CenteredSpin/>)

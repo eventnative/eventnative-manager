@@ -116,7 +116,7 @@ export default class LoginForm extends React.Component<Props, State> {
                 </Row>
                 <div className="login-form-signup">
                     <div>Don't have an account?</div>
-                    <Button shape="round" className="login-form-signup-button" onClick={() => navigateAndReload("#/register")}>
+                    <Button shape="round" className="login-form-signup-button" onClick={() => navigateAndReload("/register")}>
                         <NavLink to="/register">Sign Up!</NavLink>
                     </Button>
                 </div>

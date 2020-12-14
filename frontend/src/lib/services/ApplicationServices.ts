@@ -6,6 +6,7 @@ import AnalyticsService from "./analytics";
 import {firebaseInit, FirebaseServerStorage, FirebaseUserService} from "./firebase";
 import {message} from "antd";
 import Marshal from "../commons/marshalling";
+import {History} from "history";
 
 
 type RoutingType = "hash" | "url";
@@ -71,6 +72,7 @@ export class ApplicationConfiguration {
 }
 
 export default class ApplicationServices {
+    private _history: History;
     private readonly _userService: UserService;
     private readonly _persistenceService: PersistenceServiceFacade;
     private readonly _backendApiClient: BackendApiClient;
@@ -87,6 +89,38 @@ export default class ApplicationServices {
         this._backendApiClient = new JWTBackendClient(this._applicationConfiguration.backendApiBase, () => this._userService.getUser().getCurrentToken(), this._analyticsService);
         this._userService = new FirebaseUserService(this._backendApiClient);
         this._persistenceService = new PersistenceServiceFacade(new FirebaseServerStorage());
+    }
+
+    /**
+     * Navigates to a certain path. Depending on router config,
+     * uses either /path or #/path
+     * @param context react context
+     * @param path (as /path/)
+     */
+    navigate(path: string) {
+        if (path.length > 0 && path.charAt(0) === '#') {
+            path = path.substr(1);
+        }
+        if (path.length > 0 && path.charAt(0) !== '/') {
+            path = '/' + path;
+        }
+        if (path.length === 0) {
+            path = '/';
+        }
+        if (this.applicationConfiguration.routerType === 'hash') {
+            path = '#' + path;
+        }
+
+        this.history.push(path);
+    }
+
+
+    get history(): History {
+        return this._history;
+    }
+
+    set history(value: History) {
+        this._history = value;
     }
 
     get userService(): UserService {
