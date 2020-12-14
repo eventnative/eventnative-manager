@@ -2,6 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/struct.proto";
 
+option go_package = ".;jitsu";
 package jitsu;
 
 message SourceConfiguration {
