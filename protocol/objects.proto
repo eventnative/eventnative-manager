@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = ".;jitsu";
 package jitsu;
@@ -28,7 +29,7 @@ message Collection {
 message AllSourcesConfiguration {
   string project_id = 1;
   repeated SourceConfiguration sources = 2;
-  string _lastUpdated = 3;
+  google.protobuf.Timestamp _lastUpdated = 3;
 }
 
 message GoogleAnalyticsCollectionParameters {

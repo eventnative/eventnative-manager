@@ -339,12 +339,10 @@ func (fb *Firebase) GetSourcesLastUpdated() (*time.Time, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing last updated sources of [%s] project: %v", docs[0].Ref.ID, err)
 	}
-
-	t, err := time.Parse(LastUpdatedLayout, sourcesConfig.GetXLastUpdated())
-	if err != nil {
-		return nil, fmt.Errorf("Error parsing [%s] field into [%s] layout: %v", lastUpdatedField, LastUpdatedLayout, err)
+	if sourcesConfig.XLastUpdated == nil {
+		return nil, errors.New("_lastUpdated field is not set")
 	}
-
+	t := sourcesConfig.XLastUpdated.AsTime()
 	return &t, nil
 }
 
