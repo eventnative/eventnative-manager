@@ -11,7 +11,7 @@ require (
 	github.com/go-acme/lego v2.7.2+incompatible
 	github.com/golang/protobuf v1.4.2
 	github.com/hashicorp/go-multierror v1.1.0
-	github.com/jitsucom/eventnative v1.23.0
+	github.com/jitsucom/eventnative v1.24.0
 	github.com/lib/pq v1.8.0
 	github.com/prometheus/common v0.15.0
 	github.com/spf13/viper v1.7.1

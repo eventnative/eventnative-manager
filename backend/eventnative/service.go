@@ -46,12 +46,12 @@ func NewService(balancerApiUrl, adminToken string) *Service {
 	return s
 }
 
-func (s *Service) GetOldEvents(apiKeys []string, limit int) ([]enevents.Fact, error) {
+func (s *Service) GetOldEvents(apiKeys []string, limit int) ([]enevents.Event, error) {
 	s.RLock()
 	enInstances := s.instanceUrls
 	s.RUnlock()
 
-	response := []enevents.Fact{}
+	var response []enevents.Event
 
 	for _, enInstanceUri := range enInstances {
 		code, body, err := s.sendReq(http.MethodGet, enInstanceUri+"/api/v1/cache/events?apikeys="+strings.Join(apiKeys, ",")+"&limit_per_apikey="+strconv.Itoa(limit), nil)

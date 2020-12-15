@@ -34,8 +34,7 @@ func Init() error {
 	appConfig.Authority = "0.0.0.0:" + port
 
 	globalLoggerConfig := logging.Config{
-		LoggerName:  "main",
-		ServerName:  serverName,
+		FileName:    "main",
 		FileDir:     viper.GetString("server.log.path"),
 		RotationMin: viper.GetInt64("server.log.rotation_min"),
 		MaxBackups:  viper.GetInt("server.log.max_backups")}
