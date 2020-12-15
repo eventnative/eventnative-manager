@@ -214,6 +214,7 @@ func SetupRouter(staticContentDirectory string, enService *eventnative.Service,
 
 	statisticsHandler := handlers.NewStatisticsHandler(statisticsStorage)
 	apiKeysHandler := handlers.NewApiKeysHandler(storage)
+	sourcesHandler := handlers.NewSourcesHandler(storage)
 
 	apiV1 := router.Group("/api/v1")
 	{
@@ -242,6 +243,7 @@ func SetupRouter(staticContentDirectory string, enService *eventnative.Service,
 		apiV1.GET("/last_events", middleware.ClientAuth(eventsHandler.GetHandler, authService))
 
 		apiV1.GET("/become", middleware.ClientAuth(handlers.NewBecomeUserHandler(authService).Handler, authService))
+		apiV1.GET("/sources", middleware.ServerAuth(middleware.IfModifiedSince(sourcesHandler.GetHandler, storage.GetSourcesLastUpdated), serverToken))
 	}
 	router.Use(static.Serve("/", static.LocalFile(staticContentDirectory, false)))
 	return router

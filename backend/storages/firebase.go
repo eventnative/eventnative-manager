@@ -3,12 +3,14 @@ package storages
 import (
 	"cloud.google.com/go/firestore"
 	"context"
+	"encoding/json"
 	"errors"
 	firebase "firebase.google.com/go/v4"
 	"fmt"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jitsucom/enhosted/destinations"
 	"github.com/jitsucom/enhosted/entities"
+	"github.com/jitsucom/enhosted/generated/jitsu"
 	"github.com/jitsucom/enhosted/random"
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
@@ -16,6 +18,8 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"time"
 )
 
@@ -24,6 +28,7 @@ const (
 	destinationsCollection               = "destinations"
 	apiKeysCollection                    = "api_keys"
 	customDomainsCollection              = "custom_domains"
+	sourcesCollection                    = "AllSourcesConfiguration"
 	lastUpdatedField                     = "_lastUpdated"
 
 	LastUpdatedLayout = "2006-01-02T15:04:05.000Z"
@@ -295,6 +300,60 @@ func (fb *Firebase) GetCustomDomainsByProjectId(projectId string) (*entities.Cus
 
 func (fb *Firebase) UpdateCustomDomain(projectId string, customDomains *entities.CustomDomains) error {
 	_, err := fb.client.Collection(customDomainsCollection).Doc(projectId).Set(fb.ctx, customDomains)
+	return err
+}
+
+func (fb *Firebase) GetSources() (map[string][]*jitsu.SourceConfiguration, error) {
+	var result = map[string][]*jitsu.SourceConfiguration{}
+	iter := fb.client.Collection(sourcesCollection).Documents(fb.ctx)
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to get AllSourcesConfiguration from firestore: %v", err)
+		}
+		projectSources := &jitsu.AllSourcesConfiguration{}
+		err = convertToProtoStruct(doc.Data(), projectSources)
+		if err != nil {
+			return nil, fmt.Errorf("failed parse sources of project [%s]: %v", doc.Ref.ID, err)
+		}
+		result[doc.Ref.ID] = projectSources.GetSources()
+	}
+	return result, nil
+}
+
+func (fb *Firebase) GetSourcesLastUpdated() (*time.Time, error) {
+	result := fb.client.Collection(sourcesCollection).Select(lastUpdatedField).OrderBy(lastUpdatedField, firestore.Desc).Limit(1).Documents(fb.ctx)
+	docs, err := result.GetAll()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting sources _lastUpdated: %v", err)
+	}
+	if len(docs) == 0 {
+		return nil, errors.New("Empty sources _lastUpdated")
+	}
+
+	sourcesConfig := &jitsu.AllSourcesConfiguration{}
+	err = convertToProtoStruct(docs[0].Data(), sourcesConfig)
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing last updated sources of [%s] project: %v", docs[0].Ref.ID, err)
+	}
+
+	t, err := time.Parse(LastUpdatedLayout, sourcesConfig.GetXLastUpdated())
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing [%s] field into [%s] layout: %v", lastUpdatedField, LastUpdatedLayout, err)
+	}
+
+	return &t, nil
+}
+
+func convertToProtoStruct(source map[string]interface{}, target proto.Message) error {
+	bytes, err := json.Marshal(source)
+	if err != nil {
+		return fmt.Errorf("failed to marshal: %v", err)
+	}
+	err = protojson.Unmarshal(bytes, target)
 	return err
 }
 
