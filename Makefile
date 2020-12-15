@@ -19,7 +19,7 @@ assemble: backend frontend
 	cp frontend/build/* ./build/dist/web/
 
 backend:
-	cd ./backend; go mod tidy; $(TARGET_ENV) go build -o ../$(APPLICATION)
+	cd ./backend; mkdir -p generated/jitsu; protoc -I=../protocol/ --go_out=./generated/jitsu/ ../protocol/objects.proto; go mod tidy; $(TARGET_ENV) go build -o ../$(APPLICATION)
 
 frontend:
 	cd ./frontend; yarn install; yarn build
@@ -31,6 +31,7 @@ clean-backend:
 	rm -f $(APPLICATION)
 	rm -rf dist
 	rm -rf ./build
+	rm -rf ./backend/generated
 
 clean-frontend:
 	rm -rf ./frontend/build
