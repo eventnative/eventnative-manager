@@ -101,10 +101,12 @@ export default class AnalyticsService {
     constructor(appConfig: ApplicationConfiguration) {
         this.appConfig = appConfig;
         this.consoleInterceptor.init();
-        eventN.init({
-            key: "js.gpon6lmpwquappfl07tuq.3lput6s25gycztzcxtodom",
-            tracking_host: "https://t.jitsu.com"
-        });
+        if (this.appConfig.rawConfig.keys.eventnative) {
+            eventN.init({
+                key: this.appConfig.rawConfig.keys.eventnative,
+                tracking_host: "https://t.jitsu.com"
+            });
+        }
         this.setupGlobalErrorHandler();
         this.consoleInterceptor.addListener((level, ...args) => {
             let error = findError(args);
@@ -115,8 +117,8 @@ export default class AnalyticsService {
     }
 
     public ensureLogRocketInitialized() {
-        if (!this.logRocketInitialized && !this.isDev()) {
-            LogRocket.init('6gfkmj/ksense');
+        if (!this.logRocketInitialized && !this.isDev() && this.appConfig.rawConfig.keys.logrocket) {
+            LogRocket.init(this.appConfig.rawConfig.keys.logrocket);
             setDebugInfo('logRocket', LogRocket, false);
             this.logRocketInitialized = true;
         }
@@ -130,22 +132,28 @@ export default class AnalyticsService {
         if (!user || this.isDev()) {
             return;
         }
-        posthog.init('72gPORhrnFw9os9uBF_IHSEohx9fObmIAyFyhHq_1mA', {api_host: 'https://ph-ksense.herokuapp.com'});
+        if (this.appConfig.rawConfig.keys.posthog) {
+            posthog.init(this.appConfig.rawConfig.keys.posthog, {api_host: this.appConfig.rawConfig.keys.posthog_host});
+            posthog.people.set({email: user.email});
+            posthog.identify(user.uid);
+        }
         this.user = user;
         this.ensureLogRocketInitialized();
         LogRocket.identify(user.uid, {
             email: user.email
         });
-        AnalyticsJS.init("jEB5Eas68Pz2zmwNIm2QSlxFE7PGsndX");
-        AnalyticsJS.get().identify(user.uid, {
-            email: user.email
-        })
-        eventN.id({
-            "email": user.email,
-            "internal_id": user.uid
-        });
-        posthog.people.set({email: user.email});
-        posthog.identify(user.uid);
+        if (this.appConfig.rawConfig.keys.ajs) {
+            AnalyticsJS.init(this.appConfig.rawConfig.keys.ajs);
+            AnalyticsJS.get().identify(user.uid, {
+                email: user.email
+            })
+        }
+        if (this.appConfig.rawConfig.keys.eventnative) {
+            eventN.id({
+                "email": user.email,
+                "internal_id": user.uid
+            });
+        }
     }
 
     private isDev() {
@@ -156,15 +164,21 @@ export default class AnalyticsService {
         if (this.appConfig.appEnvironment === 'development') {
             return
         }
-        eventN.track('app_page', {
-            path: pagePath,
-            app: "hosted_ui"
-        })
 
-        if (this.user) {
+        if (this.appConfig.rawConfig.keys.eventnative) {
+            eventN.track('app_page', {
+                path: pagePath,
+                app: "hosted_ui"
+            })
+        }
+
+        if (this.user && this.appConfig.rawConfig.keys.ajs) {
             AnalyticsJS.get().page('app_page', pagePath, {
                 app: "hosted_ui"
             });
+        }
+
+        if (this.user && this.appConfig.rawConfig.keys.posthog) {
             posthog.capture('$pageview');
         }
     }
@@ -217,11 +231,13 @@ export default class AnalyticsService {
         if (!this.isDev()) {
             console.log("Sending error to monitoring system")
             this.ensureLogRocketInitialized();
-            LogRocket.captureException(error, {
-                tags: {
-                    "environment": window.location.host
-                }
-            })
+            if (this.appConfig.rawConfig.keys.logrocket) {
+                LogRocket.captureException(error, {
+                    tags: {
+                        "environment": window.location.host
+                    }
+                })
+            }
         }
     }
 }

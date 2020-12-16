@@ -10,6 +10,7 @@ import {message} from "antd";
 type RoutingType = "hash" | "url";
 
 export class ApplicationConfiguration {
+    private readonly _rawConfig: RawConfigObject;
     private readonly _firebaseConfig: any;
     private readonly _backendApiBase: string;
     private readonly _routerType: RoutingType = "hash";
@@ -19,32 +20,24 @@ export class ApplicationConfiguration {
     private readonly _appEnvironment: 'development' | 'production';
 
     constructor() {
-        this._firebaseConfig = {
-            apiKey: "AIzaSyDBm2HqvxleuJyD9xo8rh0vo1TQGp8Vohg",
-            authDomain: "backbase.jitsu.com",
-            databaseURL: "https://tracker-285220.firebaseio.com",
-            projectId: "tracker-285220",
-            storageBucket: "tracker-285220.appspot.com",
-            messagingSenderId: "942257799287",
-            appId: "1:942257799287:web:e3b0bd3435f929d6a00672",
-            measurementId: "G-6ZMG0NSJP8"
-        };
-        if (process.env.BACKEND_API_BASE) {
-            this._backendApiBase = concatenateURLs(process.env.BACKEND_API_BASE, "/api/v1");
+        this._rawConfig = getRawApplicationConfig();
+        this._firebaseConfig = this._rawConfig.firebase;
+        if (this._rawConfig.env.BACKEND_API_BASE) {
+            this._backendApiBase = concatenateURLs(this._rawConfig.env.BACKEND_API_BASE, "/api/v1");
         } else {
             this._backendApiBase = "https://app-api.jitsu.com/api/v1";
         }
-        if (process.env.APP_ENV) {
-            if (process.env.APP_ENV.toLowerCase() === 'production' || process.env.APP_ENV.toLowerCase() === 'development') {
+        if (this._rawConfig.env.APP_ENV) {
+            if (this._rawConfig.env.APP_ENV.toLowerCase() === 'production' || this._rawConfig.env.APP_ENV.toLowerCase() === 'development') {
                 this._appEnvironment = 'production';
             } else {
-                throw new Error(`Unknown app environment: ${process.env.APP_ENV.toLowerCase()}`)
+                throw new Error(`Unknown app environment: ${this._rawConfig.env.APP_ENV.toLowerCase()}`)
             }
         } else {
             this._appEnvironment = 'development';
         }
         if (process.env.ROUTING_TYPE) {
-            this._routerType = process.env.ROUTING_TYPE as RoutingType;
+            this._routerType = this._rawConfig.env.ROUTING_TYPE as RoutingType;
         }
         console.log(`App initialized. Backend: ${this._backendApiBase}. Env: ${this._appEnvironment}`);
     }
@@ -66,6 +59,42 @@ export class ApplicationConfiguration {
     get backendApiBase(): string {
         return this._backendApiBase;
     }
+
+
+    get rawConfig(): RawConfigObject {
+        return this._rawConfig;
+    }
+}
+
+
+export type RawConfigObject = {
+    env: Record<string, string>
+    firebase: Record<string, string>
+    keys: {
+        logrocket?: string
+        posthog?: string
+        posthog_host?: string
+        ajs?: string
+        eventnative?: string
+    }
+}
+
+
+function getRawApplicationConfig(): RawConfigObject {
+    let obj: {};
+    try {
+        obj = require('../../config/appConfig.json');
+    } catch (e) {
+        throw new Error("Configuration file is not found. Make sure you put config file to src/config/appConfig.json")
+    }
+    if (!obj['firebase']) {
+        throw new Error(`Firebase is not present in config ${JSON.stringify(obj, null, 2)}`)
+    }
+    if (!obj['keys']) {
+        obj['keys'] = {}
+    }
+    obj['env'] = {...process.env, ...(obj['env'] || {})};
+    return obj as RawConfigObject
 
 }
 
@@ -296,7 +325,6 @@ function parseErrorResponseBody(response: AxiosResponse) {
 export interface Transformer<T> {
     (data: any, headers?: any): T;
 }
-
 
 
 const JSON_FORMAT: Transformer<any> = undefined;
