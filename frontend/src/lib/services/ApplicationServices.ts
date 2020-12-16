@@ -11,6 +11,8 @@ import {History} from "history";
 
 type RoutingType = "hash" | "url";
 
+type AppEnv = 'development' | 'production';
+
 export class ApplicationConfiguration {
     private readonly _firebaseConfig: any;
     private readonly _backendApiBase: string;
@@ -18,7 +20,7 @@ export class ApplicationConfiguration {
     /**
      * One of the following: development, production
      */
-    private readonly _appEnvironment: 'development' | 'production';
+    private readonly _appEnvironment: AppEnv;
 
     constructor() {
         this._firebaseConfig = {
@@ -38,7 +40,7 @@ export class ApplicationConfiguration {
         }
         if (process.env.APP_ENV) {
             if (process.env.APP_ENV.toLowerCase() === 'production' || process.env.APP_ENV.toLowerCase() === 'development') {
-                this._appEnvironment = 'production';
+                this._appEnvironment = process.env.APP_ENV as AppEnv;
             } else {
                 throw new Error(`Unknown app environment: ${process.env.APP_ENV.toLowerCase()}`)
             }
@@ -531,7 +533,12 @@ export class ObjectsPersistence<T> {
 
     public async get(id: string): Promise<T> {
         let obj = await this.storageService.get(this.collectionName, id) || {};
-        return this.deserializer(obj)
+        try {
+            return this.deserializer(obj)
+        } catch (e) {
+            throw new Error(`Failed to deserialize objects: ${e.message}: ${JSON.stringify(obj, null, 2)}`);
+        }
+
     }
 
     public async save(id: string, object: T): Promise<any> {

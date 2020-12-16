@@ -1,17 +1,15 @@
 import * as React from 'react'
-import {Align, LoadableComponent} from "../components";
+import {useState} from 'react'
+import {LabelWithTooltip, LoadableComponent} from "../components";
 import {jitsu} from "../../../generated/objects";
 import ApplicationServices, {ObjectsPersistence} from "../../services/ApplicationServices";
-import {AutoComplete, Button, Col, Input, Modal, Row} from "antd";
+import {AutoComplete, Button, Col, Form, Input, Row, Select} from "antd";
 import PlusOutlined from "@ant-design/icons/lib/icons/PlusOutlined";
 import './SourcesListPage.less'
-import Search from "antd/es/input/Search";
 import {SOURCES, SourceType} from "./sources";
-import {useState} from "react";
 import SearchOutlined from "@ant-design/icons/lib/icons/SearchOutlined";
 import CloseOutlined from "@ant-design/icons/lib/icons/CloseOutlined";
-import './SourcesListPage.less'
-import Icon from "antd/es/icon";
+import {NavLink} from 'react-router-dom';
 
 
 type State = {
@@ -58,6 +56,7 @@ export default class SourcesListPage extends LoadableComponent<any, State> {
     }
 
 }
+
 function getIconSrc(srcTypeId: string): any {
     try {
         return require('../../../icons/sources/' + srcTypeId + '.svg');
@@ -68,7 +67,7 @@ function getIconSrc(srcTypeId: string): any {
 
 function getIcon(srcTypeId: string): any {
     let src = getIconSrc(srcTypeId);
-    return (<img src={src} className="destination-type-icon" alt="[destination]"/>) ;
+    return (<img src={src} className="destination-type-icon" alt="[destination]"/>);
 }
 
 
@@ -78,7 +77,7 @@ function renderItem(item: SourceType, searchString?: string) {
             {getIcon(item.id)}
 
         </Col>
-        <Col span={20}  key="2" className="src-config-item">
+        <Col span={20} key="2" className="src-config-item">
             <h1>{item.name}</h1>
             <div>{item.comment}</div>
         </Col>
@@ -86,10 +85,12 @@ function renderItem(item: SourceType, searchString?: string) {
 
 }
 
-function SearchSourceComponent({onSelect, onClose} : {onSelect: (string) => void, onClose?: () => void}) {
+function SearchSourceComponent({onSelect, onClose}: { onSelect: (string) => void, onClose?: () => void }) {
     const [value, setValue] = useState('');
 
-    let allItems = Object.values(SOURCES).map(s => {return {value: renderItem(s), id: s.id}});
+    let allItems = Object.values(SOURCES).map(s => {
+        return {value: renderItem(s), id: s.id}
+    });
     const [options, setOptions] = useState<{ value: any }[]>(allItems);
     return <AutoComplete
         defaultOpen={true}
@@ -98,16 +99,18 @@ function SearchSourceComponent({onSelect, onClose} : {onSelect: (string) => void
             setOptions(
                 !searchText ? allItems : (Object.values(SOURCES)
                     .filter(s => s.id.toLowerCase().indexOf(searchText) >= 0 || s.name.toLowerCase().indexOf(searchText) >= 0 || s.comment.toLowerCase().indexOf(searchText) >= 0)
-                    .map(s => {return {value: renderItem(s), id: s.id}}))
+                    .map(s => {
+                        return {value: renderItem(s), id: s.id}
+                    }))
             );
         }}
         className="src-config-empty-sources"
         options={options}
     >
         <Input
-            prefix={<Button type="text" icon={<SearchOutlined />} />}
-            suffix={<Button type="text" icon={<CloseOutlined />} onClick={() => onClose()} />}
-            placeholder="Start typing name of the source" />
+            prefix={<Button type="text" icon={<SearchOutlined/>}/>}
+            suffix={<Button type="text" icon={<CloseOutlined/>} onClick={() => onClose()}/>}
+            placeholder="Start typing name of the source"/>
     </AutoComplete>
-
 }
+

@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = ".;jitsu";
 package jitsu;
@@ -42,16 +43,15 @@ message FirebaseConfig {
 }
 
 message GooglePlayConfig {
-  GoogleAnalyticsConfig google_access = 1;
+  GoogleAccess google_access = 1;
 }
 
 message GoogleAnalyticsConfig {
-  GoogleAnalyticsConfig google_access = 1;
+  GoogleAccess google_access = 1;
 }
 
 
-message GoogleServiceConfig {
+message GoogleAccess {
   string project_id = 1;
   google.protobuf.Struct service_key = 2;
 }
-
