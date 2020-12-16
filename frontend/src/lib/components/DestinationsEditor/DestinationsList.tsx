@@ -1,6 +1,16 @@
 import * as React from 'react'
 import {ReactNode, useState} from 'react'
-import {BQConfig, ClickHouseConfig, DestinationConfig, destinationConfigTypes, destinationsByTypeId, PostgresConfig, RedshiftConfig, SnowflakeConfig} from "../../services/destinations";
+import {
+    BQConfig,
+    ClickHouseConfig,
+    DestinationConfig,
+    destinationConfigTypes,
+    destinationsByTypeId,
+    GoogleAnalyticsConfig,
+    PostgresConfig,
+    RedshiftConfig,
+    SnowflakeConfig
+} from "../../services/destinations";
 import {Avatar, Button, Col, Divider, Dropdown, Form, Input, List, Menu, message, Modal, Popover, Radio, Row, Select, Switch, Tooltip} from "antd";
 
 import ColumnWidthOutlined from "@ant-design/icons/lib/icons/ColumnWidthOutlined";
@@ -57,7 +67,7 @@ type State = {
     activeMapping?: FieldMappings
 }
 
-const SERIALIZABLE_CLASSES = [DestinationConfig, PostgresConfig, ClickHouseConfig, RedshiftConfig, FieldMappings, Mapping, SnowflakeConfig, BQConfig];
+const SERIALIZABLE_CLASSES = [DestinationConfig, PostgresConfig, ClickHouseConfig, RedshiftConfig, FieldMappings, Mapping, SnowflakeConfig, BQConfig, GoogleAnalyticsConfig];
 
 export class DestinationsList extends LoadableComponent<any, State> {
     private services: ApplicationServices;
@@ -531,6 +541,24 @@ class PostgresDestinationDialog extends DestinationDialog<PostgresConfig> {
     }
 }
 
+class GoogleAnalyticsDialog extends DestinationDialog<GoogleAnalyticsConfig> {
+
+    constructor(props: Readonly<IDestinationDialogProps<GoogleAnalyticsConfig>> | IDestinationDialogProps<GoogleAnalyticsConfig>) {
+        super(props);
+    }
+
+    items(): React.ReactNode {
+        return (
+            <>
+                <Row>
+                    <Col span={16}>
+                        <Form.Item label="Tracking ID" name="gaTrackingId" labelCol={{span: 6}} wrapperCol={{span: 18}} rules={[{required: true, message: 'Tracking ID is required'}]}><Input type="text"/></Form.Item>
+                    </Col>
+                </Row>
+            </>);
+    }
+}
+
 
 class RedshiftDestinationDialog extends DestinationDialog<RedshiftConfig> {
     items(): React.ReactNode {
@@ -718,5 +746,6 @@ const dialogsByType = {
     'clickhouse': ClickHouseDialog,
     'redshift': RedshiftDestinationDialog,
     'snowflake': SnowflakeDialog,
-    'bigquery': BiqQueryDialog
+    'bigquery': BiqQueryDialog,
+    'google_analytics': GoogleAnalyticsDialog
 }

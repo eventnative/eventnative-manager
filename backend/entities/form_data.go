@@ -75,3 +75,11 @@ type SnowflakeFormData struct {
 	GCSBucket string      `firestore:"snowflakeGcsBucket" json:"snowflakeGcsBucket"`
 	GCSKey    interface{} `firestore:"snowflakeJSONKey" json:"snowflakeJSONKey"`
 }
+
+//GoogleAnalyticsFormData entity is stored in main storage (Firebase)
+type GoogleAnalyticsFormData struct {
+	Mode      string `firestore:"mode" json:"mode"`
+	TableName string `firestore:"tableName" json:"tableName"`
+
+	TrackingId string `firestore:"gaTrackingId" json:"gaTrackingId"`
+}

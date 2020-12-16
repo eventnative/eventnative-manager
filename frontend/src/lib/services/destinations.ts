@@ -32,7 +32,8 @@ export const destinationConfigTypes = [
     new DestinationConfigFactory("ClickHouse", "clickhouse", (id) => new ClickHouseConfig(id)),
     new DestinationConfigFactory("BigQuery", "bigquery", (id) => new BQConfig(id)),
     new DestinationConfigFactory("Redshift", "redshift", (id) => new RedshiftConfig(id)),
-    new DestinationConfigFactory("Snowflake", "snowflake", (id) => new SnowflakeConfig(id))
+    new DestinationConfigFactory("Snowflake", "snowflake", (id) => new SnowflakeConfig(id)),
+    new DestinationConfigFactory("GoogleAnalytics", "google_analytics", (id) => new GoogleAnalyticsConfig(id))
 ]
 
 export const destinationsByTypeId = destinationConfigTypes.reduce((map: Record<string, DestinationConfigFactory<any>>, obj) => {
@@ -198,6 +199,23 @@ export class ClickHouseConfig extends DestinationConfig {
 
 }
 
+export class GoogleAnalyticsConfig extends DestinationConfig {
+
+    constructor(id: string) {
+        super("google_analytics", id);
+    }
+
+    update(formValues: any): void {
+        super.update(formValues);
+    }
+
+    describe(): ConnectionDescription {
+        return {
+            displayURL: `${this.formData['gaTrackingId']}`,
+            commandLineConnect: null
+        };
+    }
+}
 
 export class SnowflakeConfig extends DestinationConfig {
 
