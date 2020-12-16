@@ -102,7 +102,7 @@ export default class AnalyticsService {
         this.appConfig = appConfig;
         this.consoleInterceptor.init();
         eventN.init({
-            key: "daaac3a7-a7e4-475f-80dd-43a2985680c5",
+            key: "js.gpon6lmpwquappfl07tuq.3lput6s25gycztzcxtodom",
             tracking_host: "https://t.jitsu.com"
         });
         this.setupGlobalErrorHandler();
