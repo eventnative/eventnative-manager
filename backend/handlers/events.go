@@ -65,7 +65,7 @@ func (eh *EventsHandler) OldGetHandler(c *gin.Context) {
 		return
 	}
 	if len(apiKeysObjects) == 0 {
-		c.JSON(http.StatusOK, enhandlers.OldCachedEventsResponse{Events: []enevents.Fact{}})
+		c.JSON(http.StatusOK, enhandlers.OldCachedEventsResponse{Events: []enevents.Event{}})
 		return
 	}
 

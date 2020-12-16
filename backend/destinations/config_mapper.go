@@ -24,6 +24,8 @@ func MapConfig(destinationId string, destination *entities.Destination, defaultS
 		config, err = mapBigQuery(destination)
 	case enstorages.SnowflakeType:
 		config, err = mapSnowflake(destination)
+	case enstorages.GoogleAnalyticsType:
+		config, err = mapGoogleAnalytics(destination)
 	default:
 		return nil, fmt.Errorf("Unknown destination type: %s", destination.Type)
 	}
@@ -194,6 +196,30 @@ func mapSnowflake(snowflakeDestination *entities.Destination) (*enstorages.Desti
 		Snowflake: &enadapters.SnowflakeConfig{Account: snowflakeFormData.Account, Warehouse: snowflakeFormData.Warehouse, Db: snowflakeFormData.DB, Schema: snowflakeFormData.Schema, Username: snowflakeFormData.Username, Password: snowflakeFormData.Password, Stage: snowflakeFormData.StageName},
 		S3:        s3,
 		Google:    gcs,
+	}, nil
+}
+
+func mapGoogleAnalytics(gaDestination *entities.Destination) (*enstorages.DestinationConfig, error) {
+	b, err := json.Marshal(gaDestination.Data)
+	if err != nil {
+		return nil, fmt.Errorf("Error marshaling google analytics config destination: %v", err)
+	}
+
+	gaFormData := &entities.GoogleAnalyticsFormData{}
+	err = json.Unmarshal(b, gaFormData)
+	if err != nil {
+		return nil, fmt.Errorf("Error unmarshaling google analytics form data: %v", err)
+	}
+
+	return &enstorages.DestinationConfig{
+		Type: enstorages.GoogleAnalyticsType,
+		Mode: gaFormData.Mode,
+		DataLayout: &enstorages.DataLayout{
+			TableNameTemplate: gaFormData.TableName,
+		},
+		GoogleAnalytics: &enadapters.GoogleAnalyticsConfig{
+			TrackingId: gaFormData.TrackingId,
+		},
 	}, nil
 }
 
